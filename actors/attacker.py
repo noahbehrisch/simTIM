@@ -1,0 +1,63 @@
+from .actor import Actor
+from simulator.network import Node, Link
+from actions.action import Action
+
+class Attacker(Actor):
+    def __init__(self, id: str, role: str = "attacker", capacity: int = 2) -> None:
+        super().__init__(id, role, capacity)
+        self.is_attacker = True
+        self.visible_nodes = set()
+        self.compromised_nodes = set()
+        self.visible_links = set()
+        self.compromised_links = set()
+        self.available_actions = []
+
+    def choose_best_action(self, network_state) -> tuple:
+        visible_nodes = list(self.visible_nodes)
+        visible_links = list(self.visible_links)
+        best = None
+        best_gain = float('-inf')
+        for action in self.available_actions:
+            if action.is_node_action():
+                for node in visible_nodes:
+                    # Skip nodes this attacker has already compromised (by id)
+                    if hasattr(node, 'id') and node.id in self.compromised_nodes:
+                        continue
+                    actor_access = node.access.get(self.id, None)
+                    if action.precondition(node, actor_access, self.id):
+                        gain = action.get_one_off_gain(node, actor_access, self.id)
+                        if gain > best_gain:
+                            best = (action, node)
+                            best_gain = gain
+            elif action.is_link_action():
+                for link in visible_links:
+                    # Skip links this attacker has already compromised (by id)
+                    if hasattr(link, 'id') and link.id in self.compromised_links:
+                        continue
+                    actor_access = getattr(link, 'access', {}).get(self.id, None)
+                    if action.precondition(link, actor_access, self.id):
+                        gain = action.get_one_off_gain(link, actor_access, self.id)
+                        if gain > best_gain:
+                            best = (action, link)
+                            best_gain = gain
+        return best
+
+    def exploit(self, node: Node):
+        node.compromised = True
+        if hasattr(node, 'id'):
+            self.compromised_nodes.add(node.id)
+
+    def gain_visibility(self, node: Node):
+        self.visible_nodes.add(node)
+
+    def gain_link_visibility(self, link: Link):
+        self.visible_links.add(link)
+
+    def compromise_link(self, link: Link):
+        self.compromised_links.add(link)
+
+    def on_action_finished(self, action, status, target=None):
+        # Track successful node compromises by id for any node action
+        if status == "success" and target is not None:
+            if hasattr(target, 'id'):
+                self.compromised_nodes.add(target.id)
