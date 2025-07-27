@@ -1,7 +1,7 @@
 from simulator.simulator import Simulator
 from actions.action_attack import all_attack_actions
 from actions.action_defense import all_defense_actions
-from simulator.network import Node, Link
+from simulator.graph import Node, Link
 from networks.network_loader import load_network_config, create_network_from_config
 from actors.attacker import Attacker
 from actors.defender import Defender
@@ -84,6 +84,13 @@ def simtim_main(
 
 def main():
     simtim_main()
+    
+    from networks.network_visualizer import NetworkVisualizer
+    from simulator.graph import Graph
+
+    network = Graph.from_json("networks/star_network.json")
+    visualizer = NetworkVisualizer(network)
+    visualizer.visualize()
 
 if __name__ == "__main__":
     main()

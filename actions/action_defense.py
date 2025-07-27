@@ -1,5 +1,5 @@
 from actions.action import Action
-from simulator.network import Node
+from simulator.graph import Node
 from enum import Enum
 from packaging.version import Version
 

@@ -1,8 +1,10 @@
 import os
 import json
-from simulator.network import Node, Link
+from simulator.graph import Node, Link
 from typing import List, Dict
 
+
+# TODO: reevaluate need -> graph.py.load_from_json
 def load_network_config(path: str) -> dict:
     with open(path, 'r') as f:
         if path.endswith('.json'):
