@@ -41,7 +41,6 @@ dist/
 output/
 results/
 *.pcap
-*.json
 
 # Miscellaneous
 misc/
