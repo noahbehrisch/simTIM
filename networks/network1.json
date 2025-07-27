@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "n1",
+      "software": {"WebApp framework name": "Apache Tapestry", "WebApp framework version": "5.6.2", "Endpoint protection": "Sophos"},
+      "vulnerabilities": ["CVE-2021-1234"],
+      "assets": ["website_hosting_server"]
+    },
+    {
+      "id": "n2",
+      "software": {"DBMS name": "MySQL", "DBMS version": "8.0.20"},
+      "vulnerabilities": ["CVE-2022-5678"],
+      "assets": ["user_db"]
+    },
+    {
+      "id": "n3",
+      "software": {"WebApp framework name": "Apache Tapestry", "WebApp framework version": "5.8.0", "Endpoint protection": "Sophos"},
+      "vulnerabilities": [],
+      "assets": ["internal_server"]
+    }
+  ],
+  "links": [
+    {"node1": "n1", "node2": "n2", "bidirectional": true, "latency": 1.0},
+    {"node1": "n2", "node2": "n3", "bidirectional": true, "latency": 1.0}
+  ]
+}
