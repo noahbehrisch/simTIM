@@ -318,6 +318,7 @@ class App(tk.Tk):
             defenders=defenders
         )
 
+        # Enable results button
         self.results_button.config(state=tk.NORMAL)
 
         tk.messagebox.showinfo(
@@ -326,12 +327,14 @@ class App(tk.Tk):
         )
 
     def launch_visualizer(self):
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         from networks.network_visualizer import NetworkVisualizer
         from simulator.graph import Graph
 
         network_path = self.network_file_var.get()
         network = Graph.from_json(network_path)
         visualizer = NetworkVisualizer(network)
+        
         visualizer.visualize()
 
 
