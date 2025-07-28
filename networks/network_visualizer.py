@@ -57,7 +57,10 @@ class NetworkVisualizer:
     def visualize(self):
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        ax.set_aspect('auto', adjustable='datalim')
+        self._draw_network()
 
-        ani = FuncAnimation(fig, self._update, interval=1000)
         plt.show()
+
+    def update_plot(self):
+        plt.clf()
+        self.visualize()
