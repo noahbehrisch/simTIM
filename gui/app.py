@@ -53,7 +53,15 @@ class App(tk.Tk):
         self.bottom_frame.grid_columnconfigure(2, weight=1)
         self.help_button = tk.Button(self.bottom_frame, text="Help", command=self.open_help_window, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
         self.help_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
-        self.results_button = tk.Button(self.bottom_frame, text="Results", bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
+        self.results_button = tk.Button(
+            self.bottom_frame,
+            text="Results",
+            state=tk.DISABLED,
+            bg=self.button_color,
+            fg=self.button_fg,
+            activebackground=self.highlight_color
+        )
+        self.results_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
         self.start_button = tk.Button(self.bottom_frame, text="Start Simulation", command=self.run_simulation_from_gui, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
         self.next_button = tk.Button(self.bottom_frame, text="Next", command=self.next_tab, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
         self.after(0, lambda: self.show_tab("Simulation"))
@@ -249,11 +257,34 @@ class App(tk.Tk):
         tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
     def open_results_window(self):
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        from visualization.plot_results import plot_violin
+        import numpy as np
+        import matplotlib.pyplot as plt
+
         win = tk.Toplevel(self)
         win.title("Results")
         win.geometry("900x700")
         win.configure(bg=self.bg_color)
-        tk.Label(win, text="Results window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
+
+        # Test data for plotting
+        data = [
+            np.random.normal(0, 1, 100),
+            np.random.normal(1, 0.5, 100),
+            np.random.normal(2, 0.8, 100)
+        ]
+
+        fig = plot_violin(data, return_figure=True)
+
+        canvas = FigureCanvasTkAgg(fig, master=win)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        def on_close():
+            plt.close(fig)
+            win.destroy()
+
+        win.protocol("WM_DELETE_WINDOW", on_close)
 
     def open_help_window(self):
         win = tk.Toplevel(self)
@@ -286,7 +317,13 @@ class App(tk.Tk):
             attackers=attackers,
             defenders=defenders
         )
-        sys.exit(0)
+
+        self.results_button.config(state=tk.NORMAL)
+
+        tk.messagebox.showinfo(
+            title="",
+            message="Simulation Complete"
+        )
 
     def launch_visualizer(self):
         from networks.network_visualizer import NetworkVisualizer
@@ -296,6 +333,7 @@ class App(tk.Tk):
         network = Graph.from_json(network_path)
         visualizer = NetworkVisualizer(network)
         visualizer.visualize()
+
 
 class Sidebar(tk.Frame):
     def __init__(self, master, toggle_fullscreen, fullscreen_state, switch_tab_callback, sidebar_color, highlight_color, button_color, button_fg):
