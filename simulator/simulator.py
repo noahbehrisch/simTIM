@@ -105,7 +105,7 @@ class Simulator:
         self.schedule_event(self.current_time + 1, "actor_decide", {"actor": actor})
 
     def attacker_decision(self, attacker):
-        decision = attacker.choose_best_action(self.network)
+        decision = attacker.choose_action(self.network)
         if decision:
             action, target = decision
             actor_access = target.access.get(attacker.id, None)

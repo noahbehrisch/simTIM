@@ -15,7 +15,7 @@ class Actor:
         self.linkAccess={}
     
     def __repr__(self) -> str:
-        return f"Actor(id={self.id}, capacity={self.capacity}, incurredCost={self.incurredCost})"
+        return f"Actor(id={self.id}, capacity={self.capacity}, incurredCost={self.incurredCost}, strategy={self.strategy})"
 
     def can_schedule_action(self) -> bool:
         return len(self.ongoing_actions) < self.capacity

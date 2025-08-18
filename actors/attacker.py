@@ -15,11 +15,11 @@ class Attacker(Actor):
     def choose_action(self, network_state):
         match self.strategy:
             case "greedy":
-                self.choose_best_action(network_state)
+                return  self.choose_best_action(network_state)
             case "random":
-                self.choose_random_action(network_state)
+                return self.choose_random_action(network_state)
             case _:
-                self.choose_best_action(network_state)
+                return self.choose_best_action(network_state)
 
     def choose_best_action(self, network_state) -> tuple:
         visible_nodes = list(self.visible_nodes)
@@ -59,7 +59,7 @@ class Attacker(Actor):
         visible_links = list(self.visible_links)
         possible_actions = []
 
-        print("[DEBUG] Available actions:", self.available_actions)
+        print("[DEBUG] Available random actions:", self.available_actions)
         for action in self.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
