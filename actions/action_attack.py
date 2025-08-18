@@ -13,6 +13,9 @@ class AccessLink(Enum):
     NONE = auto()
     VISIBLE = auto()
 
+
+# Post and Pre Conditions
+
 def compromise_tapestry_pre(node: Node, actor_access: str, actor_id: str) -> bool:
     return (
         node.get_software('WebApp framework name') == 'Apache Tapestry' and
@@ -53,35 +56,120 @@ def tapestry_detection_probability(node: Node, actor_access: str, actor_id: str)
         return 0.8
     return 0.2
 
-# Example attack actions
+
+#def simple_user_attack_pre(node: Node, actor_access: str, actor_id: str) -> bool:
+#    return actor_access == AccessNode.USER.name
+
+#def simple_user_attack_post(node: Node, actor_access: str, actor_id: str) -> None:
+#    node.compromised = True
+
+def reconnaissance_pre(node: Node, actor_access: str, actor_id: str) -> bool:
+    return actor_access != AccessNode.NONE.name
+
+def reconnaissance_post(node: Node, actor_access: str, actor_id: str) -> None:
+    node.access[actor_id] = AccessNode.VISIBLE.name
+
+def privilege_escalation_pre(node: Node, actor_access: str, actor_id: str) -> bool:
+    return actor_access == AccessNode.USER.name
+
+def privilege_escalation_post(node: Node, actor_access: str, actor_id: str) -> None:
+    node.access[actor_id] = AccessNode.ADMIN.name
+
+def data_exfiltration_pre(node: Node, actor_access: str, actor_id: str) -> bool:
+    return actor_access == AccessNode.ADMIN.name and len(node.assets) > 0
+
+def data_exfiltration_post(node: Node, actor_access: str, actor_id: str) -> None:
+    node.assets.clear()
+
+# Actions
 compromise_tapestry = Action(
     name="Tapestry attack",
     precondition=compromise_tapestry_pre,
     postcondition=compromise_tapestry_post,
     cost=300,
-    duration=1.0,
-    success_probability=0.2,
+    duration=1.5,
+    success_probability=0.6,
     action_type="node",
-    detection_probability=zero,
-    one_off_damage=zero,
-    one_off_gain=zero,
-    time_damage=zero,
-    time_gain=zero,
+    detection_probability=tapestry_detection_probability,
+    one_off_damage=lambda node, access, actor: 50.0,
+    one_off_gain=lambda node, access, actor: 30.0,
+    time_damage=lambda node, access, actor: 10.0,
+    time_gain=lambda node, access, actor: 5.0,
 )
 
 port_scan = Action(
     name="Port scan",
     precondition=port_scan_pre,
     postcondition=port_scan_post,
-    cost=0,
-    duration=2,
+    cost=50,
+    duration=1.0,
+    success_probability=0.95,
+    action_type="node",
+    detection_probability=lambda node, access, actor: 0.15,
+    one_off_damage=lambda node, access, actor: 0.0,
+    one_off_gain=lambda node, access, actor: 20.0,
+    time_damage=lambda node, access, actor: 0.0,
+    time_gain=lambda node, access, actor: 0.0,
+)
+
+#simple_user_attack = Action(
+#    name="Simple User Attack",
+#    precondition=simple_user_attack_pre,
+#    postcondition=simple_user_attack_post,
+#    cost=20,
+#    duration=0.5,
+#    success_probability=0.9,
+#    action_type="node",
+#    detection_probability=lambda node, access, actor: 0.1,
+#    one_off_damage=lambda node, access, actor: 10.0,
+#    one_off_gain=lambda node, access, actor: 50.0,
+#    time_damage=lambda node, access, actor: 0.0,
+#    time_gain=lambda node, access, actor: 0.0,
+#)
+
+reconnaissance = Action(
+    name="Reconnaissance",
+    precondition=reconnaissance_pre,
+    postcondition=reconnaissance_post,
+    cost=50,
+    duration=0.5,
     success_probability=0.9,
     action_type="node",
-    detection_probability=zero,
-    one_off_damage=zero,
-    one_off_gain=zero,
-    time_damage=zero,
-    time_gain=zero,
+    detection_probability=lambda node, access, actor: 0.1,
+    one_off_damage=lambda node, access, actor: 0.0,
+    one_off_gain=lambda node, access, actor: 10.0,
+    time_damage=lambda node, access, actor: 0.0,
+    time_gain=lambda node, access, actor: 0.0,
+)
+
+privilege_escalation = Action(
+    name="Privilege Escalation",
+    precondition=privilege_escalation_pre,
+    postcondition=privilege_escalation_post,
+    cost=100,
+    duration=1.0,
+    success_probability=0.8,
+    action_type="node",
+    detection_probability=lambda node, access, actor: 0.2,
+    one_off_damage=lambda node, access, actor: 0.0,
+    one_off_gain=lambda node, access, actor: 20.0,
+    time_damage=lambda node, access, actor: 0.0,
+    time_gain=lambda node, access, actor: 0.0,
+)
+
+data_exfiltration = Action(
+    name="Data Exfiltration",
+    precondition=data_exfiltration_pre,
+    postcondition=data_exfiltration_post,
+    cost=200,
+    duration=2.0,
+    success_probability=0.7,
+    action_type="node",
+    detection_probability=lambda node, access, actor: 0.3,
+    one_off_damage=lambda node, access, actor: 50.0,
+    one_off_gain=lambda node, access, actor: 100.0,
+    time_damage=lambda node, access, actor: 0.0,
+    time_gain=lambda node, access, actor: 0.0,
 )
 
 compromise_mysql = Action(
@@ -89,37 +177,31 @@ compromise_mysql = Action(
     precondition=compromise_mysql_pre,
     postcondition=compromise_mysql_post,
     cost=800,
-    duration=1.0,
-    success_probability=0.8,
+    duration=2.0,
+    success_probability=0.7,
     action_type="link",
-    detection_probability=zero,
-    one_off_damage=zero,
-    one_off_gain=zero,
-    time_damage=zero,
-    time_gain=zero,
+    detection_probability=lambda node, access, actor: 0.25,
+    one_off_damage=lambda node, access, actor: 100.0,
+    one_off_gain=lambda node, access, actor: 80.0,
+    time_damage=lambda node, access, actor: 20.0,
+    time_gain=lambda node, access, actor: 10.0,
 )
 
-def simple_user_attack_pre(node: Node, actor_access: str, actor_id: str) -> bool:
-    return actor_access == AccessNode.USER.name
+node_attack_actions = [
+    compromise_tapestry,
+    port_scan,
+    #simple_user_attack,
+    reconnaissance,
+    privilege_escalation,
+    data_exfiltration
+]
 
-def simple_user_attack_post(node: Node, actor_access: str, actor_id: str) -> None:
-    node.compromised = True
+link_attack_actions = [
+    compromise_mysql
+]
 
-simple_user_attack = Action(
-    name="Simple User Attack",
-    precondition=simple_user_attack_pre,
-    postcondition=simple_user_attack_post,
-    cost=10,
-    duration=1.0,
-    success_probability=1.0,
-    action_type="node",
-    detection_probability=zero,
-    one_off_damage=zero,
-    one_off_gain=lambda node, access, actor_id: 100,
-    time_damage=zero,
-    time_gain=zero,
-)
-
-node_attack_actions = [compromise_tapestry, port_scan, simple_user_attack]
-link_attack_actions = [compromise_mysql]
 all_attack_actions = node_attack_actions + link_attack_actions
+
+print("[DEBUG] all_attack_actions:", all_attack_actions)
+print("[DEBUG] node_attack_actions:", node_attack_actions)
+print("[DEBUG] link_attack_actions:", link_attack_actions)
