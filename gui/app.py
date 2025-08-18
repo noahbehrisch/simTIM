@@ -10,7 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from main import simtim_main
 
-
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -160,22 +159,32 @@ class App(tk.Tk):
                 self.node_options = []
 
     def add_attacker_entry(self):
-        idx = len(self.attacker_entries)
-        frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color, bd=1, relief=tk.GROOVE)
-        frame.pack(fill="x", padx=5, pady=5)
-        id_var = tk.StringVar(value=f"A{idx+1}")
-        tk.Label(frame, text=f"Attacker #{idx+1} ID:", bg=self.tab_color).grid(row=0, column=0, sticky="w")
-        tk.Entry(frame, textvariable=id_var, width=10, state='readonly').grid(row=0, column=1, sticky="w")
-        self.attacker_entries.append({'id': id_var})
+        frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color)
+        frame.pack(fill="x", padx=10, pady=5)
+
+        attacker_id = len(self.attacker_entries) + 1
+        tk.Label(frame, text=f"Attacker {attacker_id}:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+
+        tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+        strategy_var = tk.StringVar(value="greedy")
+        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy"], state="readonly", width=10)
+        strategy_dropdown.pack(side="left", padx=5)
+
+        self.attacker_entries.append((attacker_id, strategy_var))
 
     def add_defender_entry(self):
-        idx = len(self.defender_entries)
-        frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color, bd=1, relief=tk.GROOVE)
-        frame.pack(fill="x", padx=5, pady=5)
-        id_var = tk.StringVar(value=f"D{idx+1}")
-        tk.Label(frame, text=f"Defender #{idx+1} ID:", bg=self.tab_color).grid(row=0, column=0, sticky="w")
-        tk.Entry(frame, textvariable=id_var, width=10, state='readonly').grid(row=0, column=1, sticky="w")
-        self.defender_entries.append({'id': id_var})
+        frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color)
+        frame.pack(fill="x", padx=10, pady=5)
+
+        defender_id = len(self.defender_entries) + 1
+        tk.Label(frame, text=f"Defender {defender_id}:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+
+        tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+        strategy_var = tk.StringVar(value="greedy")
+        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy"], state="readonly", width=10)
+        strategy_dropdown.pack(side="left", padx=5)
+
+        self.defender_entries.append((defender_id, strategy_var))
 
     # ---- Tab Logic ----
     def show_tab(self, name):

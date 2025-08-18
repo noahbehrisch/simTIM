@@ -3,17 +3,20 @@ class Actor:
         self, 
         id: str, 
         role: str, 
-        capacity: int = None
+        capacity: int = None,
+        strategy=None
     ):
-        self.id=id
-        self.role=role
-        self.capacity=capacity
-        self.incurredCost=0
-        self.nodeAccess={}
-        self.linkAccess={}
+        self.id = id
+        self.role = role
+        self.capacity = capacity
+        self.strategy = strategy
+        self.incurredCost = 0
+        self.nodeAccess = {}
+        self.linkAccess = {}
+        self.ongoing_actions = set()
     
     def __repr__(self) -> str:
-        return f"Actor(id={self.id}, capacity={self.capacity}, incurredCost={self.incurredCost})"
+        return f"Actor(id={self.id}, role={self.role}, capacity={self.capacity}, strategy={self.strategy})"
 
     def can_schedule_action(self) -> bool:
         return len(self.ongoing_actions) < self.capacity
@@ -33,4 +36,10 @@ class Actor:
 
     def on_action_finished(self, action, status):
         pass
+
+    def choose_action(self, network_state):
+        if self.strategy:
+            return self.strategy.decide_action(self, network_state)
+        else:
+            raise NotImplementedError("No strategy assigned to actor")
 

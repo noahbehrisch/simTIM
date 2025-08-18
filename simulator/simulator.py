@@ -7,10 +7,9 @@ infinity = float('inf')
 
 class Event:
     def __init__(self, time: float, event_type: str, data: Dict[str, Any]):
-        self.time = time # TODO: reform time tracking
+        self.time = time
         self.event_type = event_type
         self.data = data # Dict holding important information about the event TODO: is it a good idea?
-    # Less than comparison for priority queue, essential for heapq TODO: learn more
     def __lt__(self, other):
         return self.time < other.time
     def __repr__(self):
@@ -30,8 +29,10 @@ class Simulator:
         for actor in self.get_all_actors():
             if hasattr(actor, 'is_attacker') and actor.is_attacker:
                 actor.visible_nodes = list(all_nodes)
+        
         for actor in self.get_all_actors():
             self.schedule_event(self.current_time, "actor_decide", {"actor": actor})
+        
         while self.event_queue and self.current_time <= until: 
             event = heapq.heappop(self.event_queue)
             self.current_time = event.time
