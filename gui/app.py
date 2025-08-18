@@ -204,7 +204,7 @@ class App(tk.Tk):
             self.results_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
             self.start_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
             self.next_button.grid_remove()
-            self.results_button.config(command=self.open_results_window)
+            self.results_button.config(command=lambda: self.open_results_window(self.all_histories))
         else:
             self.results_button.grid_remove()
             self.start_button.grid_remove()
@@ -219,14 +219,10 @@ class App(tk.Tk):
         )
         overview += "Attackers:\n"
         for idx, entry in enumerate(self.attacker_entries):
-            overview += (
-                f"  Attacker #{idx+1}: ID={entry['id'].get()}\n"
-            )
+            overview += f"  Attacker #{idx+1}: ID={entry[0]}, Strategy={entry[1].get()}\n"
         overview += "Defenders:\n"
         for idx, entry in enumerate(self.defender_entries):
-            overview += (
-                f"  Defender #{idx+1}: ID={entry['id'].get()}\n"
-            )
+            overview += f"  Defender #{idx+1}: ID={entry[0]}, Strategy={entry[1].get()}\n"
         self.overview_text.config(state=tk.NORMAL)
         self.overview_text.delete(1.0, tk.END)
         self.overview_text.insert(tk.END, overview)
@@ -265,18 +261,38 @@ class App(tk.Tk):
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
-    def open_results_window(self):
-        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from visualization.plot_results import plot_violin
+    def open_results_window(self, all_histories):
         import numpy as np
         import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        from visualization.plot_results import plot_violin
 
         win = tk.Toplevel(self)
         win.title("Results")
         win.geometry("900x700")
         win.configure(bg=self.bg_color)
 
-        # Test data for plotting
+        notebook = ttk.Notebook(win)
+        notebook.pack(fill=tk.BOTH, expand=True)
+
+        logs_frame = tk.Frame(notebook, bg=self.bg_color)
+        logs_text = tk.Text(logs_frame, wrap=tk.WORD, bg="#eaf1fb", fg=self.button_fg, state=tk.NORMAL)
+        logs_text.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+        notebook.add(logs_frame, text="Logs")
+
+        # Display the all_histories list in the logs tab
+        logs_text.config(state=tk.NORMAL)
+        logs_text.delete(1.0, tk.END)
+        for run_index, history in enumerate(all_histories, start=1):
+            logs_text.insert(tk.END, f"Run {run_index} History:\n")
+            for entry in history:
+                logs_text.insert(tk.END, f"  {entry}\n")
+            logs_text.insert(tk.END, "\n")
+        logs_text.config(state=tk.DISABLED)
+
+        plot_frame = tk.Frame(notebook, bg=self.bg_color)
+        notebook.add(plot_frame, text="Plot")
+
         data = [
             np.random.normal(0, 1, 100),
             np.random.normal(1, 0.5, 100),
@@ -285,7 +301,7 @@ class App(tk.Tk):
 
         fig = plot_violin(data, return_figure=True)
 
-        canvas = FigureCanvasTkAgg(fig, master=win)
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
@@ -310,16 +326,18 @@ class App(tk.Tk):
         attackers = []
         for entry in self.attacker_entries:
             attackers.append({
-                'id': entry['id'].get()
+                'id': entry[0],  # Access the first element of the tuple for the ID
+                'strategy': entry[1].get()  # Access the second element for the strategy
             })
 
         defenders = []
         for entry in self.defender_entries:
             defenders.append({
-                'id': entry['id'].get()
+                'id': entry[0],  # Access the first element of the tuple for the ID
+                'strategy': entry[1].get()  # Access the second element for the strategy
             })
         # TODO: Add action selection per attacker/defender if needed
-        simtim_main(
+        all_histories = simtim_main(
             path_to_network_config=path_to_network_config,
             sim_runs=sim_runs,
             sim_time=sim_time,
@@ -327,8 +345,8 @@ class App(tk.Tk):
             defenders=defenders
         )
 
-        # Enable results button
-        self.results_button.config(state=tk.NORMAL)
+        # Enable results button with all_histories
+        self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
 
         tk.messagebox.showinfo(
             title="",
