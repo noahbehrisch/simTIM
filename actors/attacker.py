@@ -17,6 +17,7 @@ class Attacker(Actor):
         visible_links = list(self.visible_links)
         best = None
         best_gain = float('-inf')
+        print("[DEBUG] Available actions:", self.available_actions)
         for action in self.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
