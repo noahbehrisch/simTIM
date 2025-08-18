@@ -3,14 +3,22 @@ from simulator.graph import Node
 from actions.action import Action
 
 class Defender(Actor):
-    def __init__(self, id: str, role: str = "defender", capacity: int = 2) -> None:
-        super().__init__(id, role, capacity)
+    def __init__(self, id: str, role: str = "defender", capacity: int = 2, strategy: str = "none") -> None:
+        super().__init__(id, role, capacity, strategy)
         self.is_defender = True
         self.visible_nodes = set()
         self.compromised_nodes = set()
         self.visible_links = set()
         self.compromised_links = set()
         self.available_actions = []  # List[Action] assigned externally
+
+    def choose_action(self, network_state):
+        match self.strategy:
+            case "greedy":
+                return self.choose_best_action(network_state)
+            case _:
+                return self.choose_best_action(network_state)
+
 
     def choose_best_action(self, network_state) -> tuple:
         best = None

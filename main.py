@@ -52,13 +52,13 @@ def simtim_main(
 
         attacker_objs = []
         for attacker_config in attackers:
-            attacker = Attacker(id=attacker_config['id'])
+            attacker = Attacker(id=attacker_config['id'], strategy=attacker_config.get('strategy', 'none'))
             attacker.available_actions = all_attack_actions
             attacker_objs.append(attacker)
 
         defender_objs = []
         for defender_config in defenders:
-            defender = Defender(id=defender_config['id'])
+            defender = Defender(id=defender_config['id'], strategy=defender_config.get('strategy', 'none'))
             defender.available_actions = all_defense_actions
             defender_objs.append(defender)
 
@@ -72,7 +72,8 @@ def simtim_main(
         sim = Simulator(network=network)
 
         sim.run(until=sim_time)
-        
+
+
         all_histories.append(list(sim.history))
         print(f"\nRun {run+1}/{sim_runs} history:")
         sim.print_history()

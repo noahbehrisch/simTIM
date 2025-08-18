@@ -55,7 +55,7 @@ class NetworkVisualizer:
         ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
 
     def visualize(self):
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(12, 10))
 
         self._draw_network()
 

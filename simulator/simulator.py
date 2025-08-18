@@ -1,6 +1,8 @@
 import heapq
 import random
 from typing import Any, Dict, List
+from actors.attacker import Attacker
+from actors.defender import Defender
 
 # Aliases:
 infinity = float('inf') 
@@ -14,7 +16,6 @@ class Event:
         return self.time < other.time
     def __repr__(self):
         return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
-
 class Simulator:
     def __init__(self, network=None):
         self.current_time = 0.0
@@ -72,7 +73,14 @@ class Simulator:
 
     def get_all_actors(self):
         actors = self.network.get('actors', [])
-        return actors
+        for actor in actors:
+            if isinstance(actor, Attacker):
+                actor_obj = Attacker(id=actor.id, strategy=actor.strategy)
+            elif isinstance(actor, Defender):
+                actor_obj = Defender(id=actor.id, strategy=actor.strategy)
+            else:
+                continue
+            yield actor_obj
 
     def interrupt(self, actor=None, target=None, action_type=None):
         to_interrupt = []
@@ -106,7 +114,7 @@ class Simulator:
         self.schedule_event(self.current_time + 1, "actor_decide", {"actor": actor})
 
     def attacker_decision(self, attacker):
-        decision = attacker.choose_best_action(self.network)
+        decision = attacker.choose_action(self.network)
         if decision:
             action, target = decision
             actor_access = target.access.get(attacker.id, None)
@@ -127,7 +135,7 @@ class Simulator:
                 pass
 
     def defender_decision(self, defender):
-        decision = defender.choose_best_action(self.network)
+        decision = defender.choose_action(self.network)
         if decision:
             action, target = decision
             actor_access = target.access.get(defender.id, None) 

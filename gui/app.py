@@ -15,8 +15,8 @@ class App(tk.Tk):
         super().__init__()
         # ---- Window Setup ----
         self.title("simTIM GUI")
-        self.geometry("1200x800")
-        self.minsize(1000, 600)
+        self.geometry("1700x800")
+        self.minsize(2000, 1200)
         self.bg_color = "#f8f9fa"
         self.sidebar_color = "#e3eaf2"
         self.tab_color = "#ffffff"
@@ -146,6 +146,7 @@ class App(tk.Tk):
             filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
             initialdir=network_dir
         )
+        # Note: filedialog does not support resizing directly, but this ensures the directory is set.
         if file_path:
             self.network_file_var.set(file_path)
             try:
@@ -167,7 +168,7 @@ class App(tk.Tk):
 
         tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
         strategy_var = tk.StringVar(value="greedy")
-        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy"], state="readonly", width=10)
+        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy", "random"], state="readonly", width=10)
         strategy_dropdown.pack(side="left", padx=5)
 
         self.attacker_entries.append((attacker_id, strategy_var))
@@ -257,7 +258,7 @@ class App(tk.Tk):
     def open_create_network_window(self):
         win = tk.Toplevel(self)
         win.title("Create Network")
-        win.geometry("900x700")
+        win.geometry("1800x1200")
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
@@ -269,7 +270,7 @@ class App(tk.Tk):
 
         win = tk.Toplevel(self)
         win.title("Results")
-        win.geometry("900x700")
+        win.geometry("1800x1200")
         win.configure(bg=self.bg_color)
 
         notebook = ttk.Notebook(win)
@@ -314,7 +315,7 @@ class App(tk.Tk):
     def open_help_window(self):
         win = tk.Toplevel(self)
         win.title("Help")
-        win.geometry("900x700")
+        win.geometry("1800x1400")
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Help!", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
@@ -326,15 +327,15 @@ class App(tk.Tk):
         attackers = []
         for entry in self.attacker_entries:
             attackers.append({
-                'id': entry[0],  # Access the first element of the tuple for the ID
-                'strategy': entry[1].get()  # Access the second element for the strategy
+                'id': entry[0],
+                'strategy': entry[1].get()
             })
 
         defenders = []
         for entry in self.defender_entries:
             defenders.append({
-                'id': entry[0],  # Access the first element of the tuple for the ID
-                'strategy': entry[1].get()  # Access the second element for the strategy
+                'id': entry[0],
+                'strategy': entry[1].get()
             })
         # TODO: Add action selection per attacker/defender if needed
         all_histories = simtim_main(
@@ -348,10 +349,11 @@ class App(tk.Tk):
         # Enable results button with all_histories
         self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
 
-        tk.messagebox.showinfo(
-            title="",
-            message="Simulation Complete"
-        )
+        custom_messagebox = tk.Toplevel(self)
+        custom_messagebox.title("Simulation Complete")
+        custom_messagebox.geometry("800x400")
+        tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+        tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
 
     def launch_visualizer(self):
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
