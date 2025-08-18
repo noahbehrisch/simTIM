@@ -3,11 +3,13 @@ class Actor:
         self, 
         id: str, 
         role: str, 
-        capacity: int = None
+        capacity: int = None,
+        strategy: str = "None"
     ):
         self.id=id
         self.role=role
         self.capacity=capacity
+        self.strategy=strategy
         self.incurredCost=0
         self.nodeAccess={}
         self.linkAccess={}
