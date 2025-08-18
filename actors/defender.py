@@ -13,16 +13,19 @@ class Defender(Actor):
         self.available_actions = []  # List[Action] assigned externally
 
     def choose_action(self, network_state):
+        print(f"[DEBUG] Defender {self.id} choosing action with strategy {self.strategy}")
         match self.strategy:
             case "greedy":
-                return self.choose_best_action(network_state)
+                self.choose_best_action(network_state)
+            case "random":
+                self.choose_random_action(network_state)
             case _:
-                return self.choose_best_action(network_state)
-
+                self.choose_best_action(network_state)
 
     def choose_best_action(self, network_state) -> tuple:
         best = None
         best_cost = float('inf')
+        print("[DEBUG] Available actions:", self.available_actions)
         for action in self.available_actions:
             if action.is_node_action():
                 for node in getattr(network_state, 'nodes', []):

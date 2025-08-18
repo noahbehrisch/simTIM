@@ -11,8 +11,10 @@ class Attacker(Actor):
         self.visible_links = set()
         self.compromised_links = set()
         self.available_actions = []
+        print(f"[DEBUG] Attacker {id} initialized with available_actions: {self.available_actions}")
 
     def choose_action(self, network_state):
+        print(f"[DEBUG] Attacker {self.id} accessing available_actions: {self.available_actions}")
         print(f"[DEBUG] Attacker {self.id} choosing action with strategy {self.strategy}")
         match self.strategy:
             case "greedy":

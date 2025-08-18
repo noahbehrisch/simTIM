@@ -37,9 +37,3 @@ class Actor:
     def on_action_finished(self, action, status):
         pass
 
-    def choose_action(self, network_state):
-        if self.strategy:
-            return self.strategy.decide_action(self, network_state)
-        else:
-            raise NotImplementedError("No strategy assigned to actor")
-

@@ -53,6 +53,7 @@ def simtim_main(
         attacker_objs = []
         for attacker_config in attackers:
             attacker = Attacker(id=attacker_config['id'], strategy=attacker_config.get('strategy', 'none'))
+            print(f"[DEBUG] All attack actions for {attacker.id}: {all_attack_actions}")
             attacker.available_actions = all_attack_actions
             attacker_objs.append(attacker)
 

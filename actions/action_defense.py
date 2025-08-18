@@ -38,3 +38,8 @@ upgrade_mysql = Action(
 node_defense_actions = [upgrade_mysql]
 link_defense_actions = []
 all_defense_actions = node_defense_actions + link_defense_actions
+
+
+print("[DEBUG] all_defense_actions:", all_defense_actions)
+print("[DEBUG] node_defense_actions:", node_defense_actions)
+print("[DEBUG] link_defense_actions:", link_defense_actions)
