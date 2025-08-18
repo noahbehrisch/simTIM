@@ -47,13 +47,10 @@ def simtim_main(
                 for link in getattr(node, 'links', []):
                     links.add(link)
             network['links_list'] = list(links)
-        print(f"[DEBUG] nodes_list: {network['nodes_list']}")
-        print(f"[DEBUG] links_list: {network.get('links_list', [])}")
 
         attacker_objs = []
         for attacker_config in attackers:
             attacker = Attacker(id=attacker_config['id'], strategy=attacker_config.get('strategy', 'none'))
-            print(f"[DEBUG] All attack actions for {attacker.id}: {all_attack_actions}")
             attacker.available_actions = all_attack_actions
             attacker_objs.append(attacker)
 
