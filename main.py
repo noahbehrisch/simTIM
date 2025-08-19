@@ -33,6 +33,7 @@ def simtim_main(
     for run in range(sim_runs):
         config = load_network_config(path_to_network_config)
         network = create_network_from_config(config)
+        
         # Store a list of nodes in the network dict for Simulator compatibility
         network['nodes_list'] = list(network.values())
         # Store a list of links if available
@@ -47,8 +48,8 @@ def simtim_main(
                 for link in getattr(node, 'links', []):
                     links.add(link)
             network['links_list'] = list(links)
-        print(f"[DEBUG] nodes_list: {network['nodes_list']}")
-        print(f"[DEBUG] links_list: {network.get('links_list', [])}")
+        #print(f"[DEBUG] nodes_list: {network['nodes_list']}")
+        #print(f"[DEBUG] links_list: {network.get('links_list', [])}")
 
         attacker_objs = []
         for attacker_config in attackers:
@@ -69,13 +70,15 @@ def simtim_main(
             for node in network['nodes_list']:
                 node.access[attacker.id] = 'USER'
 
+        #print(f"[DEBUG] Network: {network}")
+
         sim = Simulator(network=network)
 
         sim.run(until=sim_time)
         
         all_histories.append(list(sim.history))
-        print(f"\nRun {run+1}/{sim_runs} history:")
-        sim.print_history()
+        # print(f"\nRun {run+1}/{sim_runs} history:")
+        # sim.print_history()
         print("\nFinal network state:")
         for n in network.values():
             print(n)
