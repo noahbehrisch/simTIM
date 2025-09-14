@@ -21,8 +21,12 @@ class NetworkVisualizer:
         plt.clf()
         ax = plt.gca()
         ax.set_aspect('equal', adjustable='datalim')
-        ax.set_xlim(-6, 6)
-        ax.set_ylim(-6, 6)
+
+        all_x = [pos[0] for pos in self.node_positions.values()]
+        all_y = [pos[1] for pos in self.node_positions.values()]
+        margin = 1
+        ax.set_xlim(min(all_x) - margin, max(all_x) + margin)
+        ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
 
         for link in self.network.links:
             node1_pos = self.node_positions[link.node1.id]
@@ -43,7 +47,17 @@ class NetworkVisualizer:
     def _update(self, frame):
         self._draw_network()
 
+        ax = plt.gca()
+        all_x = [pos[0] for pos in self.node_positions.values()]
+        all_y = [pos[1] for pos in self.node_positions.values()]
+        margin = 1
+        ax.set_xlim(min(all_x) - margin, max(all_x) + margin)
+        ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
+
     def visualize(self):
         fig, ax = plt.subplots(figsize=(8, 6))
+
+        ax.set_aspect('auto', adjustable='datalim')
+
         ani = FuncAnimation(fig, self._update, interval=1000)
         plt.show()
