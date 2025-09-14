@@ -1,0 +1,52 @@
+{
+  "nodes": [
+    {
+      "id": "b1",
+      "software": {"OS": "Linux", "version": "5.15"},
+      "vulnerabilities": ["CVE-2025-1234"],
+      "assets": ["central_hub"],
+      "properties": {"critical": true}
+    },
+    {
+      "id": "b2",
+      "software": {"OS": "Windows", "version": "11"},
+      "vulnerabilities": ["CVE-2024-5678"],
+      "assets": ["workstation"],
+      "properties": {"critical": false}
+    },
+    {
+      "id": "b3",
+      "software": {"OS": "macOS", "version": "12.3"},
+      "vulnerabilities": [],
+      "assets": ["backup_server"],
+      "properties": {"critical": false}
+    },
+    {
+      "id": "b4",
+      "software": {"OS": "Linux", "version": "4.18"},
+      "vulnerabilities": ["CVE-2023-9999"],
+      "assets": ["file_server"],
+      "properties": {"critical": false}
+    }
+  ],
+  "links": [
+    {
+      "node1": "b1",
+      "node2": "b2",
+      "bidirectional": true,
+      "latency": 5.0
+    },
+    {
+      "node1": "b2",
+      "node2": "b3",
+      "bidirectional": true,
+      "latency": 5.0
+    },
+    {
+      "node1": "b3",
+      "node2": "b4",
+      "bidirectional": true,
+      "latency": 5.0
+    }
+  ]
+}
