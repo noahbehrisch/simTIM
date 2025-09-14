@@ -12,6 +12,37 @@ class Attacker(Actor):
         self.compromised_links = set()
         self.available_actions = []
 
+    def run(self, network_state):
+        super().run(network_state)
+        all_nodes = network_state.get('nodes', network_state.get('nodes_list', []))
+        self.visible_nodes = list(all_nodes)
+
+    def make_decision(self, network_state):
+        if not self.can_schedule_action():
+            self.schedule_next_decision()
+            return
+
+        decision = self.choose_action(network_state)
+        if decision:
+            action, target = decision
+            actor_access = target.access.get(self.id, None)
+            if action.precondition(target, actor_access, self.id):
+                self.simulator.schedule_event(self.simulator.current_time, "start_action", {
+                    "actor": self,
+                    "action": action,
+                    "target": target,
+                    "actor_access": actor_access 
+                })
+                self.simulator.schedule_event(self.simulator.current_time + action.duration, "complete_action", {
+                    "actor": self,
+                    "action": action,
+                    "target": target,
+                    "actor_access": actor_access
+                })
+                self.ongoing_actions.add(action)
+
+        self.schedule_next_decision()
+
     def choose_action(self, network_state):
         match self.strategy:
             case "greedy":
@@ -97,7 +128,9 @@ class Attacker(Actor):
         self.compromised_links.add(link)
 
     def on_action_finished(self, action, status, target=None):
-        # Track successful node compromises by id for any node action
+        if action in self.ongoing_actions:
+            self.ongoing_actions.remove(action)
+        
         if status == "success" and target is not None:
             if hasattr(target, 'id'):
                 self.compromised_nodes.add(target.id)
