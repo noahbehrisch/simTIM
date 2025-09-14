@@ -10,14 +10,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from main import simtim_main
 
-
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         # ---- Window Setup ----
         self.title("simTIM GUI")
-        self.geometry("1200x800")
-        self.minsize(1000, 600)
+        self.geometry("1700x800")
+        self.minsize(2000, 1200)
         self.bg_color = "#f8f9fa"
         self.sidebar_color = "#e3eaf2"
         self.tab_color = "#ffffff"
@@ -147,6 +146,7 @@ class App(tk.Tk):
             filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
             initialdir=network_dir
         )
+        # Note: filedialog does not support resizing directly, but this ensures the directory is set.
         if file_path:
             self.network_file_var.set(file_path)
             try:
@@ -160,22 +160,32 @@ class App(tk.Tk):
                 self.node_options = []
 
     def add_attacker_entry(self):
-        idx = len(self.attacker_entries)
-        frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color, bd=1, relief=tk.GROOVE)
-        frame.pack(fill="x", padx=5, pady=5)
-        id_var = tk.StringVar(value=f"A{idx+1}")
-        tk.Label(frame, text=f"Attacker #{idx+1} ID:", bg=self.tab_color).grid(row=0, column=0, sticky="w")
-        tk.Entry(frame, textvariable=id_var, width=10, state='readonly').grid(row=0, column=1, sticky="w")
-        self.attacker_entries.append({'id': id_var})
+        frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color)
+        frame.pack(fill="x", padx=10, pady=5)
+
+        attacker_id = len(self.attacker_entries) + 1
+        tk.Label(frame, text=f"Attacker {attacker_id}:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+
+        tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+        strategy_var = tk.StringVar(value="greedy")
+        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy", "random"], state="readonly", width=10)
+        strategy_dropdown.pack(side="left", padx=5)
+
+        self.attacker_entries.append((attacker_id, strategy_var))
 
     def add_defender_entry(self):
-        idx = len(self.defender_entries)
-        frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color, bd=1, relief=tk.GROOVE)
-        frame.pack(fill="x", padx=5, pady=5)
-        id_var = tk.StringVar(value=f"D{idx+1}")
-        tk.Label(frame, text=f"Defender #{idx+1} ID:", bg=self.tab_color).grid(row=0, column=0, sticky="w")
-        tk.Entry(frame, textvariable=id_var, width=10, state='readonly').grid(row=0, column=1, sticky="w")
-        self.defender_entries.append({'id': id_var})
+        frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color)
+        frame.pack(fill="x", padx=10, pady=5)
+
+        defender_id = len(self.defender_entries) + 1
+        tk.Label(frame, text=f"Defender {defender_id}:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+
+        tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+        strategy_var = tk.StringVar(value="greedy")
+        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy"], state="readonly", width=10)
+        strategy_dropdown.pack(side="left", padx=5)
+
+        self.defender_entries.append((defender_id, strategy_var))
 
     # ---- Tab Logic ----
     def show_tab(self, name):
@@ -195,7 +205,7 @@ class App(tk.Tk):
             self.results_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
             self.start_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
             self.next_button.grid_remove()
-            self.results_button.config(command=self.open_results_window)
+            self.results_button.config(command=lambda: self.open_results_window(self.all_histories))
         else:
             self.results_button.grid_remove()
             self.start_button.grid_remove()
@@ -210,14 +220,10 @@ class App(tk.Tk):
         )
         overview += "Attackers:\n"
         for idx, entry in enumerate(self.attacker_entries):
-            overview += (
-                f"  Attacker #{idx+1}: ID={entry['id'].get()}\n"
-            )
+            overview += f"  Attacker #{idx+1}: ID={entry[0]}, Strategy={entry[1].get()}\n"
         overview += "Defenders:\n"
         for idx, entry in enumerate(self.defender_entries):
-            overview += (
-                f"  Defender #{idx+1}: ID={entry['id'].get()}\n"
-            )
+            overview += f"  Defender #{idx+1}: ID={entry[0]}, Strategy={entry[1].get()}\n"
         self.overview_text.config(state=tk.NORMAL)
         self.overview_text.delete(1.0, tk.END)
         self.overview_text.insert(tk.END, overview)
@@ -252,22 +258,42 @@ class App(tk.Tk):
     def open_create_network_window(self):
         win = tk.Toplevel(self)
         win.title("Create Network")
-        win.geometry("900x700")
+        win.geometry("1800x1200")
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
-    def open_results_window(self):
-        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from visualization.plot_results import plot_violin
+    def open_results_window(self, all_histories):
         import numpy as np
         import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        from visualization.plot_results import plot_violin
 
         win = tk.Toplevel(self)
         win.title("Results")
-        win.geometry("900x700")
+        win.geometry("1800x1200")
         win.configure(bg=self.bg_color)
 
-        # Test data for plotting
+        notebook = ttk.Notebook(win)
+        notebook.pack(fill=tk.BOTH, expand=True)
+
+        logs_frame = tk.Frame(notebook, bg=self.bg_color)
+        logs_text = tk.Text(logs_frame, wrap=tk.WORD, bg="#eaf1fb", fg=self.button_fg, state=tk.NORMAL)
+        logs_text.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+        notebook.add(logs_frame, text="Logs")
+
+        # Display the all_histories list in the logs tab
+        logs_text.config(state=tk.NORMAL)
+        logs_text.delete(1.0, tk.END)
+        for run_index, history in enumerate(all_histories, start=1):
+            logs_text.insert(tk.END, f"Run {run_index} History:\n")
+            for entry in history:
+                logs_text.insert(tk.END, f"  {entry}\n")
+            logs_text.insert(tk.END, "\n")
+        logs_text.config(state=tk.DISABLED)
+
+        plot_frame = tk.Frame(notebook, bg=self.bg_color)
+        notebook.add(plot_frame, text="Plot")
+
         data = [
             np.random.normal(0, 1, 100),
             np.random.normal(1, 0.5, 100),
@@ -276,7 +302,7 @@ class App(tk.Tk):
 
         fig = plot_violin(data, return_figure=True)
 
-        canvas = FigureCanvasTkAgg(fig, master=win)
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
@@ -289,7 +315,7 @@ class App(tk.Tk):
     def open_help_window(self):
         win = tk.Toplevel(self)
         win.title("Help")
-        win.geometry("900x700")
+        win.geometry("1800x1400")
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Help!", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
@@ -301,16 +327,18 @@ class App(tk.Tk):
         attackers = []
         for entry in self.attacker_entries:
             attackers.append({
-                'id': entry['id'].get()
+                'id': entry[0],
+                'strategy': entry[1].get()
             })
 
         defenders = []
         for entry in self.defender_entries:
             defenders.append({
-                'id': entry['id'].get()
+                'id': entry[0],
+                'strategy': entry[1].get()
             })
         # TODO: Add action selection per attacker/defender if needed
-        simtim_main(
+        all_histories = simtim_main(
             path_to_network_config=path_to_network_config,
             sim_runs=sim_runs,
             sim_time=sim_time,
@@ -318,13 +346,14 @@ class App(tk.Tk):
             defenders=defenders
         )
 
-        # Enable results button
-        self.results_button.config(state=tk.NORMAL)
+        # Enable results button with all_histories
+        self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
 
-        tk.messagebox.showinfo(
-            title="",
-            message="Simulation Complete"
-        )
+        custom_messagebox = tk.Toplevel(self)
+        custom_messagebox.title("Simulation Complete")
+        custom_messagebox.geometry("800x400")
+        tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+        tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
 
     def launch_visualizer(self):
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
