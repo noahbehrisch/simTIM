@@ -57,11 +57,11 @@ def tapestry_detection_probability(node: Node, actor_access: str, actor_id: str)
     return 0.2
 
 
-#def simple_user_attack_pre(node: Node, actor_access: str, actor_id: str) -> bool:
-#    return actor_access == AccessNode.USER.name
+def simple_user_attack_pre(node: Node, actor_access: str, actor_id: str) -> bool:
+   return actor_access == AccessNode.USER.name
 
-#def simple_user_attack_post(node: Node, actor_access: str, actor_id: str) -> None:
-#    node.compromised = True
+def simple_user_attack_post(node: Node, actor_access: str, actor_id: str) -> None:
+   node.compromised = True
 
 def reconnaissance_pre(node: Node, actor_access: str, actor_id: str) -> bool:
     return actor_access != AccessNode.NONE.name
@@ -112,20 +112,20 @@ port_scan = Action(
     time_gain=lambda node, access, actor: 0.0,
 )
 
-#simple_user_attack = Action(
-#    name="Simple User Attack",
-#    precondition=simple_user_attack_pre,
-#    postcondition=simple_user_attack_post,
-#    cost=20,
-#    duration=0.5,
-#    success_probability=0.9,
-#    action_type="node",
-#    detection_probability=lambda node, access, actor: 0.1,
-#    one_off_damage=lambda node, access, actor: 10.0,
-#    one_off_gain=lambda node, access, actor: 50.0,
-#    time_damage=lambda node, access, actor: 0.0,
-#    time_gain=lambda node, access, actor: 0.0,
-#)
+simple_user_attack = Action(
+   name="Simple User Attack",
+   precondition=simple_user_attack_pre,
+   postcondition=simple_user_attack_post,
+   cost=20,
+   duration=0.5,
+   success_probability=0.9,
+   action_type="node",
+   detection_probability=lambda node, access, actor: 0.1,
+   one_off_damage=lambda node, access, actor: 10.0,
+   one_off_gain=lambda node, access, actor: 50.0,
+   time_damage=lambda node, access, actor: 0.0,
+   time_gain=lambda node, access, actor: 0.0,
+)
 
 reconnaissance = Action(
     name="Reconnaissance",
@@ -190,7 +190,7 @@ compromise_mysql = Action(
 node_attack_actions = [
     compromise_tapestry,
     port_scan,
-    #simple_user_attack,
+    simple_user_attack,
     reconnaissance,
     privilege_escalation,
     data_exfiltration
@@ -202,6 +202,6 @@ link_attack_actions = [
 
 all_attack_actions = node_attack_actions + link_attack_actions
 
-print("[DEBUG] all_attack_actions:", all_attack_actions)
-print("[DEBUG] node_attack_actions:", node_attack_actions)
-print("[DEBUG] link_attack_actions:", link_attack_actions)
+# print("[DEBUG] all_attack_actions:", all_attack_actions)
+# print("[DEBUG] node_attack_actions:", node_attack_actions)
+# print("[DEBUG] link_attack_actions:", link_attack_actions)
