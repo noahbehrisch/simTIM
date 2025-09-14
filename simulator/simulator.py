@@ -23,7 +23,7 @@ class Simulator:
         self.history: List[Event] = []
         self.network = network if network is not None else {}
         self.ongoing_actions = []
-
+        
     def run(self, until: float):
         # For testing: all attackers see every node
         all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
