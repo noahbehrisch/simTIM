@@ -3,8 +3,8 @@ from simulator.graph import Node
 from actions.action import Action
 
 class Defender(Actor):
-    def __init__(self, id: str, role: str = "defender", capacity: int = 2) -> None:
-        super().__init__(id, role, capacity)
+    def __init__(self, id: str, role: str = "defender", capacity: int = 2, strategy: str = "none") -> None:
+        super().__init__(id, role, capacity, strategy)
         self.is_defender = True
         self.visible_nodes = set()
         self.compromised_nodes = set()
