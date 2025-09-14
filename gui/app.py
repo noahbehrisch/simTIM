@@ -1,14 +1,15 @@
 import sys
 import os
 import json
+import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
 
 # Does not find main without this TODO: -m an easier solution?
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import tkinter as tk
-from tkinter import ttk
 from main import simtim_main
+
 
 class App(tk.Tk):
     def __init__(self):
@@ -88,6 +89,8 @@ class App(tk.Tk):
         self.network_file_var = tk.StringVar(value=default_network_path)
         tk.Entry(net_frame, textvariable=self.network_file_var, width=30, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
         tk.Button(net_frame, text="Browse", command=self.browse_network_file, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=1, column=2, padx=5, pady=10, sticky="w")
+        # Add Visualize Network button to the Network Tab
+        tk.Button(net_frame, text="Visualize Network", command=self.launch_visualizer, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
         # ---- Attackers Tab ----
         atk_frame = self.tabs["Attackers_pad"]
@@ -284,6 +287,15 @@ class App(tk.Tk):
             defenders=defenders
         )
         sys.exit(0)
+
+    def launch_visualizer(self):
+        from networks.network_visualizer import NetworkVisualizer
+        from simulator.graph import Graph
+
+        network_path = self.network_file_var.get()
+        network = Graph.from_json(network_path)
+        visualizer = NetworkVisualizer(network)
+        visualizer.visualize()
 
 class Sidebar(tk.Frame):
     def __init__(self, master, toggle_fullscreen, fullscreen_state, switch_tab_callback, sidebar_color, highlight_color, button_color, button_fg):

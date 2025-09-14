@@ -1,5 +1,5 @@
 from .actor import Actor
-from simulator.network import Node, Link
+from simulator.graph import Node, Link
 from actions.action import Action
 
 class Attacker(Actor):

@@ -1,3 +1,5 @@
+import json
+
 class Node:
     def __init__(
         self,
@@ -54,11 +56,6 @@ class Link:
         if bidirectional:
             node2.add_link(self)
 
-    def get(self, key, default=None):
-        if hasattr(self, key):
-            return getattr(self, key, default)
-        return default
-
     def get_latency(self):
         return self.latency
 
@@ -92,7 +89,66 @@ class Graph:
         if link in self.links:
             self.links.remove(link)
 
-    # TODO: save and load from json, -m dict
+    def to_json(self, file_path):
+        graph_data = {
+            "nodes": [
+                {
+                    "id": node.id,
+                    "software": node.software,
+                    "vulnerabilities": node.vulnerabilities,
+                    "assets": node.assets,
+                    "compromised": node.compromised,
+                    "repaired": node.repaired,
+                    "properties": node.properties
+                }
+                for node in self.nodes.values()
+            ],
+            "links": [
+                {
+                    "node1": link.node1.id,
+                    "node2": link.node2.id,
+                    "bidirectional": link.bidirectional,
+                    "latency": link.latency
+                }
+                for link in self.links
+            ]
+        }
+        with open(file_path, "w") as file:
+            json.dump(graph_data, file, indent=4)
+
+    @classmethod
+    def from_json(cls, file_path):
+        with open(file_path, "r") as file:
+            graph_data = json.load(file)
+
+        graph = cls()
+
+        id_to_node = {}
+        for node_data in graph_data["nodes"]:
+            node = Node(
+                id=node_data["id"],
+                software=node_data.get("software"),
+                vulnerabilities=node_data.get("vulnerabilities"),
+                assets=node_data.get("assets")
+            )
+            node.compromised = node_data.get("compromised", False)
+            node.repaired = node_data.get("repaired", False)
+            node.properties = node_data.get("properties", {})
+            graph.insert_node(node)
+            id_to_node[node.id] = node
+
+        for link_data in graph_data["links"]:
+            node1 = id_to_node[link_data["node1"]]
+            node2 = id_to_node[link_data["node2"]]
+            link = Link(
+                node1=node1,
+                node2=node2,
+                bidirectional=link_data.get("bidirectional", True),
+                latency=link_data.get("latency", 0.0)
+            )
+            graph.insert_link(link)
+
+        return graph
 
     def __repr__(self):
         return f"Graph(nodes={len(self.nodes)}, links={len(self.links)})"

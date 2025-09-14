@@ -1,4 +1,4 @@
-from simulator.network import Node
+from simulator.graph import Node
 from typing import Any, Callable, Dict
 
 # TODO: how to use context dictionaries? It is best practice 

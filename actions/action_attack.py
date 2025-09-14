@@ -1,5 +1,5 @@
 from actions.action import Action
-from simulator.network import Node, Link
+from simulator.graph import Node, Link
 from enum import Enum, auto
 from packaging.version import Version # useful module for version comparisons, which is used qite a lot here
 

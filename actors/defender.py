@@ -1,5 +1,5 @@
 from .actor import Actor
-from simulator.network import Node
+from simulator.graph import Node
 from actions.action import Action
 
 class Defender(Actor):
