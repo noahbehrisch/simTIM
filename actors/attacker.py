@@ -60,25 +60,21 @@ class Attacker(Actor):
         for action in self.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
-                    # Skip nodes this attacker has already compromised (by id)
                     if hasattr(node, 'id') and node.id in self.compromised_nodes:
                         continue
                     actor_access = node.access.get(self.id, None)
                     if action.precondition(node, actor_access, self.id):
                         gain = action.get_one_off_gain(node, actor_access, self.id)
-                        #print(f"[DEBUG] Action: {action}, Node: {node}, Gain: {gain}")
                         if gain > best_gain:
                             best = (action, node)
                             best_gain = gain
             elif action.is_link_action():
                 for link in visible_links:
-                    # Skip links this attacker has already compromised (by id)
                     if hasattr(link, 'id') and link.id in self.compromised_links:
                         continue
                     actor_access = getattr(link, 'access', {}).get(self.id, None)
                     if action.precondition(link, actor_access, self.id):
                         gain = action.get_one_off_gain(link, actor_access, self.id)
-                        #print(f"[DEBUG] Action: {action}, Link: {link}, Gain: {gain}")
                         if gain > best_gain:
                             best = (action, link)
                             best_gain = gain
@@ -90,7 +86,6 @@ class Attacker(Actor):
         visible_links = list(self.visible_links)
         possible_actions = []
 
-        #print("[DEBUG] Available random actions:", self.available_actions)
         for action in self.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
@@ -98,7 +93,6 @@ class Attacker(Actor):
                         continue
                     actor_access = node.access.get(self.id, None)
                     if action.precondition(node, actor_access, self.id):
-                        #print(f"[DEBUG] Valid action: {action}, Node: {node}")
                         possible_actions.append((action, node))
             elif action.is_link_action():
                 for link in visible_links:
@@ -110,7 +104,6 @@ class Attacker(Actor):
                         possible_actions.append((action, link))
 
         chosen_action = random.choice(possible_actions) if possible_actions else None
-        #print("[DEBUG] Randomly chosen action:", chosen_action)
         return chosen_action
 
     def exploit(self, node: Node):

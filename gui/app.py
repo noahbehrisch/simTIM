@@ -13,7 +13,6 @@ from main import simtim_main
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        # ---- Window Setup ----
         self.title("simTIM GUI")
         self.geometry("1700x800")
         self.minsize(2000, 1200)
@@ -33,7 +32,6 @@ class App(tk.Tk):
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
 
-        # ---- Tabs and Sidebar ----
         self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Overview"]
         self.tabs = {}
         self.current_tab = None
@@ -44,7 +42,6 @@ class App(tk.Tk):
         )
         self.sidebar.grid(row=0, column=0, rowspan=3, sticky="nsw")
 
-        # ---- Bottom Bar ----
         self.bottom_frame = tk.Frame(self, bg=self.sidebar_color)
         self.bottom_frame.grid(row=2, column=1, sticky="ew")
         self.bottom_frame.grid_columnconfigure(0, weight=1)
@@ -65,7 +62,6 @@ class App(tk.Tk):
         self.next_button = tk.Button(self.bottom_frame, text="Next", command=self.next_tab, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
         self.after(0, lambda: self.show_tab("Simulation"))
 
-    # ---- Tab Creation ----
     def create_tabs(self):
         tab_names = self.tab_names
         for name in tab_names:
@@ -78,7 +74,6 @@ class App(tk.Tk):
             pad_frame.pack(expand=True, fill="both")
             self.tabs[name + "_pad"] = pad_frame
 
-        # ---- Simulation Tab ----
         sim_frame = self.tabs["Simulation_pad"]
         tk.Label(sim_frame, text="Simulation Runs:", bg=self.tab_color, fg=self.button_fg).grid(row=0, column=0, padx=10, pady=10, sticky="w")
         self.sim_runs_var = tk.IntVar(value=1)
@@ -87,19 +82,15 @@ class App(tk.Tk):
         self.sim_time_var = tk.DoubleVar(value=10.0)
         tk.Entry(sim_frame, textvariable=self.sim_time_var, width=10, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        # ---- Network Tab ----
         net_frame = self.tabs["Network_pad"]
         tk.Button(net_frame, text="Create Network", command=self.open_create_network_window, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=0, column=0, padx=10, pady=10, sticky="w")
         tk.Label(net_frame, text="Load Network File:", bg=self.tab_color, fg=self.button_fg).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        # Set default network file to network1.json in the library folder
         default_network_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'networks', 'library', 'network1.json'))
         self.network_file_var = tk.StringVar(value=default_network_path)
         tk.Entry(net_frame, textvariable=self.network_file_var, width=30, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
         tk.Button(net_frame, text="Browse", command=self.browse_network_file, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=1, column=2, padx=5, pady=10, sticky="w")
-        # Add Visualize Network button to the Network Tab
         tk.Button(net_frame, text="Visualize Network", command=self.launch_visualizer, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
-        # ---- Attackers Tab ----
         atk_frame = self.tabs["Attackers_pad"]
         self.attacker_entries = []
         self.attacker_list = []
@@ -107,7 +98,6 @@ class App(tk.Tk):
         self.attacker_entries_frame = tk.Frame(atk_frame, bg=self.tab_color)
         self.attacker_entries_frame.pack(fill="both", expand=True)
 
-        # ---- Defenders Tab ----
         def_frame = self.tabs["Defenders_pad"]
         self.defender_entries = []
         self.defender_list = []
@@ -118,15 +108,12 @@ class App(tk.Tk):
         self.add_attacker_entry()
         self.add_defender_entry()
 
-        # ---- Overview Tab ----
         overview_frame = self.tabs["Overview_pad"]
         self.overview_text = tk.Text(overview_frame, width=60, height=30, state=tk.DISABLED, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg)
         self.overview_text.pack(expand=True, fill="both", padx=10, pady=10)
 
 
-        # ---- Node options ----
         self.node_options = []
-        # For default TODO: delete later
         try:
             with open(default_network_path, 'r') as f:
                 data = json.load(f)
@@ -146,7 +133,6 @@ class App(tk.Tk):
             filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
             initialdir=network_dir
         )
-        # Note: filedialog does not support resizing directly, but this ensures the directory is set.
         if file_path:
             self.network_file_var.set(file_path)
             try:
@@ -187,7 +173,6 @@ class App(tk.Tk):
 
         self.defender_entries.append((defender_id, strategy_var))
 
-    # ---- Tab Logic ----
     def show_tab(self, name):
         if self.current_tab:
             self.tabs[self.current_tab].grid_remove()
@@ -211,7 +196,6 @@ class App(tk.Tk):
             self.start_button.grid_remove()
             self.next_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
 
-    # ---- Overview Variables ----
     def update_overview(self):
         overview = (
             f"Simulation Runs: {self.sim_runs_var.get()}\n"

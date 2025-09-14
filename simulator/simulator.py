@@ -2,7 +2,6 @@ import heapq
 import random
 from typing import Any, Dict, List
 
-# Aliases:
 infinity = float('inf') 
 
 class Event:
@@ -37,10 +36,8 @@ class Simulator:
             self.current_time = event.time
             self.process_event((event.time, event.event_type, event.data))
 
-    # --- Event Queue Management ---
     def schedule_event(self, time: float, event_type: str, data: Dict[str, Any]):
         if event_type == "action":
-            # Check precondition before scheduling start
             precond = data["action"].precondition(
                 data["target"],
                 getattr(data["target"].access, data["actor"].id, None),
@@ -48,15 +45,11 @@ class Simulator:
             )
             if not precond:
                 return
-            # Schedule start
             heapq.heappush(self.event_queue, Event(time, "start_action", data))
-            # Schedule completion
             heapq.heappush(self.event_queue, Event(time + data["action"].duration, "complete_action", data))
         else:
-            # Schedule other events [not used yet]
             heapq.heappush(self.event_queue, Event(time, event_type, data))
 
-    # convenience function for timeouts, delays, etc.
     def timeout(self, delay: float, event_type: str, data: dict):
         self.schedule_event(
             time=self.current_time + delay,
@@ -64,7 +57,6 @@ class Simulator:
             data=data
         )
 
-    # just for debugging, TODO: -m delete later
     def print_event_queue(self):
         for event in sorted(self.event_queue, key=lambda e: e[0]):
             pass
@@ -84,9 +76,7 @@ class Simulator:
             self.ongoing_actions.remove(a)
             self.history.append((self.current_time, "action_interrupted", a))
 
-    # --- Event Processing ---
     def process_event(self, event):
-        # Event processing function. TODO: rework
         time, event_type, data = event
         handler = getattr(self, f"handle_{event_type}", None)
         if handler:
@@ -142,7 +132,6 @@ class Simulator:
                 self.history.append((self.current_time, "action_aborted", data))
             self.ongoing_actions.remove(ongoing)
 
-    # --- History/Debug ---
     def print_history(self):
         for entry in self.history:
             print(entry)

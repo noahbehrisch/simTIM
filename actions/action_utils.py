@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Action management utilities for simTIM.
-Provides functions to manage individual action JSON files.
-"""
 
 import os
 import json
@@ -16,18 +12,15 @@ from actions.action_loader import (
 from actions.action_registry import action_registry
 
 def list_available_actions() -> Dict[str, List[str]]:
-    """List all available action files by category."""
     base_dir = os.path.join(os.path.dirname(__file__), 'library')
     
     result = {}
     
-    # List attack actions
     attacks_dir = os.path.join(base_dir, 'attacks')
     if os.path.exists(attacks_dir):
         attack_files = glob.glob(os.path.join(attacks_dir, "*.json"))
         result['attacks'] = [os.path.basename(f) for f in attack_files]
     
-    # List defense actions
     defenses_dir = os.path.join(base_dir, 'defenses')
     if os.path.exists(defenses_dir):
         defense_files = glob.glob(os.path.join(defenses_dir, "*.json"))
@@ -36,7 +29,6 @@ def list_available_actions() -> Dict[str, List[str]]:
     return result
 
 def get_action_details(action_name: str) -> Optional[Dict]:
-    """Get details of a specific action by name."""
     all_actions = get_all_available_actions()
     for action in all_actions:
         if action.name == action_name:
@@ -50,7 +42,6 @@ def get_action_details(action_name: str) -> Optional[Dict]:
     return None
 
 def create_action_from_template(name: str, action_type: str = "node") -> Dict:
-    """Create a template for a new action."""
     template = {
         "name": name,
         "action_type": action_type,
@@ -79,7 +70,6 @@ def create_action_from_template(name: str, action_type: str = "node") -> Dict:
     return template
 
 def validate_action_json(action_data: Dict) -> List[str]:
-    """Validate an action JSON structure and return any errors."""
     errors = []
     
     required_fields = [
@@ -103,7 +93,6 @@ def validate_action_json(action_data: Dict) -> List[str]:
     return errors
 
 def load_scenario_actions(scenario_name: str) -> List:
-    """Load actions for a specific scenario."""
     scenario_dir = os.path.join(os.path.dirname(__file__), 'scenarios', scenario_name)
     if os.path.exists(scenario_dir):
         return load_actions_from_directory(scenario_dir)
@@ -112,7 +101,6 @@ def load_scenario_actions(scenario_name: str) -> List:
         return []
 
 def save_scenario_actions(scenario_name: str, actions: List) -> str:
-    """Save actions as a scenario."""
     scenario_dir = os.path.join(os.path.dirname(__file__), 'scenarios', scenario_name)
     os.makedirs(scenario_dir, exist_ok=True)
     
@@ -127,7 +115,6 @@ def save_scenario_actions(scenario_name: str, actions: List) -> str:
     return scenario_dir
 
 def delete_action_file(action_name: str, action_category: str = None) -> bool:
-    """Delete an action file."""
     base_dir = os.path.join(os.path.dirname(__file__), 'library')
     
     if action_category:
@@ -151,7 +138,6 @@ def delete_action_file(action_name: str, action_category: str = None) -> bool:
     return False
 
 def print_action_summary():
-    """Print a summary of all available actions."""
     available = list_available_actions()
     
     print("Available Actions Summary")

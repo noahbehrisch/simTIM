@@ -2,7 +2,6 @@ from simulator.graph import Node
 from typing import Any, Callable, Dict
 import json
 
-# TODO: how to use context dictionaries? It is best practice 
 class Action:
     def __init__(
         self,

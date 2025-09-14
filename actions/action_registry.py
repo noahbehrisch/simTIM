@@ -87,12 +87,10 @@ class ActionRegistry:
         elif spec["type"] == "zero":
             return lambda node, access, actor: 0.0
         elif spec["type"] == "lambda":
-            # Handle simple lambda expressions
             expression = spec["expression"]
             if expression == "zero":
                 return lambda node, access, actor: 0.0
             else:
-                # For more complex expressions, try to evaluate
                 try:
                     return eval(f"lambda node, access, actor: {expression}")
                 except:
@@ -159,7 +157,6 @@ class ActionRegistry:
             }
         }
         
-        # Try to get actual damage/gain values
         try:
             action_data["damage_gain"]["one_off_damage"] = action.one_off_damage(None, None, None)
             action_data["damage_gain"]["one_off_gain"] = action.one_off_gain(None, None, None)
@@ -195,5 +192,4 @@ class ActionRegistry:
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
 
-# Global registry instance
 action_registry = ActionRegistry()

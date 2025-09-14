@@ -1,7 +1,7 @@
 from actions.action import Action
 from simulator.graph import Node, Link
 from enum import Enum, auto
-from packaging.version import Version # useful module for version comparisons, which is used qite a lot here
+from packaging.version import Version
 
 class AccessNode(Enum):
     NONE = auto()
@@ -14,18 +14,17 @@ class AccessLink(Enum):
     VISIBLE = auto()
 
 
-# Post and Pre Conditions
-
 def compromise_tapestry_pre(node: Node, actor_access: str, actor_id: str) -> bool:
     return (
         node.get_software('WebApp framework name') == 'Apache Tapestry' and
         node.get_software('WebApp framework version') in {'5.4.5','5.5.0','5.6.2','5.7.0'} and
         actor_access != AccessNode.NONE.name and
-        node.get_software('Endpoint protection') == 'sophos' # maybe not the best idea to put it in the precondition? TODO: ask
+        node.get_software('Endpoint protection') == 'sophos'
     )
 
 def compromise_tapestry_post(node: Node, actor_access: str, actor_id: str) -> None:
     node.access[actor_id] = AccessNode.ADMIN.name
+    node.compromised = True
 
 def port_scan_pre(node: Node, actor_access: str, actor_id: str) -> bool:
     return actor_access == AccessNode.ADMIN.name
@@ -45,11 +44,11 @@ def compromise_mysql_pre(link: Link, actor_access: str, actor_id: str) -> bool:
 
 def compromise_mysql_post(link: Link, actor_access: str, actor_id: str) -> None:
     link.node2.access[actor_id] = AccessNode.ADMIN.name
+    link.node2.compromised = True
 
 def zero():
     return 0.0
 
-# Definitely not the best way to do this TODO: rework
 def tapestry_detection_probability(node: Node, actor_access: str, actor_id: str) -> float:
     endpoint = node.get_software('Endpoint protection')
     if endpoint and endpoint.lower() == 'sophos':
@@ -74,6 +73,7 @@ def privilege_escalation_pre(node: Node, actor_access: str, actor_id: str) -> bo
 
 def privilege_escalation_post(node: Node, actor_access: str, actor_id: str) -> None:
     node.access[actor_id] = AccessNode.ADMIN.name
+    node.compromised = True
 
 def data_exfiltration_pre(node: Node, actor_access: str, actor_id: str) -> bool:
     return actor_access == AccessNode.ADMIN.name and len(node.assets) > 0
@@ -81,7 +81,6 @@ def data_exfiltration_pre(node: Node, actor_access: str, actor_id: str) -> bool:
 def data_exfiltration_post(node: Node, actor_access: str, actor_id: str) -> None:
     node.assets.clear()
 
-# Actions
 compromise_tapestry = Action(
     name="Tapestry attack",
     precondition=compromise_tapestry_pre,
@@ -202,11 +201,6 @@ link_attack_actions = [
 
 all_attack_actions = node_attack_actions + link_attack_actions
 
-# Support for JSON-based actions
 def get_all_attack_actions_from_json():
     from actions.action_loader import get_attack_actions
     return get_attack_actions()
-
-# print("[DEBUG] all_attack_actions:", all_attack_actions)
-# print("[DEBUG] node_attack_actions:", node_attack_actions)
-# print("[DEBUG] link_attack_actions:", link_attack_actions)

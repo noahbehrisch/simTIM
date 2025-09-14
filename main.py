@@ -47,48 +47,37 @@ def simtim_main(
                 for link in getattr(node, 'links', []):
                     links.add(link)
             network['links_list'] = list(links)
-        #print(f"[DEBUG] nodes_list: {network['nodes_list']}")
-        #print(f"[DEBUG] links_list: {network.get('links_list', [])}")
 
-        # Load actions separately for attackers and defenders
         attack_actions = get_attack_actions()
         defense_actions = get_defense_actions()
         
         attacker_objs = []
         for attacker_config in attackers:
             attacker = Attacker(id=attacker_config['id'],strategy=attacker_config.get('strategy','none'))
-            # Attackers get only attack actions
             attacker.available_actions = attack_actions
             attacker_objs.append(attacker)
 
         defender_objs = []
         for defender_config in defenders:
             defender = Defender(id=defender_config['id'],strategy=defender_config.get('strategy','none'))
-            # Defenders get only defense actions
             defender.available_actions = defense_actions
             defender_objs.append(defender)
 
         network['actors'] = attacker_objs + defender_objs
 
-        # Give every attacker USER access to all nodes for testing
         for attacker in attacker_objs:
             for node in network['nodes_list']:
                 node.access[attacker.id] = 'USER'
                 
-        # Give every defender ADMIN access to all nodes for defense
         for defender in defender_objs:
             for node in network['nodes_list']:
                 node.access[defender.id] = 'ADMIN'
-
-        #print(f"[DEBUG] Network: {network}")
 
         sim = Simulator(network=network)
 
         sim.run(until=sim_time)
         
         all_histories.append(list(sim.history))
-        # print(f"\nRun {run+1}/{sim_runs} history:")
-        # sim.print_history()
         print("\nFinal network state:")
         for n in network.values():
             print(n)
