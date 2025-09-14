@@ -3,8 +3,8 @@ from simulator.graph import Node, Link
 from actions.action import Action
 
 class Attacker(Actor):
-    def __init__(self, id: str, role: str = "attacker", capacity: int = 2) -> None:
-        super().__init__(id, role, capacity)
+    def __init__(self, id: str, role: str = "attacker", capacity: int = 2, strategy: str="None") -> None:
+        super().__init__(id, role, capacity,strategy)
         self.is_attacker = True
         self.visible_nodes = set()
         self.compromised_nodes = set()
