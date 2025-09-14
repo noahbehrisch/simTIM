@@ -1,0 +1,25 @@
+{
+  "name": "Intrusion Detection System",
+  "action_type": "node",
+  "cost": 300,
+  "duration": 1.5,
+  "success_probability": 0.8,
+  "precondition": {
+    "type": "function_ref",
+    "function": "ids_deploy_pre"
+  },
+  "postcondition": {
+    "type": "function_ref",
+    "function": "ids_deploy_post"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 75.0,
+    "time_damage": 0.0,
+    "time_gain": 10.0
+  }
+}

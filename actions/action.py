@@ -1,5 +1,6 @@
 from simulator.graph import Node
 from typing import Any, Callable, Dict
+import json
 
 # TODO: how to use context dictionaries? It is best practice 
 class Action:
@@ -72,6 +73,43 @@ class Action:
 
     def is_link_action(self) -> bool:
         return self.action_type == 'link'
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "action_type": self.action_type,
+            "cost": self.cost,
+            "duration": self.duration,
+            "success_probability": self.success_probability,
+            "precondition": {
+                "type": "function_ref",
+                "function": getattr(self.precondition, '__name__', 'unknown_function')
+            },
+            "postcondition": {
+                "type": "function_ref", 
+                "function": getattr(self.postcondition, '__name__', 'unknown_function')
+            },
+            "detection_probability": {
+                "type": "function_ref",
+                "function": getattr(self.detection_probability, '__name__', 'unknown_function')
+            },
+            "damage_gain": {
+                "one_off_damage": self.get_one_off_damage(None, None, None) if callable(self.one_off_damage) else 0.0,
+                "one_off_gain": self.get_one_off_gain(None, None, None) if callable(self.one_off_gain) else 0.0,
+                "time_damage": self.get_time_damage(None, None, None) if callable(self.time_damage) else 0.0,
+                "time_gain": self.get_time_gain(None, None, None) if callable(self.time_gain) else 0.0
+            }
+        }
+
+    @classmethod
+    def from_json(cls, action_data: Dict[str, Any], function_registry: Dict[str, Callable] = None):
+        from actions.action_registry import action_registry
+        registry = function_registry or action_registry
+        
+        if hasattr(registry, 'action_from_json'):
+            return registry.action_from_json(action_data)
+        else:
+            raise ValueError("No action registry available for deserialization")
 
     def __repr__(self) -> str:
         return (

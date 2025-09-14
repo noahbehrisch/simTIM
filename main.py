@@ -1,6 +1,5 @@
 from simulator.simulator import Simulator
-from actions.action_attack import all_attack_actions
-from actions.action_defense import all_defense_actions
+from actions.action_loader import get_all_available_actions, get_attack_actions, get_defense_actions
 from simulator.graph import Node, Link
 from networks.network_loader import load_network_config, create_network_from_config
 from actors.attacker import Attacker
@@ -51,16 +50,22 @@ def simtim_main(
         #print(f"[DEBUG] nodes_list: {network['nodes_list']}")
         #print(f"[DEBUG] links_list: {network.get('links_list', [])}")
 
+        # Load actions separately for attackers and defenders
+        attack_actions = get_attack_actions()
+        defense_actions = get_defense_actions()
+        
         attacker_objs = []
         for attacker_config in attackers:
             attacker = Attacker(id=attacker_config['id'],strategy=attacker_config.get('strategy','none'))
-            attacker.available_actions = all_attack_actions
+            # Attackers get only attack actions
+            attacker.available_actions = attack_actions
             attacker_objs.append(attacker)
 
         defender_objs = []
         for defender_config in defenders:
             defender = Defender(id=defender_config['id'],strategy=defender_config.get('strategy','none'))
-            defender.available_actions = all_defense_actions
+            # Defenders get only defense actions
+            defender.available_actions = defense_actions
             defender_objs.append(defender)
 
         network['actors'] = attacker_objs + defender_objs
@@ -69,6 +74,11 @@ def simtim_main(
         for attacker in attacker_objs:
             for node in network['nodes_list']:
                 node.access[attacker.id] = 'USER'
+                
+        # Give every defender ADMIN access to all nodes for defense
+        for defender in defender_objs:
+            for node in network['nodes_list']:
+                node.access[defender.id] = 'ADMIN'
 
         #print(f"[DEBUG] Network: {network}")
 
@@ -91,29 +101,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-# Some general TODO:s :
-# BUILDING A WORKING PROTOTYPE!
-# reducing external dependencies
-# restructuring so make it more maintainable and expandable
-# -> should all the network stuff be in a separate folder? 
-# remove lost comments
-# include logging
-# adding lots of error handling
-# creating tests
-# adding actions
-# adding more nodes and links 
-# -> maybe a file with a collection of nodes and links
-# expanding the gui
-# building the network creator
-# making networks savable
-# building the network visualizer
-# implementing the actor creation process
-# implementing the action creation process
-# find a solution for physical time implementation
-# building the simulator
-# action_handler???
-# writing a README
-# main.py is entry point for GUI(graphical user interface) and CLI(command line interface)
-# -m add event/result/visualization export
-# add example scenarios and usage tutorials -> example in CyberSim py Pira
+
 

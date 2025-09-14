@@ -1,0 +1,25 @@
+{
+  "name": "Remote attack on MySQL",
+  "action_type": "link",
+  "cost": 800,
+  "duration": 2.0,
+  "success_probability": 0.7,
+  "precondition": {
+    "type": "function_ref",
+    "function": "compromise_mysql_pre"
+  },
+  "postcondition": {
+    "type": "function_ref",
+    "function": "compromise_mysql_post"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.25
+  },
+  "damage_gain": {
+    "one_off_damage": 100.0,
+    "one_off_gain": 80.0,
+    "time_damage": 20.0,
+    "time_gain": 10.0
+  }
+}

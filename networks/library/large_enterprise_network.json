@@ -1,0 +1,338 @@
+{
+  "name": "Large Enterprise Network",
+  "description": "A comprehensive enterprise network with multiple zones, servers, and workstations",
+  "nodes": [
+    {
+      "id": "internet_gateway",
+      "software": {"os": "cisco_ios", "version": "15.1"},
+      "vulnerabilities": ["CVE-2017-6736"],
+      "assets": ["network_access"]
+    },
+    {
+      "id": "dmz_web_server",
+      "software": {"os": "ubuntu", "version": "20.04", "web_server": "apache2"},
+      "vulnerabilities": ["CVE-2021-41773", "CVE-2021-42013"],
+      "assets": ["web_content", "customer_data"]
+    },
+    {
+      "id": "dmz_mail_server",
+      "software": {"os": "debian", "version": "11", "mail_server": "postfix"},
+      "vulnerabilities": ["CVE-2020-28948"],
+      "assets": ["email_data", "contact_lists"]
+    },
+    {
+      "id": "dmz_dns_server",
+      "software": {"os": "ubuntu", "version": "18.04", "dns_server": "bind9"},
+      "vulnerabilities": ["CVE-2021-25216"],
+      "assets": ["dns_records", "domain_info"]
+    },
+    {
+      "id": "internal_firewall",
+      "software": {"os": "pfsense", "version": "2.5.2"},
+      "vulnerabilities": ["CVE-2021-41282"],
+      "assets": ["firewall_rules", "network_logs"]
+    },
+    {
+      "id": "domain_controller",
+      "software": {"os": "windows_server", "version": "2019", "ad": "active_directory"},
+      "vulnerabilities": ["CVE-2021-42287", "CVE-2021-42278"],
+      "assets": ["user_credentials", "domain_secrets", "kerberos_tickets"]
+    },
+    {
+      "id": "file_server",
+      "software": {"os": "windows_server", "version": "2016", "file_share": "smb"},
+      "vulnerabilities": ["CVE-2017-0144", "CVE-2017-0145"],
+      "assets": ["corporate_files", "backup_data", "financial_records"]
+    },
+    {
+      "id": "database_server",
+      "software": {"os": "rhel", "version": "8", "database": "mysql"},
+      "vulnerabilities": ["CVE-2021-2154", "CVE-2021-2166"],
+      "assets": ["customer_database", "financial_data", "audit_logs"]
+    },
+    {
+      "id": "backup_server",
+      "software": {"os": "ubuntu", "version": "20.04", "backup": "veeam"},
+      "vulnerabilities": ["CVE-2021-30547"],
+      "assets": ["system_backups", "disaster_recovery"]
+    },
+    {
+      "id": "monitoring_server",
+      "software": {"os": "centos", "version": "7", "monitoring": "nagios"},
+      "vulnerabilities": ["CVE-2020-28903"],
+      "assets": ["system_metrics", "alert_data", "performance_logs"]
+    },
+    {
+      "id": "hr_workstation_1",
+      "software": {"os": "windows_10", "version": "21H1", "office": "microsoft_office"},
+      "vulnerabilities": ["CVE-2021-40444", "CVE-2021-34527"],
+      "assets": ["hr_documents", "employee_data", "payroll_info"]
+    },
+    {
+      "id": "hr_workstation_2",
+      "software": {"os": "windows_10", "version": "21H1", "office": "microsoft_office"},
+      "vulnerabilities": ["CVE-2021-40444"],
+      "assets": ["hr_documents", "recruitment_data"]
+    },
+    {
+      "id": "finance_workstation_1",
+      "software": {"os": "windows_10", "version": "21H1", "finance_app": "quickbooks"},
+      "vulnerabilities": ["CVE-2021-34527", "CVE-2021-26855"],
+      "assets": ["financial_reports", "accounting_data", "tax_documents"]
+    },
+    {
+      "id": "finance_workstation_2",
+      "software": {"os": "windows_10", "version": "20H2", "finance_app": "excel"},
+      "vulnerabilities": ["CVE-2021-40444", "CVE-2021-31199"],
+      "assets": ["budget_data", "expense_reports"]
+    },
+    {
+      "id": "it_workstation_1",
+      "software": {"os": "ubuntu", "version": "21.04", "dev_tools": "vscode"},
+      "vulnerabilities": ["CVE-2021-33742"],
+      "assets": ["source_code", "development_tools", "admin_scripts"]
+    },
+    {
+      "id": "it_workstation_2",
+      "software": {"os": "windows_10", "version": "21H1", "admin_tools": "rsat"},
+      "vulnerabilities": ["CVE-2021-34527", "CVE-2021-34484"],
+      "assets": ["admin_tools", "system_configs", "network_diagrams"]
+    },
+    {
+      "id": "sales_workstation_1",
+      "software": {"os": "macos", "version": "12.0", "crm": "salesforce"},
+      "vulnerabilities": ["CVE-2021-30713"],
+      "assets": ["customer_contacts", "sales_data", "proposals"]
+    },
+    {
+      "id": "sales_workstation_2",
+      "software": {"os": "windows_10", "version": "21H1", "crm": "hubspot"},
+      "vulnerabilities": ["CVE-2021-40444"],
+      "assets": ["lead_data", "marketing_materials"]
+    },
+    {
+      "id": "guest_wifi_ap",
+      "software": {"os": "cisco_ios", "version": "15.3", "wireless": "wifi_controller"},
+      "vulnerabilities": ["CVE-2021-1529"],
+      "assets": ["guest_access", "wifi_logs"]
+    },
+    {
+      "id": "corporate_wifi_ap",
+      "software": {"os": "cisco_ios", "version": "15.3", "wireless": "wifi_controller"},
+      "vulnerabilities": ["CVE-2021-1529", "CVE-2021-1530"],
+      "assets": ["corporate_wifi", "wifi_certificates"]
+    },
+    {
+      "id": "network_switch_1",
+      "software": {"os": "cisco_ios", "version": "15.2"},
+      "vulnerabilities": ["CVE-2020-3452"],
+      "assets": ["network_config", "vlan_settings"]
+    },
+    {
+      "id": "network_switch_2",
+      "software": {"os": "cisco_ios", "version": "15.2"},
+      "vulnerabilities": ["CVE-2020-3452"],
+      "assets": ["network_config", "port_settings"]
+    },
+    {
+      "id": "voip_server",
+      "software": {"os": "asterisk", "version": "18.5", "voip": "asterisk_pbx"},
+      "vulnerabilities": ["CVE-2021-37706"],
+      "assets": ["call_logs", "voicemail_data", "phone_directory"]
+    },
+    {
+      "id": "print_server",
+      "software": {"os": "windows_server", "version": "2016", "print": "print_spooler"},
+      "vulnerabilities": ["CVE-2021-34527", "CVE-2021-1675"],
+      "assets": ["print_jobs", "document_cache"]
+    },
+    {
+      "id": "security_camera_nvr",
+      "software": {"os": "embedded_linux", "version": "4.4", "nvr": "hikvision"},
+      "vulnerabilities": ["CVE-2021-36260"],
+      "assets": ["surveillance_footage", "camera_feeds"]
+    }
+  ],
+  "links": [
+    {
+      "node1": "internet_gateway",
+      "node2": "dmz_web_server",
+      "bidirectional": true,
+      "latency": 0.1
+    },
+    {
+      "node1": "internet_gateway",
+      "node2": "dmz_mail_server",
+      "bidirectional": true,
+      "latency": 0.1
+    },
+    {
+      "node1": "internet_gateway",
+      "node2": "dmz_dns_server",
+      "bidirectional": true,
+      "latency": 0.1
+    },
+    {
+      "node1": "dmz_web_server",
+      "node2": "internal_firewall",
+      "bidirectional": true,
+      "latency": 0.05
+    },
+    {
+      "node1": "dmz_mail_server",
+      "node2": "internal_firewall",
+      "bidirectional": true,
+      "latency": 0.05
+    },
+    {
+      "node1": "dmz_dns_server",
+      "node2": "internal_firewall",
+      "bidirectional": true,
+      "latency": 0.05
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "domain_controller",
+      "bidirectional": true,
+      "latency": 0.02
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "network_switch_1",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "network_switch_2",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "domain_controller",
+      "node2": "file_server",
+      "bidirectional": true,
+      "latency": 0.02
+    },
+    {
+      "node1": "domain_controller",
+      "node2": "database_server",
+      "bidirectional": true,
+      "latency": 0.02
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "file_server",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "database_server",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "monitoring_server",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "voip_server",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "print_server",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "hr_workstation_1",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "hr_workstation_2",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "finance_workstation_1",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "finance_workstation_2",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "it_workstation_1",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "it_workstation_2",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "sales_workstation_1",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_2",
+      "node2": "sales_workstation_2",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "corporate_wifi_ap",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "internet_gateway",
+      "node2": "guest_wifi_ap",
+      "bidirectional": true,
+      "latency": 0.05
+    },
+    {
+      "node1": "network_switch_1",
+      "node2": "security_camera_nvr",
+      "bidirectional": true,
+      "latency": 0.01
+    },
+    {
+      "node1": "file_server",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "latency": 0.02
+    },
+    {
+      "node1": "database_server",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "latency": 0.02
+    }
+  ]
+}

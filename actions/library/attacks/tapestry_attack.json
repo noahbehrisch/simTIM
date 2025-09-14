@@ -1,0 +1,25 @@
+{
+  "name": "Tapestry attack",
+  "action_type": "node",
+  "cost": 300,
+  "duration": 1.5,
+  "success_probability": 0.6,
+  "precondition": {
+    "type": "function_ref",
+    "function": "compromise_tapestry_pre"
+  },
+  "postcondition": {
+    "type": "function_ref", 
+    "function": "compromise_tapestry_post"
+  },
+  "detection_probability": {
+    "type": "function_ref",
+    "function": "tapestry_detection_probability"
+  },
+  "damage_gain": {
+    "one_off_damage": 50.0,
+    "one_off_gain": 30.0,
+    "time_damage": 10.0,
+    "time_gain": 5.0
+  }
+}

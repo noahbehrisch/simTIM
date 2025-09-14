@@ -1,0 +1,25 @@
+{
+  "name": "Data Exfiltration",
+  "action_type": "node",
+  "cost": 200,
+  "duration": 2.0,
+  "success_probability": 0.7,
+  "precondition": {
+    "type": "function_ref",
+    "function": "data_exfiltration_pre"
+  },
+  "postcondition": {
+    "type": "function_ref",
+    "function": "data_exfiltration_post"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.3
+  },
+  "damage_gain": {
+    "one_off_damage": 50.0,
+    "one_off_gain": 100.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

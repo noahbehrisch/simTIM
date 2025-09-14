@@ -91,8 +91,8 @@ class App(tk.Tk):
         net_frame = self.tabs["Network_pad"]
         tk.Button(net_frame, text="Create Network", command=self.open_create_network_window, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=0, column=0, padx=10, pady=10, sticky="w")
         tk.Label(net_frame, text="Load Network File:", bg=self.tab_color, fg=self.button_fg).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        # Set default network file to network1.json
-        default_network_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'networks', 'network1.json'))
+        # Set default network file to network1.json in the library folder
+        default_network_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'networks', 'library', 'network1.json'))
         self.network_file_var = tk.StringVar(value=default_network_path)
         tk.Entry(net_frame, textvariable=self.network_file_var, width=30, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
         tk.Button(net_frame, text="Browse", command=self.browse_network_file, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=1, column=2, padx=5, pady=10, sticky="w")
@@ -139,7 +139,7 @@ class App(tk.Tk):
 
     def browse_network_file(self):
 
-        network_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'networks')
+        network_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'networks', 'library')
         network_dir = os.path.abspath(network_dir)
         file_path = filedialog.askopenfilename(
             title="Select Network File",

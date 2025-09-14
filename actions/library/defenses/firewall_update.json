@@ -1,0 +1,25 @@
+{
+  "name": "Firewall Rule Update",
+  "action_type": "node",
+  "cost": 100,
+  "duration": 1.0,
+  "success_probability": 0.9,
+  "precondition": {
+    "type": "function_ref",
+    "function": "firewall_update_pre"
+  },
+  "postcondition": {
+    "type": "function_ref",
+    "function": "firewall_update_post"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 30.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

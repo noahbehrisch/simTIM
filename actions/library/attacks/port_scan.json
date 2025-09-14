@@ -1,0 +1,25 @@
+{
+  "name": "Port scan",
+  "action_type": "node",
+  "cost": 50,
+  "duration": 1.0,
+  "success_probability": 0.95,
+  "precondition": {
+    "type": "function_ref",
+    "function": "port_scan_pre"
+  },
+  "postcondition": {
+    "type": "function_ref",
+    "function": "port_scan_post"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.15
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 20.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

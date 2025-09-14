@@ -202,6 +202,11 @@ link_attack_actions = [
 
 all_attack_actions = node_attack_actions + link_attack_actions
 
+# Support for JSON-based actions
+def get_all_attack_actions_from_json():
+    from actions.action_loader import get_attack_actions
+    return get_attack_actions()
+
 # print("[DEBUG] all_attack_actions:", all_attack_actions)
 # print("[DEBUG] node_attack_actions:", node_attack_actions)
 # print("[DEBUG] link_attack_actions:", link_attack_actions)
