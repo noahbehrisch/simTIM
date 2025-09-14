@@ -84,13 +84,6 @@ def simtim_main(
 
 def main():
     simtim_main()
-    
-    from networks.network_visualizer import NetworkVisualizer
-    from simulator.graph import Graph
-
-    network = Graph.from_json("networks/star_network.json")
-    visualizer = NetworkVisualizer(network)
-    visualizer.visualize()
 
 if __name__ == "__main__":
     main()
