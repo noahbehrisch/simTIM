@@ -10,7 +10,36 @@ class Defender(Actor):
         self.compromised_nodes = set()
         self.visible_links = set()
         self.compromised_links = set()
-        self.available_actions = []  # List[Action] assigned externally
+        self.available_actions = []
+
+    def run(self, network_state):
+        super().run(network_state)
+
+    def make_decision(self, network_state):
+        if not self.can_schedule_action():
+            self.schedule_next_decision()
+            return
+
+        decision = self.choose_best_action(network_state)
+        if decision:
+            action, target = decision
+            actor_access = target.access.get(self.id, None) 
+            if action.precondition(target, actor_access, self.id):
+                self.simulator.schedule_event(self.simulator.current_time, "start_action", {
+                    "actor": self,
+                    "action": action,
+                    "target": target,
+                    "actor_access": actor_access 
+                })
+                self.simulator.schedule_event(self.simulator.current_time + action.duration, "complete_action", {
+                    "actor": self,
+                    "action": action,
+                    "target": target,
+                    "actor_access": actor_access
+                })
+                self.ongoing_actions.add(action)
+
+        self.schedule_next_decision()  # List[Action] assigned externally
 
     def choose_best_action(self, network_state) -> tuple:
         best = None
@@ -38,5 +67,6 @@ class Defender(Actor):
         node.compromised = False
         node.repaired = True
 
-    def on_action_finished(self, action, status):
-        pass
+    def on_action_finished(self, action, status, target=None):
+        if action in self.ongoing_actions:
+            self.ongoing_actions.remove(action)

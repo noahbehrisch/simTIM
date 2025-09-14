@@ -25,13 +25,13 @@ class Simulator:
         self.ongoing_actions = []
         
     def run(self, until: float):
-        # For testing: all attackers see every node
-        all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
         for actor in self.get_all_actors():
+            actor.set_simulator(self)
             if hasattr(actor, 'is_attacker') and actor.is_attacker:
+                all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
                 actor.visible_nodes = list(all_nodes)
-        for actor in self.get_all_actors():
-            self.schedule_event(self.current_time, "actor_decide", {"actor": actor})
+            actor.run(self.network)
+        
         while self.event_queue and self.current_time <= until: 
             event = heapq.heappop(self.event_queue)
             self.current_time = event.time
@@ -96,55 +96,8 @@ class Simulator:
 
     def handle_actor_decide(self, time, data):
         actor = data["actor"]
-        busy = any(a["actor"] == actor for a in self.ongoing_actions)
-        if not busy:
-            if hasattr(actor, "is_attacker") and actor.is_attacker:
-                self.attacker_decision(actor)
-            elif hasattr(actor, "is_defender") and actor.is_defender:
-                self.defender_decision(actor)
-        self.schedule_event(self.current_time + 1, "actor_decide", {"actor": actor})
-
-    def attacker_decision(self, attacker):
-        decision = attacker.choose_action(self.network)
-        if decision:
-            action, target = decision
-            actor_access = target.access.get(attacker.id, None)
-            if action.precondition(target, actor_access, attacker.id):
-                self.schedule_event(self.current_time, "start_action", {
-                    "actor": attacker,
-                    "action": action,
-                    "target": target,
-                    "actor_access": actor_access 
-                })
-                self.schedule_event(self.current_time + action.duration, "complete_action", {
-                    "actor": attacker,
-                    "action": action,
-                    "target": target,
-                    "actor_access": actor_access
-                })
-            else:
-                pass
-
-    def defender_decision(self, defender):
-        decision = defender.choose_best_action(self.network)
-        if decision:
-            action, target = decision
-            actor_access = target.access.get(defender.id, None) 
-            if action.precondition(target, actor_access, defender.id):
-                self.schedule_event(self.current_time, "start_action", {
-                    "actor": defender,
-                    "action": action,
-                    "target": target,
-                    "actor_access": actor_access 
-                })
-                self.schedule_event(self.current_time + action.duration, "complete_action", {
-                    "actor": defender,
-                    "action": action,
-                    "target": target,
-                    "actor_access": actor_access
-                })
-            else:
-                pass
+        if hasattr(actor, 'make_decision'):
+            actor.make_decision(self.network)
 
     def handle_start_action(self, time, data):
         precond = data["action"].precondition(
@@ -184,9 +137,10 @@ class Simulator:
                         data["actor"].on_action_finished(data["action"], "failure", data["target"])
                     self.history.append((self.current_time, "action_failed", data))
             else:
+                if hasattr(data["actor"], "on_action_finished"):
+                    data["actor"].on_action_finished(data["action"], "aborted", data["target"])
                 self.history.append((self.current_time, "action_aborted", data))
             self.ongoing_actions.remove(ongoing)
-        self.schedule_event(self.current_time, "actor_decide", {"actor": data["actor"]})
 
     # --- History/Debug ---
     def print_history(self):
