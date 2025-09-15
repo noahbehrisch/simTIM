@@ -152,3 +152,4 @@ class Graph:
 
     def __repr__(self):
         return f"Graph(nodes={len(self.nodes)}, links={len(self.links)})"
+

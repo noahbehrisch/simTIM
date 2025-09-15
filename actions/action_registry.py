@@ -193,3 +193,4 @@ class ActionRegistry:
             json.dump(data, f, indent=2)
 
 action_registry = ActionRegistry()
+

@@ -97,3 +97,4 @@ link_defense_actions = [action for action in all_defense_actions if action.is_li
 
 
 all_available_actions = get_all_available_actions()
+

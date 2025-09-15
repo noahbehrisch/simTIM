@@ -135,3 +135,4 @@ class Simulator:
     def print_history(self):
         for entry in self.history:
             print(entry)
+

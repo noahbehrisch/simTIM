@@ -204,3 +204,4 @@ all_attack_actions = node_attack_actions + link_attack_actions
 def get_all_attack_actions_from_json():
     from actions.action_loader import get_attack_actions
     return get_attack_actions()
+

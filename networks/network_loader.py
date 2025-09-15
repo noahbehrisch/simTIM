@@ -78,3 +78,4 @@ def create_network_from_config(config: dict) -> Dict[str, Node]:
             latency=link_config.get('latency', 0.0)
         )
     return nodes
+
