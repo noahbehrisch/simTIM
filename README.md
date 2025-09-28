@@ -24,6 +24,12 @@
 - **Discrete-Event Engine**: Precise timing and event scheduling
 - **Economic Impact**: Damage/gain functions per TIM paper specifications
 
+### **TIM-Compliant Visualization**
+- **Statistical Analysis**: Violin plots replicating TIM paper Figure 2
+- **Temporal Progression**: Damage accumulation and economic impact over time
+- **Parameter Sensitivity**: Multi-dimensional analysis of action durations
+- **Publication Quality**: 300 DPI academic-standard plots and reports
+
 ### **Professional Architecture**
 - **JSON Action System**: Human-readable yet formally expressive conditions
 - **Actor Autonomy**: Independent decision-making with configurable strategies
@@ -77,6 +83,23 @@ results = simtim_main(
 }
 ```
 
+### TIM Visualization Example
+```python
+from visualization.tim_visualization import TIMVisualizationEngine
+
+# Create TIM visualization engine
+viz_engine = TIMVisualizationEngine("analysis_output")
+
+# Generate comprehensive TIM analysis (replicates Figure 2)
+figures = viz_engine.create_comprehensive_tim_analysis(
+    simulation_results,
+    parameter_variations={'mysql_upgrade_duration': [1, 2, 4, 8, 12]}
+)
+
+# Automatically saves: damage distribution, temporal analysis, 
+# economic comparison, and statistical reports
+```
+
 ## 📁 Project Structure
 
 ```
@@ -95,6 +118,11 @@ simTIM/
 ├── ⚙️ simulator/            # Core TIM simulation engine
 │   ├── simulator.py         # Temporal monitoring system
 │   └── graph.py             # Network graph representation
+├── 📊 visualization/        # TIM-compliant analysis and plotting
+│   ├── tim_visualization.py # Comprehensive TIM analysis engine
+│   ├── plot_results.py      # Enhanced plotting utilities  
+│   ├── tim_demo.py          # Full demonstration system
+│   └── README.md            # Visualization system guide
 ├── 🧪 tests/               # Streamlined test suite
 │   ├── test_integration.py      # Core system validation
 │   ├── test_smt_conditions.py   # SMT formula testing  
@@ -126,6 +154,9 @@ python3 tests/test_focused_interruption.py # TIM temporal monitoring
 python3 tests/test_smt_conditions.py       # Enhanced SMT formulas
 python3 tests/test_network_library.py      # Network functionality
 python3 tests/demo_action_system.py        # Action system demo
+
+# TIM Visualization Demo (replicates Figure 2)
+python3 visualization/tim_demo.py          # Comprehensive TIM analysis
 ```
 
 ### Expected Results
