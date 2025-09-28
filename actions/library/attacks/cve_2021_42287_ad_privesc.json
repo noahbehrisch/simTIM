@@ -1,0 +1,84 @@
+{
+  "name": "CVE-2021-42287 Active Directory Privilege Escalation",
+  "description": "Exploits sAMAccountName spoofing vulnerability in Active Directory for privilege escalation",
+  "action_type": "node",
+  "cost": 300,
+  "duration": 2.5, 
+  "success_probability": 0.75,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND", 
+    "conditions": [
+      {
+        "type": "software_check",
+        "software_key": "active_directory",
+        "operator": "not_equals",
+        "value": ""
+      },
+      {
+        "type": "software_check",
+        "software_key": "os",
+        "operator": "equals",
+        "value": "Windows Server 2019"
+      },
+      {
+        "type": "vulnerability_check",
+        "cve": "CVE-2021-42287",
+        "status": "present"
+      },
+      {
+        "type": "access_check", 
+        "operator": "equals",
+        "value": "USER"
+      },
+      {
+        "type": "property_check",
+        "property": "domain_member",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_access",
+        "value": "ADMIN"
+      },
+      {
+        "type": "add_capability",
+        "capability": "domain_admin_rights"
+      },
+      {
+        "type": "add_capability",
+        "capability": "dcsync_attack"
+      },
+      {
+        "type": "set_property",
+        "property": "kerberos_tickets",
+        "value": "golden_ticket_capability"
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.3
+  },
+  "exploit_details": {
+    "attack_vector": "network",
+    "complexity": "medium",
+    "privileges_required": "low",
+    "user_interaction": "none",
+    "cwe": "CWE-269", 
+    "technique": "sAMAccountName spoofing + machine account takeover",
+    "requires": "valid domain credentials"
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 75.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

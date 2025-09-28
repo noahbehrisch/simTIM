@@ -5,12 +5,13 @@
   "duration": 0.5,
   "success_probability": 0.9,
   "precondition": {
-    "type": "function_ref",
-    "function": "reconnaissance_pre"
+    "type": "access_check",
+    "operator": "equals",
+    "value": "NONE"
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "reconnaissance_post"
+    "type": "set_access",
+    "value": "VISIBLE"
   },
   "detection_probability": {
     "type": "constant",

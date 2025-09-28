@@ -1,6 +1,5 @@
 from simulator.simulator import Simulator
-from actions.action_loader import get_all_available_actions, get_attack_actions, get_defense_actions
-from simulator.graph import Node, Link
+from actions.action_manager import get_attack_actions, get_defense_actions
 from networks.network_loader import load_network_config, create_network_from_config
 from actors.attacker import Attacker
 from actors.defender import Defender
@@ -53,25 +52,36 @@ def simtim_main(
         
         attacker_objs = []
         for attacker_config in attackers:
-            attacker = Attacker(id=attacker_config['id'],strategy=attacker_config.get('strategy','none'))
+            attacker = Attacker(
+                id=attacker_config['id'], 
+                strategy=attacker_config.get('strategy', 'none')
+            )
             attacker.available_actions = attack_actions
             attacker_objs.append(attacker)
 
         defender_objs = []
         for defender_config in defenders:
-            defender = Defender(id=defender_config['id'],strategy=defender_config.get('strategy','none'))
+            defender = Defender(
+                id=defender_config['id'], 
+                strategy=defender_config.get('strategy', 'none')
+            )
             defender.available_actions = defense_actions
             defender_objs.append(defender)
 
         network['actors'] = attacker_objs + defender_objs
 
+        # Initialize proper access control per TIM paper
         for attacker in attacker_objs:
             for node in network['nodes_list']:
-                node.access[attacker.id] = 'USER'
+                # Attackers start with no access, must discover and compromise
+                if hasattr(node, 'exposed_to_internet') and node.exposed_to_internet:
+                    node.access[attacker.id] = 'VISIBLE'  # Can see internet-exposed nodes
+                else:
+                    node.access[attacker.id] = 'NONE'     # Cannot see internal nodes
                 
         for defender in defender_objs:
             for node in network['nodes_list']:
-                node.access[defender.id] = 'ADMIN'
+                node.access[defender.id] = 'ADMIN'  # Defender has full administrative access
 
         sim = Simulator(network=network)
 
@@ -85,11 +95,9 @@ def simtim_main(
 
 
 def main():
+    """Main entry point for simTIM simulation."""
     simtim_main()
+
 
 if __name__ == "__main__":
     main()
-
-
-
-

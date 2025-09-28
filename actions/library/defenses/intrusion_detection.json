@@ -5,12 +5,25 @@
   "duration": 1.5,
   "success_probability": 0.8,
   "precondition": {
-    "type": "function_ref",
-    "function": "ids_deploy_pre"
+    "type": "access_check",
+    "operator": "equals",
+    "value": "ADMIN"
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "ids_deploy_post"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "ids_deployed",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "detection_capability",
+        "value": 0.3
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",

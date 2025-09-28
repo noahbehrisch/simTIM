@@ -1,12 +1,12 @@
 {
-  "name": "Port scan",
-  "action_type": "node",
+  "name": "Port Scan",
+  "action_type": "node", 
   "cost": 25,
   "duration": 0.2,
   "success_probability": 0.98,
   "precondition": {
     "type": "access_check",
-    "operator": "equals",
+    "operator": "equals", 
     "value": "NONE"
   },
   "postcondition": {
@@ -29,7 +29,7 @@
   },
   "damage_gain": {
     "one_off_damage": 0.0,
-    "one_off_gain": 20.0,
+    "one_off_gain": 5.0,
     "time_damage": 0.0,
     "time_gain": 0.0
   }

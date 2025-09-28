@@ -1,25 +1,56 @@
 {
-  "name": "Remote attack on MySQL",
+  "name": "MySQL Attack",
   "action_type": "link",
-  "cost": 800,
+  "cost": 200,
   "duration": 2.0,
   "success_probability": 0.7,
   "precondition": {
-    "type": "function_ref",
-    "function": "compromise_mysql_pre"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "software_check",
+        "software_key": "DBMS name",
+        "operator": "equals",
+        "value": "MySQL"
+      },
+      {
+        "type": "version_check",
+        "software_key": "DBMS version",
+        "operator": "between",
+        "min_value": "8.0.0",
+        "max_value": "8.0.28"
+      },
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "VISIBLE"
+      }
+    ]
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "compromise_mysql_post"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_access",
+        "value": "ADMIN"
+      },
+      {
+        "type": "set_property",
+        "property": "compromised",
+        "value": true
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.25
+    "value": 0.4
   },
   "damage_gain": {
-    "one_off_damage": 100.0,
-    "one_off_gain": 80.0,
-    "time_damage": 20.0,
-    "time_gain": 10.0
+    "one_off_damage": 40.0,
+    "one_off_gain": 25.0,
+    "time_damage": 8.0,
+    "time_gain": 4.0
   }
 }

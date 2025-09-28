@@ -5,12 +5,38 @@
   "duration": 1.0,
   "success_probability": 0.9,
   "precondition": {
-    "type": "function_ref",
-    "function": "upgrade_mysql_pre"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "software_check",
+        "software_key": "DBMS name",
+        "operator": "equals",
+        "value": "MySQL"
+      },
+      {
+        "type": "version_check",
+        "software_key": "DBMS version",
+        "operator": "less_than",
+        "value": "9.0.1"
+      },
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      }
+    ]
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "upgrade_mysql_post"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_software",
+        "software_key": "DBMS version",
+        "value": "9.0.1"
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",

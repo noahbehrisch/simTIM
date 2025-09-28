@@ -5,12 +5,14 @@
   "duration": 1.0,
   "success_probability": 0.9,
   "precondition": {
-    "type": "function_ref",
-    "function": "firewall_update_pre"
+    "type": "access_check",
+    "operator": "equals",
+    "value": "ADMIN"
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "firewall_update_post"
+    "type": "increment_counter",
+    "counter": "firewall_rules",
+    "increment": 1
   },
   "detection_probability": {
     "type": "constant",

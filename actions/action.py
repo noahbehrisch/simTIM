@@ -102,8 +102,8 @@ class Action:
 
     @classmethod
     def from_json(cls, action_data: Dict[str, Any], function_registry: Dict[str, Callable] = None):
-        from actions.action_registry import action_registry
-        registry = function_registry or action_registry
+        from actions.action_manager import action_manager
+        registry = function_registry or action_manager
         
         if hasattr(registry, 'action_from_json'):
             return registry.action_from_json(action_data)

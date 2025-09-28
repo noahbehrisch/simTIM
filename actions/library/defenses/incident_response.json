@@ -1,16 +1,51 @@
 {
   "name": "Incident Response",
   "action_type": "node",
-  "cost": 400,
-  "duration": 3.0,
-  "success_probability": 0.85,
+  "cost": 800,
+  "duration": 24.0,
+  "success_probability": 0.75,
   "precondition": {
-    "type": "function_ref",
-    "function": "incident_response_pre"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "property_check",
+        "property": "compromised",
+        "operator": "equals",
+        "value": true
+      }
+    ]
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "incident_response_post"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "security_level",
+        "value": "high"
+      },
+      {
+        "type": "modify_property",
+        "property": "vulnerabilities",
+        "operation": "subtract",
+        "value": 3
+      },
+      {
+        "type": "set_links_access",
+        "access_value": "NONE"
+      },
+      {
+        "type": "increment_counter",
+        "counter": "incident_responses",
+        "increment": 1
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",

@@ -1,0 +1,316 @@
+{
+  "name": "Realistic SMB Network", 
+  "description": "A realistic small-medium business network with proper security segmentation and common vulnerabilities",
+  "metadata": {
+    "organization": "LocalBiz LLC",
+    "network_size": "small_business",
+    "employees": 25,
+    "created": "2024-09-27"
+  },
+  "nodes": [
+    {
+      "id": "edge_firewall",
+      "type": "network_device",
+      "zone": "perimeter",
+      "software": {
+        "vendor": "SonicWall",
+        "model": "TZ370", 
+        "firmware": "7.0.1-5035"
+      },
+      "vulnerabilities": ["CVE-2022-22274"],
+      "assets": ["firewall_config", "vpn_tunnels", "network_logs"],
+      "properties": {
+        "critical": true,
+        "physical_security": "medium",
+        "network_segment": "192.168.1.0/24",
+        "manages_nat": true,
+        "vpn_enabled": true
+      }
+    },
+    {
+      "id": "web_hosting_server",
+      "type": "server",
+      "zone": "dmz", 
+      "software": {
+        "os": "CentOS Linux",
+        "version": "7.9",
+        "web_server": "Apache",
+        "web_version": "2.4.6",
+        "php": "7.4.30",
+        "cms": "WordPress",
+        "cms_version": "6.1.1"
+      },
+      "vulnerabilities": ["CVE-2022-22963", "CVE-2023-23752", "CVE-2022-43497"],
+      "assets": ["company_website", "customer_inquiries", "marketing_content"],
+      "properties": {
+        "critical": false,
+        "physical_security": "low",
+        "network_segment": "192.168.10.0/24", 
+        "ip_address": "192.168.10.10",
+        "exposed_services": ["80", "443"],
+        "outdated_cms": true
+      }
+    },
+    {
+      "id": "business_server",
+      "type": "server",
+      "zone": "internal",
+      "software": {
+        "os": "Windows Server", 
+        "version": "2016",
+        "build": "14393.5501",
+        "active_directory": "2016 Forest Level",
+        "file_services": "SMB 3.1.1",
+        "email_server": "Exchange 2016"
+      },
+      "vulnerabilities": ["CVE-2017-0144", "CVE-2021-31207", "CVE-2022-41040"],
+      "assets": ["user_accounts", "shared_files", "email_database", "company_data"],
+      "properties": {
+        "critical": true,
+        "physical_security": "medium", 
+        "network_segment": "192.168.20.0/24",
+        "ip_address": "192.168.20.10",
+        "domain_controller": true,
+        "exchange_server": true
+      }
+    },
+    {
+      "id": "nas_storage",
+      "type": "storage",
+      "zone": "internal",
+      "software": {
+        "vendor": "Synology",
+        "model": "DS920+",
+        "os": "DSM", 
+        "version": "7.1.1-42962"
+      },
+      "vulnerabilities": ["CVE-2023-2729"],
+      "assets": ["file_backups", "media_storage", "document_archive"],
+      "properties": {
+        "critical": false,
+        "physical_security": "low",
+        "network_segment": "192.168.20.0/24",
+        "ip_address": "192.168.20.20", 
+        "raid_level": "RAID 5",
+        "remote_access": true
+      }
+    },
+    {
+      "id": "office_printer",
+      "type": "iot_device",
+      "zone": "internal", 
+      "software": {
+        "vendor": "HP",
+        "model": "LaserJet Pro MFP M428fdw",
+        "firmware": "20220622"
+      },
+      "vulnerabilities": ["CVE-2023-1707"],
+      "assets": ["print_jobs", "scanned_documents", "device_logs"],
+      "properties": {
+        "critical": false,
+        "physical_security": "low",
+        "network_segment": "192.168.20.0/24",
+        "ip_address": "192.168.20.30",
+        "web_interface": true,
+        "default_credentials": true
+      }
+    },
+    {
+      "id": "manager_laptop",
+      "type": "workstation", 
+      "zone": "internal",
+      "software": {
+        "os": "Windows 10",
+        "version": "21H2",
+        "build": "19044.2965",
+        "office_suite": "Microsoft Office 2019",
+        "browser": "Google Chrome",
+        "endpoint_protection": "Windows Defender"
+      },
+      "vulnerabilities": ["CVE-2023-21823", "CVE-2022-30190"],
+      "assets": ["financial_data", "business_plans", "employee_reviews", "customer_lists"],
+      "properties": {
+        "critical": false,
+        "physical_security": "low",
+        "network_segment": "192.168.20.0/24", 
+        "ip_address": "192.168.20.50",
+        "department": "Management",
+        "user": "john.manager",
+        "admin_rights": true,
+        "mobile_device": true
+      }
+    },
+    {
+      "id": "employee_desktop_01",
+      "type": "workstation",
+      "zone": "internal",
+      "software": {
+        "os": "Windows 10",
+        "version": "20H2", 
+        "build": "19042.2965",
+        "office_suite": "Microsoft Office 2016",
+        "browser": "Internet Explorer 11",
+        "endpoint_protection": "none"
+      },
+      "vulnerabilities": ["CVE-2021-40444", "CVE-2022-30190", "CVE-2023-21823"],
+      "assets": ["work_documents", "email_access", "customer_data"],
+      "properties": {
+        "critical": false,
+        "physical_security": "low",
+        "network_segment": "192.168.20.0/24",
+        "ip_address": "192.168.20.60", 
+        "department": "Sales",
+        "user": "mary.sales",
+        "admin_rights": false,
+        "outdated_software": true
+      }
+    },
+    {
+      "id": "employee_desktop_02",
+      "type": "workstation", 
+      "zone": "internal",
+      "software": {
+        "os": "Windows 10",
+        "version": "20H2",
+        "build": "19042.2965",
+        "office_suite": "LibreOffice",
+        "browser": "Mozilla Firefox",
+        "endpoint_protection": "none"
+      },
+      "vulnerabilities": ["CVE-2022-30190", "CVE-2023-21823"],
+      "assets": ["accounting_files", "vendor_invoices", "tax_documents"],
+      "properties": {
+        "critical": false,
+        "physical_security": "low", 
+        "network_segment": "192.168.20.0/24",
+        "ip_address": "192.168.20.70",
+        "department": "Accounting",
+        "user": "steve.accounting",
+        "admin_rights": false
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "edge_firewall",
+      "node2": "web_hosting_server",
+      "bidirectional": true,
+      "latency": 1.5, 
+      "bandwidth": "100Mbps",
+      "firewall_rules": ["allow_http", "allow_https", "deny_admin_ports"]
+    },
+    {
+      "node1": "edge_firewall",
+      "node2": "business_server",
+      "bidirectional": true,
+      "latency": 0.5,
+      "bandwidth": "1000Mbps",
+      "firewall_rules": ["allow_domain_traffic", "allow_exchange", "block_direct_internet"]
+    },
+    {
+      "node1": "business_server", 
+      "node2": "nas_storage",
+      "bidirectional": true,
+      "latency": 0.3,
+      "bandwidth": "1000Mbps",
+      "connection_type": "smb_file_share"
+    },
+    {
+      "node1": "business_server",
+      "node2": "office_printer",
+      "bidirectional": true,
+      "latency": 0.8,
+      "bandwidth": "100Mbps",
+      "connection_type": "print_spooler"
+    },
+    {
+      "node1": "business_server",
+      "node2": "manager_laptop", 
+      "bidirectional": true,
+      "latency": 0.4,
+      "bandwidth": "1000Mbps",
+      "connection_type": "domain_member"
+    },
+    {
+      "node1": "business_server",
+      "node2": "employee_desktop_01",
+      "bidirectional": true,
+      "latency": 0.6,
+      "bandwidth": "100Mbps", 
+      "connection_type": "domain_member"
+    },
+    {
+      "node1": "business_server",
+      "node2": "employee_desktop_02",
+      "bidirectional": true,
+      "latency": 0.5,
+      "bandwidth": "100Mbps",
+      "connection_type": "domain_member"
+    },
+    {
+      "node1": "nas_storage",
+      "node2": "manager_laptop",
+      "bidirectional": true,
+      "latency": 0.7, 
+      "bandwidth": "1000Mbps",
+      "connection_type": "backup_access"
+    }
+  ],
+  "attack_scenarios": [
+    {
+      "name": "WordPress Compromise",
+      "description": "Attacker exploits outdated WordPress to gain web server access",
+      "entry_point": "web_hosting_server", 
+      "attack_path": ["web_hosting_server", "business_server", "nas_storage"],
+      "required_vulnerabilities": ["CVE-2023-23752"]
+    },
+    {
+      "name": "Email Phishing Campaign",
+      "description": "Phishing email compromises employee workstation, escalates to domain admin",
+      "entry_point": "employee_desktop_01",
+      "attack_path": ["employee_desktop_01", "business_server", "manager_laptop", "nas_storage"],
+      "required_vulnerabilities": ["CVE-2022-30190", "CVE-2021-31207"]
+    },
+    {
+      "name": "IoT Device Pivot",
+      "description": "Compromise printer with default credentials, pivot to file server", 
+      "entry_point": "office_printer",
+      "attack_path": ["office_printer", "business_server", "nas_storage"],
+      "technique": "default_credential_attack"
+    },
+    {
+      "name": "Manager Laptop Compromise",
+      "description": "Target high-privilege manager laptop for business data access",
+      "entry_point": "manager_laptop",
+      "attack_path": ["manager_laptop", "business_server", "nas_storage"], 
+      "required_vulnerabilities": ["CVE-2023-21823"]
+    }
+  ],
+  "security_weaknesses": [
+    {
+      "type": "outdated_software",
+      "affected_nodes": ["web_hosting_server", "employee_desktop_01", "employee_desktop_02"],
+      "risk": "high"
+    },
+    {
+      "type": "missing_endpoint_protection", 
+      "affected_nodes": ["employee_desktop_01", "employee_desktop_02"],
+      "risk": "high"
+    },
+    {
+      "type": "default_credentials",
+      "affected_nodes": ["office_printer"],
+      "risk": "medium"
+    },
+    {
+      "type": "mixed_os_versions",
+      "affected_nodes": ["business_server", "manager_laptop", "employee_desktop_01"],
+      "risk": "medium"
+    },
+    {
+      "type": "insufficient_network_segmentation", 
+      "description": "All internal devices on same subnet",
+      "risk": "medium"
+    }
+  ]
+}

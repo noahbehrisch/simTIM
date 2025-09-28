@@ -54,15 +54,14 @@ def main():
     print("🚀 simTIM Test Suite Runner")
     print("=" * 60)
     
-    # Define all tests
+    # Essential tests only - streamlined test suite
     tests = [
-        ("tests/test_actor_run.py", "Actor autonomous run behavior"),
-        ("tests/test_action_system.py", "JSON action system functionality"),
-        ("tests/test_action_usage.py", "Action usage in simulations"),
-        ("tests/test_network_library.py", "Network library system"),
+        ("tests/test_integration.py", "Core system integration"),
+        ("tests/test_focused_interruption.py", "TIM temporal monitoring compliance"),
+        ("tests/test_smt_conditions.py", "Enhanced SMT-like condition system"),
+        ("tests/test_network_library.py", "Network library functionality"),
         ("tests/demo_action_system.py", "Action system demonstration"),
-        ("tests/migration_summary.py", "Migration summary display"),
-        ("tests/test_comprehensive_simulator.py", "Comprehensive simulator validation"),
+        ("tests/test_tim_economic_model.py", "TIM economic model implementation"),
     ]
     
     # Run all tests

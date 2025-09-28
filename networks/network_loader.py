@@ -67,6 +67,18 @@ def create_network_from_config(config: dict) -> Dict[str, Node]:
             vulnerabilities=node_config.get('vulnerabilities', []),
             assets=node_config.get('assets', [])
         )
+        
+        # Load node properties including internet exposure
+        properties = node_config.get('properties', {})
+        node.properties.update(properties)
+        
+        # Set internet exposure flag for access control
+        node.exposed_to_internet = properties.get('exposed_to_internet', False)
+        
+        # Load exposed services for network checks
+        node.exposed_services = node_config.get('exposed_services', 
+                                               properties.get('exposed_services', []))
+        
         nodes[node.id] = node
     for link_config in config.get('links', []):
         node1 = nodes[link_config['node1']]

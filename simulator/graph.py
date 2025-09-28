@@ -17,7 +17,8 @@ class Node:
 
         self.links: list[Link] = []
         self.access: dict[str, str] = {} 
-        self.properties: dict[str, any] = {}  
+        self.properties: dict[str, any] = {}
+        self.exposed_services: list[str] = []  # Network services/ports exposed  
 
     def add_link(self, link: "Link") -> None:
         self.links.append(link)
@@ -61,6 +62,15 @@ class Link:
 
     def get_nodes(self):
         return (self.node1, self.node2)
+    
+    def get_other_node(self, node):
+        """Get the node on the other end of this link"""
+        if node == self.node1:
+            return self.node2
+        elif node == self.node2:
+            return self.node1
+        else:
+            return None
 
     def __repr__(self) -> str:
         direction = "<->" if self.bidirectional else "->"
@@ -134,6 +144,10 @@ class Graph:
             node.compromised = node_data.get("compromised", False)
             node.repaired = node_data.get("repaired", False)
             node.properties = node_data.get("properties", {})
+            
+            # Load exposed services from properties if available
+            if "exposed_services" in node.properties:
+                node.exposed_services = node.properties["exposed_services"]
             graph.insert_node(node)
             id_to_node[node.id] = node
 

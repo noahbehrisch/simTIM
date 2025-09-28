@@ -4,12 +4,13 @@ import os
 import json
 import glob
 from typing import List, Dict, Optional
-from actions.action_loader import (
+from actions.action_manager import (
     load_actions_from_directory, 
     save_action_to_library, 
-    get_all_available_actions
+    get_all_available_actions,
+    action_manager
 )
-from actions.action_registry import action_registry
+
 
 def list_available_actions() -> Dict[str, List[str]]:
     base_dir = os.path.join(os.path.dirname(__file__), 'library')
@@ -108,7 +109,7 @@ def save_scenario_actions(scenario_name: str, actions: List) -> str:
         filename = action.name.lower().replace(' ', '_').replace('-', '_') + '.json'
         file_path = os.path.join(scenario_dir, filename)
         
-        action_data = action_registry.action_to_json(action)
+        action_data = action_manager.action_to_json(action)
         with open(file_path, 'w') as f:
             json.dump(action_data, f, indent=2)
     

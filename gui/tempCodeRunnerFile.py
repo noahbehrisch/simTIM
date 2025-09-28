@@ -1,1 +1,0 @@
-        self.logo = QLabel("simTIM")

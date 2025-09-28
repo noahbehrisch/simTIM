@@ -5,12 +5,25 @@
   "duration": 1.0,
   "success_probability": 0.9,
   "precondition": {
-    "type": "function_ref",
-    "function": "security_monitoring_pre"
+    "type": "access_check",
+    "operator": "equals",
+    "value": "ADMIN"
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "security_monitoring_post"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "monitoring_enabled",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "alert_capability",
+        "value": 0.2
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",

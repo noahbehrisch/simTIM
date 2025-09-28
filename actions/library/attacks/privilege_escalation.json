@@ -5,12 +5,24 @@
   "duration": 1.0,
   "success_probability": 0.8,
   "precondition": {
-    "type": "function_ref",
-    "function": "privilege_escalation_pre"
+    "type": "access_check",
+    "operator": "equals",
+    "value": "USER"
   },
   "postcondition": {
-    "type": "function_ref",
-    "function": "privilege_escalation_post"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_access",
+        "value": "ADMIN"
+      },
+      {
+        "type": "set_property",
+        "property": "compromised",
+        "value": true
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",
