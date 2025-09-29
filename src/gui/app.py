@@ -4,6 +4,7 @@ import json
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import messagebox
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from main import simtim_main
 
@@ -86,12 +87,48 @@ class App(tk.Tk):
         atk_frame = self.tabs["Attackers_pad"]
         self.attacker_entries = []
         self.attacker_list = []
+        
+        # Strategy descriptions
+        strategy_info = tk.Frame(atk_frame, bg="#f0f8ff", relief="ridge", bd=1)
+        strategy_info.pack(fill="x", padx=10, pady=5)
+        tk.Label(strategy_info, text="Attacker Strategies:", bg="#f0f8ff", fg=self.button_fg, font=("Arial", 10, "bold")).pack(anchor="w", padx=5)
+        tk.Label(strategy_info, text="• Greedy: Chooses actions with highest expected gain", bg="#f0f8ff", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
+        tk.Label(strategy_info, text="• Random: Selects valid actions randomly", bg="#f0f8ff", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
+        
+        # Header row
+        header_frame = tk.Frame(atk_frame, bg=self.tab_color)
+        header_frame.pack(fill="x", padx=10, pady=5)
+        tk.Label(header_frame, text="ID", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=0, padx=1)
+        tk.Label(header_frame, text="Strategy", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=1, padx=1)
+        tk.Label(header_frame, text="Capacity", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=2, padx=1)
+        tk.Label(header_frame, text="∞", bg=self.sidebar_color, fg=self.button_fg, width=6, relief="ridge").grid(row=0, column=3, padx=1)
+        tk.Label(header_frame, text="Budget ($)", bg=self.sidebar_color, fg=self.button_fg, width=10, relief="ridge").grid(row=0, column=4, padx=1)
+        tk.Label(header_frame, text="Actions", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=5, padx=1)
+        
         tk.Button(atk_frame, text="Add Attacker", command=self.add_attacker_entry, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).pack(padx=10, pady=10, anchor="w")
         self.attacker_entries_frame = tk.Frame(atk_frame, bg=self.tab_color)
         self.attacker_entries_frame.pack(fill="both", expand=True)
         def_frame = self.tabs["Defenders_pad"]
         self.defender_entries = []
         self.defender_list = []
+        
+        # Strategy descriptions
+        strategy_info = tk.Frame(def_frame, bg="#f0fff0", relief="ridge", bd=1)
+        strategy_info.pack(fill="x", padx=10, pady=5)
+        tk.Label(strategy_info, text="Defender Strategies:", bg="#f0fff0", fg=self.button_fg, font=("Arial", 10, "bold")).pack(anchor="w", padx=5)
+        tk.Label(strategy_info, text="• Reactive: Responds to detected threats and vulnerabilities", bg="#f0fff0", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
+        tk.Label(strategy_info, text="• Proactive: Actively hardens systems and patches vulnerabilities", bg="#f0fff0", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
+        tk.Label(strategy_info, text="• Monitoring: Focuses on detection and surveillance capabilities", bg="#f0fff0", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
+        
+        # Header row
+        header_frame = tk.Frame(def_frame, bg=self.tab_color)
+        header_frame.pack(fill="x", padx=10, pady=5)
+        tk.Label(header_frame, text="ID", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=0, padx=1)
+        tk.Label(header_frame, text="Strategy", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=1, padx=1)
+        tk.Label(header_frame, text="Capacity", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=2, padx=1)
+        tk.Label(header_frame, text="Budget ($)", bg=self.sidebar_color, fg=self.button_fg, width=10, relief="ridge").grid(row=0, column=3, padx=1)
+        tk.Label(header_frame, text="Actions", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=4, padx=1)
+        
         tk.Button(def_frame, text="Add Defender", command=self.add_defender_entry, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).pack(padx=10, pady=10, anchor="w")
         self.defender_entries_frame = tk.Frame(def_frame, bg=self.tab_color)
         self.defender_entries_frame.pack(fill="both", expand=True)
@@ -133,25 +170,95 @@ class App(tk.Tk):
 
     def add_attacker_entry(self):
         frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color)
-        frame.pack(fill="x", padx=10, pady=5)
+        frame.pack(fill="x", padx=10, pady=2)
+        
         attacker_id = len(self.attacker_entries) + 1
-        tk.Label(frame, text=f"Attacker {attacker_id}:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
-        tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
+        
+        # ID
+        id_label = tk.Label(frame, text=f"Attacker {attacker_id}", bg="#eaf1fb", fg=self.button_fg, width=12, relief="sunken")
+        id_label.grid(row=0, column=0, padx=1, sticky="w")
+        
+        # Strategy
         strategy_var = tk.StringVar(value="greedy")
         strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy", "random"], state="readonly", width=10)
-        strategy_dropdown.pack(side="left", padx=5)
-        self.attacker_entries.append((attacker_id, strategy_var))
+        strategy_dropdown.grid(row=0, column=1, padx=1, sticky="w")
+        
+        # Capacity
+        capacity_var = tk.StringVar(value="3")
+        capacity_entry = tk.Entry(frame, textvariable=capacity_var, width=6, bg="#eaf1fb", fg=self.button_fg)
+        capacity_entry.grid(row=0, column=2, padx=1, sticky="w")
+        
+        # Infinite capacity checkbox
+        infinite_var = tk.BooleanVar(value=False)
+        infinite_check = tk.Checkbutton(frame, text="", variable=infinite_var, bg=self.tab_color, fg=self.button_fg,
+                                       command=lambda: self._toggle_capacity(capacity_entry, infinite_var))
+        infinite_check.grid(row=0, column=3, padx=1, sticky="w")
+        
+        # Budget
+        budget_var = tk.StringVar(value="1000")
+        budget_entry = tk.Entry(frame, textvariable=budget_var, width=8, bg="#eaf1fb", fg=self.button_fg)
+        budget_entry.grid(row=0, column=4, padx=1, sticky="w")
+        
+        # Remove button
+        remove_btn = tk.Button(frame, text="Remove", command=lambda: self._remove_attacker(frame), 
+                              bg="#ffcccc", fg=self.button_fg, activebackground="#ff9999", width=6)
+        remove_btn.grid(row=0, column=5, padx=1, sticky="w")
+        
+        self.attacker_entries.append((attacker_id, strategy_var, capacity_var, infinite_var, budget_var, frame))
+
+    def _toggle_capacity(self, capacity_entry, infinite_var):
+        if infinite_var.get():
+            capacity_entry.config(state="disabled")
+        else:
+            capacity_entry.config(state="normal")
+    
+    def _remove_attacker(self, frame):
+        # Find and remove the entry
+        for i, entry in enumerate(self.attacker_entries):
+            if entry[5] == frame:  # frame is the last element
+                self.attacker_entries.pop(i)
+                frame.destroy()
+                break
 
     def add_defender_entry(self):
         frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color)
-        frame.pack(fill="x", padx=10, pady=5)
+        frame.pack(fill="x", padx=10, pady=2)
+        
         defender_id = len(self.defender_entries) + 1
-        tk.Label(frame, text=f"Defender {defender_id}:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
-        tk.Label(frame, text="Strategy:", bg=self.tab_color, fg=self.button_fg).pack(side="left", padx=5)
-        strategy_var = tk.StringVar(value="greedy")
-        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy"], state="readonly", width=10)
-        strategy_dropdown.pack(side="left", padx=5)
-        self.defender_entries.append((defender_id, strategy_var))
+        
+        # ID
+        id_label = tk.Label(frame, text=f"Defender {defender_id}", bg="#eaf1fb", fg=self.button_fg, width=12, relief="sunken")
+        id_label.grid(row=0, column=0, padx=1, sticky="w")
+        
+        # Strategy
+        strategy_var = tk.StringVar(value="reactive")
+        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["reactive", "proactive", "monitoring"], state="readonly", width=10)
+        strategy_dropdown.grid(row=0, column=1, padx=1, sticky="w")
+        
+        # Capacity
+        capacity_var = tk.StringVar(value="2")
+        capacity_entry = tk.Entry(frame, textvariable=capacity_var, width=6, bg="#eaf1fb", fg=self.button_fg)
+        capacity_entry.grid(row=0, column=2, padx=1, sticky="w")
+        
+        # Budget
+        budget_var = tk.StringVar(value="2000")
+        budget_entry = tk.Entry(frame, textvariable=budget_var, width=8, bg="#eaf1fb", fg=self.button_fg)
+        budget_entry.grid(row=0, column=3, padx=1, sticky="w")
+        
+        # Remove button
+        remove_btn = tk.Button(frame, text="Remove", command=lambda: self._remove_defender(frame), 
+                              bg="#ffcccc", fg=self.button_fg, activebackground="#ff9999", width=6)
+        remove_btn.grid(row=0, column=4, padx=1, sticky="w")
+        
+        self.defender_entries.append((defender_id, strategy_var, capacity_var, budget_var, frame))
+    
+    def _remove_defender(self, frame):
+        # Find and remove the entry
+        for i, entry in enumerate(self.defender_entries):
+            if entry[4] == frame:  # frame is now the 5th element (index 4)
+                self.defender_entries.pop(i)
+                frame.destroy()
+                break
 
     def show_tab(self, name):
         if self.current_tab:
@@ -184,10 +291,15 @@ class App(tk.Tk):
         )
         overview += "Attackers:\n"
         for idx, entry in enumerate(self.attacker_entries):
-            overview += f"  Attacker #{idx+1}: ID={entry[0]}, Strategy={entry[1].get()}\n"
+            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, _ = entry
+            capacity_text = "∞" if infinite_var.get() else capacity_var.get()
+            overview += f"  Attacker #{idx+1}: Strategy={strategy_var.get()}, Capacity={capacity_text}, Budget=${budget_var.get()}\n"
+        
         overview += "Defenders:\n"
         for idx, entry in enumerate(self.defender_entries):
-            overview += f"  Defender #{idx+1}: ID={entry[0]}, Strategy={entry[1].get()}\n"
+            defender_id, strategy_var, capacity_var, budget_var, _ = entry
+            overview += f"  Defender #{idx+1}: Strategy={strategy_var.get()}, Capacity={capacity_var.get()}, Budget=${budget_var.get()}\n"
+        
         self.overview_text.config(state=tk.NORMAL)
         self.overview_text.delete(1.0, tk.END)
         self.overview_text.insert(tk.END, overview)
@@ -359,31 +471,84 @@ class App(tk.Tk):
         sim_runs = self.sim_runs_var.get()
         sim_time = self.sim_time_var.get()
         path_to_network_config = self.network_file_var.get()
+        
         attackers = []
         for entry in self.attacker_entries:
+            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, _ = entry
+            
+            # Handle infinite capacity
+            if infinite_var.get():
+                capacity = float('inf')
+            else:
+                try:
+                    capacity = int(capacity_var.get())
+                except ValueError:
+                    capacity = 3  # fallback
+            
+            # Handle budget
+            try:
+                budget = float(budget_var.get())
+            except ValueError:
+                budget = 1000.0  # fallback
+            
             attackers.append({
-                'id': entry[0],
-                'strategy': entry[1].get()
+                'id': f"attacker{attacker_id}",
+                'strategy': strategy_var.get(),
+                'capacity': capacity,
+                'budget': budget
             })
+        
         defenders = []
         for entry in self.defender_entries:
+            defender_id, strategy_var, capacity_var, budget_var, _ = entry
+            
+            # Handle capacity
+            try:
+                capacity = int(capacity_var.get())
+            except ValueError:
+                capacity = 2  # fallback
+            
+            # Handle budget
+            try:
+                budget = float(budget_var.get())
+            except ValueError:
+                budget = 2000.0  # fallback
+            
             defenders.append({
-                'id': entry[0],
-                'strategy': entry[1].get()
+                'id': f"defender{defender_id}",
+                'strategy': strategy_var.get(),
+                'capacity': capacity,
+                'budget': budget
             })
-        all_histories = simtim_main(
-            path_to_network_config=path_to_network_config,
-            sim_runs=sim_runs,
-            sim_time=sim_time,
-            attackers=attackers,
-            defenders=defenders
-        )
-        self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
-        custom_messagebox = tk.Toplevel(self)
-        custom_messagebox.title("Simulation Complete")
-        custom_messagebox.geometry("800x400")
-        tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-        tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
+        
+        # Validate inputs
+        if not attackers:
+            tk.messagebox.showerror("Error", "At least one attacker is required!")
+            return
+        if not defenders:
+            tk.messagebox.showerror("Error", "At least one defender is required!")
+            return
+        
+        try:
+            all_histories = simtim_main(
+                path_to_network_config=path_to_network_config,
+                sim_runs=sim_runs,
+                sim_time=sim_time,
+                attackers=attackers,
+                defenders=defenders
+            )
+            self.all_histories = all_histories
+            self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
+            
+            custom_messagebox = tk.Toplevel(self)
+            custom_messagebox.title("Simulation Complete")
+            custom_messagebox.geometry("800x400")
+            custom_messagebox.configure(bg=self.bg_color)
+            tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg, font=("Arial", 16)).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+            tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
+            
+        except Exception as e:
+            tk.messagebox.showerror("Simulation Error", f"Failed to run simulation:\n{str(e)}")
 
     def launch_visualizer(self):
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg

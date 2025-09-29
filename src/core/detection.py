@@ -8,21 +8,47 @@ class SimpleDetectionEngine:
     
     def __init__(self, default_detection_rate: float = 0.1):
         self.default_detection_rate = default_detection_rate
-        self.action_detection_rates = {
-            'network_scan': 0.3,
-            'port_scan': 0.4,
-            'vulnerability_scan': 0.5,
-            'apache_tapestry_exploit': 0.2,
-            'mysql_exploit': 0.15,
-            'database_attack': 0.25,
-            'privilege_escalation': 0.1,
-            'lateral_movement': 0.05,
-            'data_exfiltration': 0.08,
-        }
+        self.action_detection_rates = {}
+        self.actions_loaded = False
     
-    def calculate_detection_probability(self, action_type: str, node_properties: Dict[str, Any]) -> float:
-        base_rate = self.action_detection_rates.get(action_type, self.default_detection_rate)
+    def load_action_detection_rates(self):
+        if self.actions_loaded:
+            return
+            
+        try:
+            from src.actions.action_manager import get_attack_actions, get_defense_actions
+            
+            attack_actions = get_attack_actions()
+            for action in attack_actions:
+                dummy_node = type('DummyNode', (), {'id': 'dummy', 'assets': 1, 'vulnerabilities': 1})()
+                detection_prob = action.detection_probability(dummy_node, 'VISIBLE', None)
+                self.action_detection_rates[action.name] = detection_prob
+                logger.debug(f"Loaded detection rate for {action.name}: {detection_prob}")
+            
+            defense_actions = get_defense_actions()
+            for action in defense_actions:
+                dummy_node = type('DummyNode', (), {'id': 'dummy', 'assets': 1, 'vulnerabilities': 1})()
+                detection_prob = action.detection_probability(dummy_node, 'ADMIN', None)
+                self.action_detection_rates[action.name] = detection_prob
+                logger.debug(f"Loaded detection rate for {action.name}: {detection_prob}")
+            
+            self.actions_loaded = True
+            logger.info(f"Loaded detection rates for {len(self.action_detection_rates)} actions")
+            
+        except Exception as e:
+            logger.warning(f"Failed to load action detection rates: {e}")
+            logger.warning("Using default detection rates")
+    
+    def calculate_detection_probability(self, action, target_node, actor_access: str = None, actor = None) -> float:
+        self.load_action_detection_rates()
+        
+        action_name = action.name if hasattr(action, 'name') else str(action)
+        base_rate = self.action_detection_rates.get(action_name, self.default_detection_rate)
         security_multiplier = 1.0
+        
+        node_properties = target_node if isinstance(target_node, dict) else {}
+        if hasattr(target_node, '__dict__'):
+            node_properties = target_node.__dict__
         
         if isinstance(node_properties, dict):
             if node_properties.get('security_level') == 'high':
@@ -35,11 +61,14 @@ class SimpleDetectionEngine:
         
         return min(0.95, base_rate * security_multiplier)
     
-    def should_detect_action(self, action_type: str, node_properties: Dict[str, Any]) -> bool:
-        detection_prob = self.calculate_detection_probability(action_type, node_properties)
+    def should_detect_action(self, action_name: str, node_properties: Dict[str, Any], actor_access: str = None, actor = None) -> bool:
+        detection_prob = self.calculate_detection_probability(action_name, node_properties)
         return random.random() < detection_prob
     
-    def sample_detection_time(self, action_type: str, action_duration: float) -> float:
+    def sample_detection_time(self, action_name: str, action_duration: float) -> float:
         return random.uniform(0, action_duration)
+    
+    def update_time(self, current_time: float):
+        pass
 
 DetectionEngine = SimpleDetectionEngine

@@ -42,12 +42,12 @@
   },
   "detection_probability": {
     "type": "constant",
-    "probability": 0.0
+    "value": 0.0
   },
   "damage_gain": {
-    "one_off_damage": 0,
-    "one_off_gain": 0,
-    "time_damage": -100,
-    "time_gain": 0
+    "one_off_damage": -300.0,
+    "one_off_gain": 0.0,
+    "time_damage": -100.0,
+    "time_gain": 0.0
   }
 }

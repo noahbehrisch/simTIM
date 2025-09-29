@@ -3,8 +3,8 @@ from src.core.graph import Node, Link
 from src.actions.action import Action
 
 class Attacker(Actor):
-    def __init__(self, id: str, strategy: str = "random"):
-        super().__init__(id, "attacker", strategy=strategy)
+    def __init__(self, id: str, strategy: str = "random", capacity: int = 3):
+        super().__init__(id, "attacker", capacity=capacity, strategy=strategy)
         self.is_attacker = True
         self.visible_nodes = set()
         self.compromised_nodes = set()

@@ -46,7 +46,8 @@ def simtim_main(
         for attacker_config in attackers:
             attacker = Attacker(
                 id=attacker_config['id'], 
-                strategy=attacker_config.get('strategy', 'none')
+                strategy=attacker_config.get('strategy', 'none'),
+                capacity=attacker_config.get('capacity', 3)
             )
             attacker.available_actions = attack_actions
             attacker_objs.append(attacker)
@@ -54,7 +55,8 @@ def simtim_main(
         for defender_config in defenders:
             defender = Defender(
                 id=defender_config['id'], 
-                strategy=defender_config.get('strategy', 'none')
+                strategy=defender_config.get('strategy', 'none'),
+                capacity=defender_config.get('capacity', 2)
             )
             defender.available_actions = defense_actions
             defender_objs.append(defender)

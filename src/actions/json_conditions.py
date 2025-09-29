@@ -20,6 +20,8 @@ class ConditionEvaluator:
             return self._evaluate_forall(condition, node, actor_access, actor_id, network_context)
         elif condition_type == 'software_check':
             return self._evaluate_software_check(condition, node)
+        elif condition_type == 'service_check':
+            return self._evaluate_service_check(condition, node)
         elif condition_type == 'version_check':
             return self._evaluate_version_check(condition, node)
         elif condition_type == 'access_check':
@@ -175,6 +177,27 @@ class ConditionEvaluator:
             return actual_value is None or actual_value == ""
         else:
             raise ValueError(f"Unknown software check operator: {operator}")
+
+    def _evaluate_service_check(self, condition: Dict[str, Any], node: Node) -> bool:
+        service = condition['service']
+        status = condition.get('status', 'running')
+        
+        # Check if node has services attribute
+        if not hasattr(node, 'services'):
+            node.services = {}
+        
+        # Get service status (default to 'stopped' if not found)
+        service_status = node.services.get(service, 'stopped')
+        
+        # Check against expected status
+        if status == 'running':
+            return service_status == 'running'
+        elif status == 'stopped':
+            return service_status == 'stopped'
+        elif status == 'exists':
+            return service in node.services
+        else:
+            return service_status == status
 
     def _evaluate_version_check(self, condition: Dict[str, Any], node: Node) -> bool:
         software_key = condition['software_key']

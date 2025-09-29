@@ -1,10 +1,10 @@
 {
-  "name": "CVE-2017-0144 EternalBlue SMB Exploit",
-  "description": "Exploits Windows SMB vulnerability for remote code execution",
-  "action_type": "node", 
-  "cost": 200,
-  "duration": 2.0,
-  "success_probability": 0.95,
+  "name": "Windows Privilege Escalation",
+  "description": "Exploits Windows system vulnerabilities for local privilege escalation",
+  "action_type": "node",
+  "cost": 100,
+  "duration": 1.0,
+  "success_probability": 0.8,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -12,18 +12,19 @@
       {
         "type": "software_check",
         "software_key": "os",
-        "operator": "in",
-        "values": ["Windows Server 2016", "Windows Server 2008", "Windows 7", "Windows 10"]
-      },
-      {
-        "type": "vulnerability_check",
-        "cve": "CVE-2017-0144", 
-        "status": "present"
+        "operator": "in", 
+        "values": ["Windows Server", "Windows"]
       },
       {
         "type": "access_check",
-        "operator": "in",
-        "values": ["VISIBLE", "USER"]
+        "operator": "equals",
+        "value": "USER"
+      },
+      {
+        "type": "vulnerability_check",
+        "check_type": "count",
+        "operator": "greater_than",
+        "value": 0
       }
     ]
   },
@@ -32,7 +33,7 @@
     "operator": "AND",
     "actions": [
       {
-        "type": "set_access", 
+        "type": "set_access",
         "value": "ADMIN"
       },
       {
@@ -44,11 +45,11 @@
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.6
+    "value": 0.2
   },
   "damage_gain": {
     "one_off_damage": 0.0,
-    "one_off_gain": 50.0,
+    "one_off_gain": 20.0,
     "time_damage": 0.0,
     "time_gain": 0.0
   }

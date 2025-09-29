@@ -18,6 +18,8 @@ class Node:
         self.access: dict[str, str] = {} 
         self.properties: dict[str, any] = {}
         self.exposed_services: list[str] = []
+        self.services: dict[str, str] = {}
+        self._initialize_services()
 
     def add_link(self, link: "Link") -> None:
         self.links.append(link)
@@ -33,6 +35,49 @@ class Node:
 
     def get_property(self, key, default=None):
         return self.properties.get(key, default)
+
+    def _initialize_services(self):
+        """Initialize services based on installed software"""
+        # Map software to services
+        software_service_map = {
+            'Apache': ['HTTP', 'HTTPS'],
+            'Apache Tapestry': ['HTTP', 'HTTPS'],
+            'MySQL': ['MySQL'],
+            'Windows': ['SMB', 'RDP'],
+            'Windows Server': ['SMB', 'RDP', 'DNS'],
+            'Linux': ['SSH'],
+            'SSH': ['SSH'],
+            'IIS': ['HTTP', 'HTTPS'],
+            'nginx': ['HTTP', 'HTTPS'],
+            'PostgreSQL': ['PostgreSQL'],
+            'Oracle': ['Oracle'],
+            'SQL Server': ['MSSQL']
+        }
+        
+        # Start all services as running by default
+        for software_name in self.software.keys():
+            for software_key, services in software_service_map.items():
+                if software_key.lower() in software_name.lower():
+                    for service in services:
+                        self.services[service] = 'running'
+        
+        # Add common services based on software patterns
+        if any('WebApp' in key for key in self.software.keys()):
+            self.services['HTTP'] = 'running'
+            self.services['HTTPS'] = 'running'
+        
+        if any('DBMS' in key for key in self.software.keys()):
+            dbms_name = self.software.get('DBMS name', '').lower()
+            if 'mysql' in dbms_name:
+                self.services['MySQL'] = 'running'
+            elif 'postgresql' in dbms_name:
+                self.services['PostgreSQL'] = 'running'
+            elif 'oracle' in dbms_name:
+                self.services['Oracle'] = 'running'
+        
+        # Default services if none detected
+        if not self.services:
+            self.services['SSH'] = 'running'
 
     def __repr__(self) -> str:
         return (f"Node(id={self.id}, compromised={self.compromised}, "

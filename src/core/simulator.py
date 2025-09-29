@@ -28,9 +28,9 @@ class Simulator:
         self.ongoing_actions = []
         self.detection_engine = DetectionEngine()
         from src.actions.json_conditions import action_executor
-
+        
         action_executor.set_simulator(self)
-
+    
     def run(self, until: float):
         for actor in self.get_all_actors():
             actor.set_simulator(self)
@@ -134,6 +134,11 @@ class Simulator:
                         data["actor"].id
                     )
                     self._calculate_economic_impact(data)
+                    
+                    # Register defense capabilities with detection engine
+                    if hasattr(data["actor"], 'is_attacker') and not data["actor"].is_attacker:
+                        self._register_defense_capability(data)
+                    
                     if hasattr(data["actor"], "on_action_finished"):
                         data["actor"].on_action_finished(data["action"], "success", data["target"])
                     self.history.append((self.current_time, "action_succeeded", data))
@@ -148,17 +153,18 @@ class Simulator:
             self.ongoing_actions.remove(ongoing)
 
     def _schedule_detection_check(self, action_data):
-        import random
-
+        """Schedule detection check using the new action-aware detection engine"""
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
-        detection_prob = self.detection_engine.calculate_detection_probability(
-            action.name, 
-            target if isinstance(target, dict) else target.__dict__
-        )
-        if random.random() < detection_prob:
-            detection_delay = self.detection_engine.sample_detection_time(action.name, action.duration)
+        actor_access = action_data.get("actor_access", "NONE")
+        
+        # Update detection engine with current time
+        self.detection_engine.update_time(self.current_time)
+        
+        # Use new detection engine API
+        if self.detection_engine.should_detect_action(action, target, actor_access, actor):
+            detection_delay = self.detection_engine.sample_detection_time(action, action.duration)
             self.schedule_event(
                 self.current_time + detection_delay,
                 "attack_detected",
@@ -167,7 +173,7 @@ class Simulator:
                     "detected_actor": actor,
                     "detected_target": target,
                     "detection_time": self.current_time + detection_delay,
-                    "detection_probability": detection_prob
+                    "detection_probability": self.detection_engine.calculate_detection_probability(action, target, actor_access, actor)
                 }
             )
 
@@ -180,11 +186,13 @@ class Simulator:
                 self.ongoing_actions.remove(ongoing)
                 interruption_event = Event(
                     time=self.current_time,
-                    type="action_interrupted_by_detection",
-                    actor=data["detected_actor"].actor_id,
-                    action=data["detected_action"].__class__.__name__,
-                    target=data["detected_target"],
-                    detection_probability=data.get("detection_probability", 0.0)
+                    event_type="action_interrupted_by_detection",
+                    data={
+                        "actor": data["detected_actor"].id,
+                        "action": data["detected_action"].__class__.__name__,
+                        "target": data["detected_target"],
+                        "detection_probability": data.get("detection_probability", 0.0)
+                    }
                 )
                 self.history.append(interruption_event)
         defenders = [actor for actor in self.get_all_actors() 

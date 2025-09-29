@@ -3,8 +3,8 @@ from src.core.graph import Node
 from src.actions.action import Action
 
 class Defender(Actor):
-    def __init__(self, id: str, strategy: str = "reactive"):
-        super().__init__(id, "defender", strategy=strategy)
+    def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2):
+        super().__init__(id, "defender", capacity=capacity, strategy=strategy)
         self.is_defender = True
         self.visible_nodes = set()
         self.compromised_nodes = set()

@@ -1,0 +1,39 @@
+{
+  "name": "Spear Phishing Attack",
+  "description": "Targeted phishing email with malicious attachment or link - most common initial access vector",
+  "action_type": "node",
+  "cost": 80,
+  "duration": 0.8,
+  "success_probability": 0.65,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "VISIBLE"
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_access",
+        "value": "USER"
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.4
+  },
+  "damage_gain": {
+    "one_off_damage": 20.0,
+    "one_off_gain": 30.0,
+    "time_damage": 5.0,
+    "time_gain": 2.0
+  }
+}

@@ -78,6 +78,12 @@ class Actor:
             'type': 'cost'
         })
 
+    def can_schedule_action(self):
+        return len(self.ongoing_actions) < self.capacity
+
+    def get_concurrent_actions_count(self):
+        return len(self.ongoing_actions)
+
     def record_economic_event(self, timestamp, event_type, value, details=None):
         self.economic_events.append({
             'timestamp': timestamp,
