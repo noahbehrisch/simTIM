@@ -3,6 +3,7 @@ import random
 import logging
 from typing import Any, Dict, List
 from .detection import DetectionEngine
+from .economic_model import economic_model, calculate_action_damage, calculate_action_gain
 logger = logging.getLogger(__name__)
 infinity = float('inf') 
 
@@ -256,19 +257,27 @@ class Simulator:
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
+        
+        cost = action.cost
+        damage = calculate_action_damage(action.name, target)
+        gain = calculate_action_gain(action.name, target)
+        
+        if hasattr(actor, 'is_attacker') and actor.is_attacker:
+            economic_model.record_action_impact(
+                self.current_time, actor.id, action.name, cost, 0, gain
+            )
+        else:
+            economic_model.record_action_impact(
+                self.current_time, actor.id, action.name, cost, damage, 0
+            )
+        
         actor.record_action_cost(action, self.current_time)
 
     def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
-        if hasattr(self, 'tim_economic_engine'):
-            self.tim_economic_engine.record_access_change(
-                self.current_time, node, actor_id, old_access, new_access
-            )
+        pass
 
     def record_property_change(self, node, property_name: str, old_value, new_value):
-        if hasattr(self, 'tim_economic_engine'):
-            self.tim_economic_engine.record_property_change(
-                self.current_time, node, property_name, old_value, new_value
-            )
+        pass
 
     def get_tim_economic_summary(self, time_interval=None):
         if time_interval is None:
@@ -276,26 +285,25 @@ class Simulator:
         all_actors = self.get_all_actors()
         attackers = [actor for actor in all_actors if hasattr(actor, 'is_attacker') and actor.is_attacker]
         defenders = [actor for actor in all_actors if hasattr(actor, 'is_defender') and actor.is_defender]
+        
         attacker_objectives = {}
         for attacker in attackers:
-            attacker_objectives[attacker.id] = attacker.get_economic_objective(time_interval)
+            attacker_objectives[attacker.id] = economic_model.get_attacker_objective(attacker.id)
+        
         defender_objectives = {}
-        total_system_damage = 0.0
         for defender in defenders:
-            defender_obj = defender.get_economic_objective(time_interval)
-            defender_objectives[defender.id] = defender_obj
-            total_system_damage += defender._calculate_total_system_damage(time_interval)
-        total_attacker_gains = sum(attacker.total_gain for attacker in attackers)
-        total_costs = sum(actor.incurredCost for actor in all_actors)
+            defender_objectives[defender.id] = economic_model.get_defender_objective(defender.id)
+        
+        summary = economic_model.get_summary()
+        
         return {
             "time_interval": time_interval,
-            "total_damage": total_system_damage,
+            "total_damage": summary['total_damage'],
             "defender_objectives": defender_objectives,
             "attacker_objectives": attacker_objectives,
-            "total_attacker_gains": total_attacker_gains,
-            "total_costs": total_costs,
-            "num_economic_events": sum(len(actor.economic_events) for actor in all_actors),
-            "num_actions": sum(len(actor.action_history) for actor in all_actors)
+            "total_attacker_gains": summary['total_gains'],
+            "total_costs": summary['total_costs'],
+            "num_actions": summary['num_actions']
         }
 
     def print_history(self):
