@@ -365,37 +365,46 @@ class App(tk.Tk):
             logs_text.insert(tk.END, f"=== Simulation Run {run_index} ===\n")
             event_count = 0
             for entry in history:
-                if len(entry) >= 3:
+                # Handle both Event objects and tuples
+                if hasattr(entry, 'time') and hasattr(entry, 'event_type') and hasattr(entry, 'data'):
+                    # It's an Event object
+                    time = entry.time
+                    event_type = entry.event_type
+                    data = entry.data
+                elif isinstance(entry, (list, tuple)) and len(entry) >= 3:
+                    # It's a tuple/list
                     time, event_type, data = entry[:3]
-                    
-                    # Format different event types
-                    if event_type == "start_action":
-                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
-                        action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
-                        target_id = data.get('target', {}).id if hasattr(data.get('target', {}), 'id') else 'Unknown'
-                        logs_text.insert(tk.END, f"[{time:6.2f}] {actor_id} starts {action_name} on {target_id}\n")
-                    elif event_type == "action_succeeded":
-                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
-                        action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
-                        logs_text.insert(tk.END, f"[{time:6.2f}] ✓ {actor_id} completed {action_name}\n")
-                    elif event_type == "action_failed":
-                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
-                        action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
-                        logs_text.insert(tk.END, f"[{time:6.2f}] ✗ {actor_id} failed {action_name}\n")
-                    elif event_type == "attack_detected":
-                        detected_actor = data.get('detected_actor', {}).id if hasattr(data.get('detected_actor', {}), 'id') else 'Unknown'
-                        detected_action = data.get('detected_action', {}).name if hasattr(data.get('detected_action', {}), 'name') else 'Unknown'
-                        logs_text.insert(tk.END, f"[{time:6.2f}] 🚨 Detected: {detected_actor} performing {detected_action}\n")
-                    elif event_type == "action_interrupted":
-                        reason = data.get('reason', 'unknown')
-                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
-                        logs_text.insert(tk.END, f"[{time:6.2f}] ⚠ {actor_id} action interrupted ({reason})\n")
-                    else:
-                        logs_text.insert(tk.END, f"[{time:6.2f}] {event_type}\n")
-                    
-                    event_count += 1
                 else:
+                    # Unknown format, just display as string
                     logs_text.insert(tk.END, f"  {entry}\n")
+                    continue
+                
+                # Format different event types
+                if event_type == "start_action":
+                    actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                    action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
+                    target_id = data.get('target', {}).id if hasattr(data.get('target', {}), 'id') else 'Unknown'
+                    logs_text.insert(tk.END, f"[{time:6.2f}] {actor_id} starts {action_name} on {target_id}\n")
+                elif event_type == "action_succeeded":
+                    actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                    action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
+                    logs_text.insert(tk.END, f"[{time:6.2f}] ✓ {actor_id} completed {action_name}\n")
+                elif event_type == "action_failed":
+                    actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                    action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
+                    logs_text.insert(tk.END, f"[{time:6.2f}] ✗ {actor_id} failed {action_name}\n")
+                elif event_type == "attack_detected":
+                    detected_actor = data.get('detected_actor', {}).id if hasattr(data.get('detected_actor', {}), 'id') else 'Unknown'
+                    detected_action = data.get('detected_action', {}).name if hasattr(data.get('detected_action', {}), 'name') else 'Unknown'
+                    logs_text.insert(tk.END, f"[{time:6.2f}] 🚨 Detected: {detected_actor} performing {detected_action}\n")
+                elif event_type == "action_interrupted":
+                    reason = data.get('reason', 'unknown')
+                    actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                    logs_text.insert(tk.END, f"[{time:6.2f}] ⚠ {actor_id} action interrupted ({reason})\n")
+                else:
+                    logs_text.insert(tk.END, f"[{time:6.2f}] {event_type}\n")
+                
+                event_count += 1
             
             logs_text.insert(tk.END, f"Total events in run {run_index}: {event_count}\n\n")
         

@@ -15,35 +15,45 @@ def analyze_simulation_results(simulation_histories: List[List],
         num_detections = 0
         
         for event in history:
-            if len(event) >= 3:
+            # Handle both Event objects and tuples
+            if hasattr(event, 'time') and hasattr(event, 'event_type') and hasattr(event, 'data'):
+                # It's an Event object
+                time = event.time
+                event_type = event.event_type
+                data = event.data
+            elif isinstance(event, (list, tuple)) and len(event) >= 3:
+                # It's a tuple/list
                 time, event_type, data = event[:3]
+            else:
+                # Unknown format, skip
+                continue
+            
+            if event_type == "action_succeeded" and isinstance(data, dict):
+                action = data.get("action")
+                actor = data.get("actor")
+                target = data.get("target")
                 
-                if event_type == "action_succeeded" and isinstance(data, dict):
-                    action = data.get("action")
-                    actor = data.get("actor")
-                    target = data.get("target")
+                if action and target:
+                    # Calculate costs for all actors
+                    if hasattr(action, 'cost'):
+                        costs += action.cost
                     
-                    if action and target:
-                        # Calculate costs for all actors
-                        if hasattr(action, 'cost'):
-                            costs += action.cost
+                    # Calculate damage and gains based on action type and actor
+                    if actor and hasattr(actor, 'is_attacker') and actor.is_attacker:
+                        # Attacker succeeded
+                        num_successful_attacks += 1
+                        action_gain = calculate_action_gain(action.name, target)
+                        gains += action_gain
+                    elif actor and hasattr(actor, 'is_defender') and actor.is_defender:
+                        # Defender succeeded (prevents damage)
+                        num_successful_defenses += 1
+                    else:
+                        # Generic action damage
+                        action_damage = calculate_action_damage(action.name, target)
+                        damage += action_damage
                         
-                        # Calculate damage and gains based on action type and actor
-                        if actor and hasattr(actor, 'is_attacker') and actor.is_attacker:
-                            # Attacker succeeded
-                            num_successful_attacks += 1
-                            action_gain = calculate_action_gain(action.name, target)
-                            gains += action_gain
-                        elif actor and hasattr(actor, 'is_defender') and actor.is_defender:
-                            # Defender succeeded (prevents damage)
-                            num_successful_defenses += 1
-                        else:
-                            # Generic action damage
-                            action_damage = calculate_action_damage(action.name, target)
-                            damage += action_damage
-                            
-                elif event_type == "attack_detected":
-                    num_detections += 1
+            elif event_type == "attack_detected":
+                num_detections += 1
         
         result = {
             'run_id': i,
