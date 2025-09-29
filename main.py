@@ -25,13 +25,10 @@ def simtim_main(
         return
     if not sim_runs or not isinstance(sim_runs, int) or sim_runs < 1:
         sim_runs = 1
-
     all_histories = []
-    
     for run in range(sim_runs):
         config = load_network_config(path_to_network_config)
         network = create_network_from_config(config)
-        
         network['nodes_list'] = list(network.values())
         if hasattr(network, 'links'):
             network['links_list'] = list(getattr(network, 'links', []))
@@ -43,10 +40,8 @@ def simtim_main(
                 for link in getattr(node, 'links', []):
                     links.add(link)
             network['links_list'] = list(links)
-
         attack_actions = get_attack_actions()
         defense_actions = get_defense_actions()
-        
         attacker_objs = []
         for attacker_config in attackers:
             attacker = Attacker(
@@ -55,7 +50,6 @@ def simtim_main(
             )
             attacker.available_actions = attack_actions
             attacker_objs.append(attacker)
-
         defender_objs = []
         for defender_config in defenders:
             defender = Defender(
@@ -64,35 +58,25 @@ def simtim_main(
             )
             defender.available_actions = defense_actions
             defender_objs.append(defender)
-
         network['actors'] = attacker_objs + defender_objs
-
         for attacker in attacker_objs:
             for node in network['nodes_list']:
                 if hasattr(node, 'exposed_to_internet') and node.exposed_to_internet:
                     node.access[attacker.id] = 'VISIBLE'
                 else:
                     node.access[attacker.id] = 'NONE'
-                
         for defender in defender_objs:
             for node in network['nodes_list']:
                 node.access[defender.id] = 'ADMIN'
-
         sim = Simulator(network=network)
-
         sim.run(until=sim_time)
-        
         all_histories.append(list(sim.history))
         print("\nFinal network state:")
         for n in network.values():
             print(n)
     return all_histories
-
-
 def main():
-    """Main entry point for simTIM simulation."""
+
     simtim_main()
-
-
 if __name__ == "__main__":
     main()
