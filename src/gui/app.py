@@ -226,41 +226,126 @@ class App(tk.Tk):
         import numpy as np
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from src.visualization.plot_results import plot_violin
+        from src.visualization import ViolinPlotEngine, analyze_simulation_results
 
         win = tk.Toplevel(self)
-        win.title("Results")
+        win.title("Simulation Results")
         win.geometry("1800x1200")
         win.configure(bg=self.bg_color)
+        
         notebook = ttk.Notebook(win)
         notebook.pack(fill=tk.BOTH, expand=True)
+        
         logs_frame = tk.Frame(notebook, bg=self.bg_color)
         logs_text = tk.Text(logs_frame, wrap=tk.WORD, bg="#eaf1fb", fg=self.button_fg, state=tk.NORMAL)
-        logs_text.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
-        notebook.add(logs_frame, text="Logs")
+        scrollbar = tk.Scrollbar(logs_frame, orient="vertical", command=logs_text.yview)
+        logs_text.configure(yscrollcommand=scrollbar.set)
+        
+        logs_text.pack(side="left", expand=True, fill=tk.BOTH, padx=(10, 0), pady=10)
+        scrollbar.pack(side="right", fill="y", padx=(0, 10), pady=10)
+        
+        notebook.add(logs_frame, text="Event Logs")
+        
         logs_text.config(state=tk.NORMAL)
         logs_text.delete(1.0, tk.END)
+        
         for run_index, history in enumerate(all_histories, start=1):
-            logs_text.insert(tk.END, f"Run {run_index} History:\n")
+            logs_text.insert(tk.END, f"=== Simulation Run {run_index} ===\n")
+            event_count = 0
             for entry in history:
-                logs_text.insert(tk.END, f"  {entry}\n")
-            logs_text.insert(tk.END, "\n")
+                if len(entry) >= 3:
+                    time, event_type, data = entry[:3]
+                    
+                    # Format different event types
+                    if event_type == "start_action":
+                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                        action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
+                        target_id = data.get('target', {}).id if hasattr(data.get('target', {}), 'id') else 'Unknown'
+                        logs_text.insert(tk.END, f"[{time:6.2f}] {actor_id} starts {action_name} on {target_id}\n")
+                    elif event_type == "action_succeeded":
+                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                        action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
+                        logs_text.insert(tk.END, f"[{time:6.2f}] ✓ {actor_id} completed {action_name}\n")
+                    elif event_type == "action_failed":
+                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                        action_name = data.get('action', {}).name if hasattr(data.get('action', {}), 'name') else 'Unknown'
+                        logs_text.insert(tk.END, f"[{time:6.2f}] ✗ {actor_id} failed {action_name}\n")
+                    elif event_type == "attack_detected":
+                        detected_actor = data.get('detected_actor', {}).id if hasattr(data.get('detected_actor', {}), 'id') else 'Unknown'
+                        detected_action = data.get('detected_action', {}).name if hasattr(data.get('detected_action', {}), 'name') else 'Unknown'
+                        logs_text.insert(tk.END, f"[{time:6.2f}] 🚨 Detected: {detected_actor} performing {detected_action}\n")
+                    elif event_type == "action_interrupted":
+                        reason = data.get('reason', 'unknown')
+                        actor_id = data.get('actor', {}).id if hasattr(data.get('actor', {}), 'id') else 'Unknown'
+                        logs_text.insert(tk.END, f"[{time:6.2f}] ⚠ {actor_id} action interrupted ({reason})\n")
+                    else:
+                        logs_text.insert(tk.END, f"[{time:6.2f}] {event_type}\n")
+                    
+                    event_count += 1
+                else:
+                    logs_text.insert(tk.END, f"  {entry}\n")
+            
+            logs_text.insert(tk.END, f"Total events in run {run_index}: {event_count}\n\n")
+        
         logs_text.config(state=tk.DISABLED)
-        plot_frame = tk.Frame(notebook, bg=self.bg_color)
-        notebook.add(plot_frame, text="Plot")
-        data = [
-            np.random.normal(0, 1, 100),
-            np.random.normal(1, 0.5, 100),
-            np.random.normal(2, 0.8, 100)
-        ]
-        fig = plot_violin(data, return_figure=True)
-        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        try:
+            simulation_results = analyze_simulation_results(all_histories)
+            
+            if simulation_results:
+                plot_frame = tk.Frame(notebook, bg=self.bg_color)
+                notebook.add(plot_frame, text="Economic Analysis")
+                
+                plotter = ViolinPlotEngine()
+                fig = plotter.create_economic_comparison_plot(
+                    simulation_results,
+                    "TIM Simulation Results: Economic Impact"
+                )
+                
+                canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+                
+                summary_frame = tk.Frame(notebook, bg=self.bg_color)
+                notebook.add(summary_frame, text="Summary")
+                
+                summary_text = tk.Text(summary_frame, wrap=tk.WORD, bg="#eaf1fb", fg=self.button_fg)
+                summary_text.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+                
+                total_damage = sum(r.get('total_damage', 0) for r in simulation_results)
+                total_gains = sum(r.get('total_attacker_gains', 0) for r in simulation_results)
+                total_costs = sum(r.get('total_costs', 0) for r in simulation_results)
+                avg_damage = total_damage / len(simulation_results) if simulation_results else 0
+                
+                summary_text.insert(tk.END, f"Simulation Summary\n")
+                summary_text.insert(tk.END, f"==================\n\n")
+                summary_text.insert(tk.END, f"Number of runs: {len(simulation_results)}\n")
+                summary_text.insert(tk.END, f"Total system damage: ${total_damage:,.2f}\n")
+                summary_text.insert(tk.END, f"Average damage per run: ${avg_damage:,.2f}\n")
+                summary_text.insert(tk.END, f"Total attacker gains: ${total_gains:,.2f}\n")
+                summary_text.insert(tk.END, f"Total action costs: ${total_costs:,.2f}\n")
+                summary_text.insert(tk.END, f"Net attacker benefit: ${total_gains - total_costs:,.2f}\n")
+                
+                summary_text.config(state=tk.DISABLED)
+            else:
+                plot_frame = tk.Frame(notebook, bg=self.bg_color)
+                tk.Label(plot_frame, text="No simulation data available for visualization", 
+                        bg=self.bg_color, fg=self.button_fg).pack(expand=True)
+                notebook.add(plot_frame, text="Visualization")
+                
+        except Exception as e:
+            error_frame = tk.Frame(notebook, bg=self.bg_color)
+            tk.Label(error_frame, text=f"Error creating visualization: {str(e)}", 
+                    bg=self.bg_color, fg="red").pack(expand=True)
+            notebook.add(error_frame, text="Visualization Error")
 
         def on_close():
-            plt.close(fig)
+            try:
+                plt.close('all')
+            except:
+                pass
             win.destroy()
+        
         win.protocol("WM_DELETE_WINDOW", on_close)
 
     def open_help_window(self):
