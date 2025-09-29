@@ -12,7 +12,6 @@ except ImportError:
     from tim_visualization import TIMVisualizationEngine
 
 def plot_violin(data, labels=None, title="Distribution Analysis", save_path=None, return_figure=False):
-
     fig, ax = plt.subplots(figsize=(12, 8))
     if isinstance(data, (list, tuple)) and len(data) > 0 and isinstance(data[0], (list, np.ndarray)):
         plot_data = data
@@ -60,8 +59,8 @@ def plot_simulation_results(simulation_results: List[Dict[str, Any]],
     print(f"✅ Generated {len(figures)} visualization plots")
     print(f"📁 Saved to directory: {output_dir}")
     return figures
-def extract_parameter_variations(simulation_results: List[Dict[str, Any]]) -> Dict[str, List[float]]:
 
+def extract_parameter_variations(simulation_results: List[Dict[str, Any]]) -> Dict[str, List[float]]:
     parameter_variations = {}
     for result in simulation_results:
         params = result.get('parameters', {})
@@ -88,8 +87,8 @@ def plot_damage_over_time(timeline_data: List[Dict[str, Any]],
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
     plt.tight_layout()
     return fig
-def plot_economic_comparison(simulation_results: List[Dict[str, Any]]):
 
+def plot_economic_comparison(simulation_results: List[Dict[str, Any]]):
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
     fig.suptitle('TIM Economic Analysis Comparison', fontsize=16)
     damages = []

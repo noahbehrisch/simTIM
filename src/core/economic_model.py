@@ -7,7 +7,6 @@ from src.core.graph import Node
 @dataclass
 
 class StateChangeEvent:
-
     time: float
     node: Node
     actor_id: str
@@ -18,7 +17,6 @@ class StateChangeEvent:
 @dataclass
 
 class EconomicState:
-
     state_change_times: List[float] = field(default_factory=list)
     attack_completions: Dict[str, List[Tuple[float, str, Node]]] = field(default_factory=lambda: defaultdict(list))
     action_costs: Dict[str, List[Tuple[float, float]]] = field(default_factory=lambda: defaultdict(list))
@@ -30,16 +28,15 @@ class EconomicState:
         if time not in self.state_change_times:
             self.state_change_times.append(time)
             self.state_change_times.sort()
+
     def add_attack_completion(self, time: float, attacker_id: str, action_name: str, target_node: Node):
-
         self.attack_completions[attacker_id].append((time, action_name, target_node))
+
     def add_action_cost(self, time: float, actor_id: str, cost: float):
-
         self.action_costs[actor_id].append((time, cost))
+
 class TIMEconomicEngine:
-
     def __init__(self):
-
         self.economic_state = EconomicState()
         self.one_off_damage_functions: Dict[str, Callable] = {}
         self.one_off_gain_functions: Dict[str, Callable] = {}
@@ -65,20 +62,20 @@ class TIMEconomicEngine:
             self.time_damage_functions[f"access_{access_level}"] = time_damage_fn
         if time_gain_fn:
             self.time_gain_functions[f"access_{access_level}"] = time_gain_fn
-    def D(self, action_name: str, node_properties: Dict[str, Any]) -> float:
 
+    def D(self, action_name: str, node_properties: Dict[str, Any]) -> float:
         damage_fn = self.one_off_damage_functions.get(action_name, self._default_damage_function)
         return damage_fn(node_properties)
-    def G(self, action_name: str, node_properties: Dict[str, Any]) -> float:
 
+    def G(self, action_name: str, node_properties: Dict[str, Any]) -> float:
         gain_fn = self.one_off_gain_functions.get(action_name, self._default_gain_function)
         return gain_fn(node_properties)
-    def delta(self, access_level: str, node_properties: Dict[str, Any]) -> float:
 
+    def delta(self, access_level: str, node_properties: Dict[str, Any]) -> float:
         damage_fn = self.time_damage_functions.get(f"access_{access_level}", self._default_time_damage_function)
         return damage_fn(access_level, node_properties)
-    def gamma(self, access_level: str, node_properties: Dict[str, Any]) -> float:
 
+    def gamma(self, access_level: str, node_properties: Dict[str, Any]) -> float:
         gain_fn = self.time_gain_functions.get(f"access_{access_level}", self._default_time_gain_function)
         return gain_fn(access_level, node_properties)
     def calculate_total_damage(self, time_interval: Tuple[float, float], 
@@ -138,8 +135,8 @@ class TIMEconomicEngine:
                 one_off_gain = self.G(action_name, node_props)
                 total_gain += one_off_gain
         return total_gain
-    def calculate_actor_costs(self, actor_id: str, time_interval: Tuple[float, float]) -> float:
 
+    def calculate_actor_costs(self, actor_id: str, time_interval: Tuple[float, float]) -> float:
         t_start, t_end = time_interval
         costs = self.economic_state.action_costs.get(actor_id, [])
         total_cost = sum(cost for time, cost in costs 
@@ -169,11 +166,11 @@ class TIMEconomicEngine:
                                target_node: Node, success: bool):
         if success:
             self.economic_state.add_attack_completion(time, attacker_id, action_name, target_node)
+
     def record_action_cost(self, time: float, actor_id: str, cost: float):
-
         self.economic_state.add_action_cost(time, actor_id, cost)
-    def _get_access_at_time(self, actor_id: str, node: Node, time: float) -> str:
 
+    def _get_access_at_time(self, actor_id: str, node: Node, time: float) -> str:
         relevant_changes = [
             change for change in self.economic_state.state_changes
             if (change.time <= time and change.node == node and 
@@ -184,8 +181,8 @@ class TIMEconomicEngine:
             return latest_change.new_value
         else:
             return node.access.get(actor_id, "NONE")
-    def _get_node_properties_at_time(self, node: Node, time: float) -> Dict[str, Any]:
 
+    def _get_node_properties_at_time(self, node: Node, time: float) -> Dict[str, Any]:
         properties = {
             'vulnerabilities': list(getattr(node, 'vulnerabilities', [])),
             'assets': list(getattr(node, 'assets', [])),
@@ -201,19 +198,19 @@ class TIMEconomicEngine:
         for change in sorted(relevant_changes, key=lambda c: c.time):
             pass
         return properties
-    def _default_damage_function(self, node_properties: Dict[str, Any]) -> float:
 
+    def _default_damage_function(self, node_properties: Dict[str, Any]) -> float:
         assets = node_properties.get('assets', [])
         base_damage = len(assets) * 1000.0
         if any('sensitive' in str(asset).lower() or 'critical' in str(asset).lower() 
                for asset in assets):
             base_damage *= 10.0
         return base_damage
+
     def _default_gain_function(self, node_properties: Dict[str, Any]) -> float:
-
         return self._default_damage_function(node_properties) * 0.3
-    def _default_time_damage_function(self, access_level: str, node_properties: Dict[str, Any]) -> float:
 
+    def _default_time_damage_function(self, access_level: str, node_properties: Dict[str, Any]) -> float:
         if access_level in ["NONE", "VISIBLE"]:
             return 0.0
         assets = node_properties.get('assets', [])
@@ -223,13 +220,12 @@ class TIMEconomicEngine:
         elif access_level == "USER":
             base_rate *= 2.0
         return base_rate
+
     def _default_time_gain_function(self, access_level: str, node_properties: Dict[str, Any]) -> float:
-
         return self._default_time_damage_function(access_level, node_properties) * 0.2
+
 def register_realistic_economic_functions():
-
     def tapestry_damage(node_props):
-
         base_damage = 5000.0
         assets = node_props.get('assets', [])
         asset_damage = len(assets) * 2500.0
@@ -237,23 +233,23 @@ def register_realistic_economic_functions():
                for asset in assets):
             asset_damage *= 3.0
         return base_damage + asset_damage
+
     def tapestry_gain(node_props):
-
         return tapestry_damage(node_props) * 0.25
-    def data_exfiltration_damage(node_props):
 
+    def data_exfiltration_damage(node_props):
         assets = node_props.get('assets', [])
         base_damage = 50000.0
         sensitive_assets = [a for a in assets if 'sensitive' in str(a).lower() or 'data' in str(a).lower()]
         damage_per_asset = 25000.0
         total_damage = base_damage + len(sensitive_assets) * damage_per_asset
         return min(total_damage, 500000.0)
-    def data_exfiltration_gain(node_props):
 
+    def data_exfiltration_gain(node_props):
         damage = data_exfiltration_damage(node_props)
         return min(damage * 0.6, 100000.0)
-    def admin_access_time_damage(access_level, node_props):
 
+    def admin_access_time_damage(access_level, node_props):
         if access_level != "ADMIN":
             return 0.0
         assets = node_props.get('assets', [])
@@ -261,8 +257,8 @@ def register_realistic_economic_functions():
         critical_assets = [a for a in assets if 'critical' in str(a).lower()]
         asset_rate = len(critical_assets) * 250.0
         return base_rate + asset_rate
-    def admin_access_time_gain(access_level, node_props):
 
+    def admin_access_time_gain(access_level, node_props):
         if access_level != "ADMIN":
             return 0.0
         damage_rate = admin_access_time_damage(access_level, node_props)
@@ -285,5 +281,4 @@ def register_realistic_economic_functions():
 tim_economic_engine = TIMEconomicEngine()
 
 def register_realistic_economic_functions():
-
     pass

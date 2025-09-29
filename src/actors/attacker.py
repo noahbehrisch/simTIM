@@ -3,9 +3,7 @@ from src.core.graph import Node, Link
 from src.actions.action import Action
 
 class Attacker(Actor):
-
     def __init__(self, id: str, strategy: str = "random"):
-
         super().__init__(id, "attacker", strategy=strategy)
         self.is_attacker = True
         self.visible_nodes = set()
@@ -14,13 +12,13 @@ class Attacker(Actor):
         self.compromised_links = set()
         self.available_actions = []
         self.time_proportional_gain_rate = 0.0
-    def run(self, network_state):
 
+    def run(self, network_state):
         super().run(network_state)
         all_nodes = network_state.get('nodes', network_state.get('nodes_list', []))
         self.visible_nodes = list(all_nodes)
-    def make_decision(self, network_state):
 
+    def make_decision(self, network_state):
         if not self.can_schedule_action():
             self.schedule_next_decision()
             return
@@ -43,8 +41,8 @@ class Attacker(Actor):
                 })
                 self.ongoing_actions.add(action)
         self.schedule_next_decision()
-    def choose_action(self, network_state):
 
+    def choose_action(self, network_state):
         match self.strategy:
             case "greedy":
                 return  self.choose_best_action(network_state)
@@ -52,8 +50,8 @@ class Attacker(Actor):
                 return self.choose_random_action(network_state)
             case _:
                 return self.choose_best_action(network_state)
-    def choose_best_action(self, network_state) -> tuple:
 
+    def choose_best_action(self, network_state) -> tuple:
         visible_nodes = list(self.visible_nodes)
         visible_links = list(self.visible_links)
         best = None
@@ -80,8 +78,8 @@ class Attacker(Actor):
                             best = (action, link)
                             best_gain = gain
         return best
-    def choose_random_action(self, network_state) -> tuple:
 
+    def choose_random_action(self, network_state) -> tuple:
         import random
 
         visible_nodes = list(self.visible_nodes)
@@ -104,22 +102,22 @@ class Attacker(Actor):
                         possible_actions.append((action, link))
         chosen_action = random.choice(possible_actions) if possible_actions else None
         return chosen_action
-    def exploit(self, node: Node):
 
+    def exploit(self, node: Node):
         node.compromised = True
         if hasattr(node, 'id'):
             self.compromised_nodes.add(node.id)
+
     def gain_visibility(self, node: Node):
-
         self.visible_nodes.add(node)
+
     def gain_link_visibility(self, link: Link):
-
         self.visible_links.add(link)
+
     def compromise_link(self, link: Link):
-
         self.compromised_links.add(link)
-    def on_action_finished(self, action, status, target=None):
 
+    def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
         if status == "success" and target is not None:
@@ -127,8 +125,8 @@ class Attacker(Actor):
                 self.compromised_nodes.add(target.id)
             if hasattr(self, 'simulator') and self.simulator:
                 self.on_successful_attack(action, target, self.simulator.current_time)
-    def get_economic_objective(self, time_interval=None):
 
+    def get_economic_objective(self, time_interval=None):
         if time_interval is None:
             total_gain = self.total_gain
             total_costs = self.incurredCost
@@ -143,8 +141,8 @@ class Attacker(Actor):
                 if event['type'] == 'cost' and start_time <= event['timestamp'] <= end_time
             )
         return total_gain - total_costs
-    def on_successful_attack(self, action, target, timestamp):
 
+    def on_successful_attack(self, action, target, timestamp):
         actor_access = target.access.get(self.id, 'NONE')
         one_off_damage, one_off_gain = self.calculate_damage_functions(action, target, actor_access)
         self.total_gain += one_off_gain
@@ -161,8 +159,8 @@ class Attacker(Actor):
                 'target': target.id,
                 'type': 'time_proportional_rate'
             })
-    def _calculate_one_off_gain(self, action_name, node_properties):
 
+    def _calculate_one_off_gain(self, action_name, node_properties):
         if 'tapestry' in action_name.lower():
             return 2500.0
         if 'data' in action_name.lower() or 'exfiltration' in action_name.lower():
@@ -173,8 +171,8 @@ class Attacker(Actor):
             elif len(sensitive_data) > 0:
                 return 25000.0
         return super()._calculate_one_off_gain(action_name, node_properties)
-    def _calculate_time_gain_rate(self, access_level, node_properties):
 
+    def _calculate_time_gain_rate(self, access_level, node_properties):
         if access_level == 'ADMIN':
             assets = node_properties.get('assets', [])
             critical_assets = [a for a in assets if 'critical' in str(a).lower()]

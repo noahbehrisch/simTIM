@@ -5,10 +5,9 @@ from src.core.graph import Node, Link
 from typing import List, Dict
 
 def get_network_library_path() -> str:
-
     return os.path.join(os.path.dirname(__file__), 'library')
-def find_network_file(filename: str) -> str:
 
+def find_network_file(filename: str) -> str:
     if not filename.endswith('.json'):
         filename += '.json'
     library_path = get_network_library_path()
@@ -17,30 +16,30 @@ def find_network_file(filename: str) -> str:
         return full_path
     else:
         raise FileNotFoundError(f"Network file '{filename}' not found in {library_path}")
-def list_available_networks() -> List[str]:
 
+def list_available_networks() -> List[str]:
     library_path = get_network_library_path()
     if not os.path.exists(library_path):
         return []
     json_files = glob.glob(os.path.join(library_path, "*.json"))
     return [os.path.basename(f) for f in json_files]
-def resolve_network_path(path: str) -> str:
 
+def resolve_network_path(path: str) -> str:
     if os.path.sep in path or os.path.isabs(path):
         return path
     try:
         return find_network_file(path)
     except FileNotFoundError:
         return path
-def load_network_config(path: str) -> dict:
 
+def load_network_config(path: str) -> dict:
     resolved_path = resolve_network_path(path)
     with open(resolved_path, 'r') as f:
         if resolved_path.endswith('.json'):
             return json.load(f)
         raise ValueError('Only json files')
-def create_network_from_config(config: dict) -> Dict[str, Node]:
 
+def create_network_from_config(config: dict) -> Dict[str, Node]:
     nodes = {}
     for node_config in config.get('nodes', []):
         node = Node(

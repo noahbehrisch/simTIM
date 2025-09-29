@@ -3,12 +3,10 @@ from src.actions.version import Version
 from src.core.graph import Node, Link
 
 class ConditionEvaluator:
-
     def __init__(self):
-
         self.variable_scope = {}
-    def evaluate_condition(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
 
+    def evaluate_condition(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
         condition_type = condition.get('type')
         if condition_type == 'compound':
             return self._evaluate_compound(condition, node, actor_access, actor_id, network_context)
@@ -38,8 +36,8 @@ class ConditionEvaluator:
             return self._evaluate_variable_ref(condition, node, actor_access, actor_id)
         else:
             raise ValueError(f"Unknown condition type: {condition_type}")
-    def _evaluate_compound(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
 
+    def _evaluate_compound(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
         operator = condition.get('operator', 'AND')
         conditions = condition.get('conditions', [])
         if operator == 'AND':
@@ -55,8 +53,8 @@ class ConditionEvaluator:
             return not any(self.evaluate_condition(cond, node, actor_access, actor_id, network_context) for cond in conditions)
         else:
             raise ValueError(f"Unknown compound operator: {operator}")
-    def _evaluate_implication(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
 
+    def _evaluate_implication(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
         premise = condition.get('premise')
         conclusion = condition.get('conclusion')
         if not premise or not conclusion:
@@ -64,14 +62,14 @@ class ConditionEvaluator:
         premise_result = self.evaluate_condition(premise, node, actor_access, actor_id, network_context)
         conclusion_result = self.evaluate_condition(conclusion, node, actor_access, actor_id, network_context)
         return not premise_result or conclusion_result
-    def _evaluate_negation(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
 
+    def _evaluate_negation(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
         inner_condition = condition.get('condition')
         if not inner_condition:
             raise ValueError("Negation requires 'condition' field")
         return not self.evaluate_condition(inner_condition, node, actor_access, actor_id, network_context)
-    def _evaluate_exists(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
 
+    def _evaluate_exists(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
         variable = condition.get('variable')
         domain = condition.get('domain')
         formula = condition.get('formula')
@@ -90,8 +88,8 @@ class ConditionEvaluator:
                 else:
                     self.variable_scope.pop(variable, None)
         return False
-    def _evaluate_forall(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
 
+    def _evaluate_forall(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str, network_context: Dict = None) -> bool:
         variable = condition.get('variable')
         domain = condition.get('domain')
         formula = condition.get('formula')
@@ -110,8 +108,8 @@ class ConditionEvaluator:
                 else:
                     self.variable_scope.pop(variable, None)
         return True
-    def _get_domain_elements(self, domain: Dict[str, Any], node: Node, network_context: Dict = None) -> List[Any]:
 
+    def _get_domain_elements(self, domain: Dict[str, Any], node: Node, network_context: Dict = None) -> List[Any]:
         domain_type = domain.get('type')
         if domain_type == 'neighbors':
             return [link.get_other_node(node) for link in node.links if link.get_other_node(node)]
@@ -131,8 +129,8 @@ class ConditionEvaluator:
             return list(range(start, end + 1))
         else:
             raise ValueError(f"Unknown domain type: {domain_type}")
-    def _evaluate_variable_ref(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str) -> bool:
 
+    def _evaluate_variable_ref(self, condition: Dict[str, Any], node: Node, actor_access: str, actor_id: str) -> bool:
         variable = condition.get('variable')
         property_name = condition.get('property')
         operator = condition.get('operator', 'equals')
@@ -158,8 +156,8 @@ class ConditionEvaluator:
             return value in actual_value if actual_value else False
         else:
             raise ValueError(f"Unknown variable operator: {operator}")
-    def _evaluate_software_check(self, condition: Dict[str, Any], node: Node) -> bool:
 
+    def _evaluate_software_check(self, condition: Dict[str, Any], node: Node) -> bool:
         software_key = condition['software_key']
         operator = condition['operator']
         actual_value = node.get_software(software_key)
@@ -177,8 +175,8 @@ class ConditionEvaluator:
             return actual_value is None or actual_value == ""
         else:
             raise ValueError(f"Unknown software check operator: {operator}")
-    def _evaluate_version_check(self, condition: Dict[str, Any], node: Node) -> bool:
 
+    def _evaluate_version_check(self, condition: Dict[str, Any], node: Node) -> bool:
         software_key = condition['software_key']
         operator = condition['operator']
         expected_version = Version(condition['value'])
@@ -204,8 +202,8 @@ class ConditionEvaluator:
             return min_version <= actual_version <= max_version
         else:
             raise ValueError(f"Unknown version check operator: {operator}")
-    def _evaluate_access_check(self, condition: Dict[str, Any], actor_access: str, actor_id: str) -> bool:
 
+    def _evaluate_access_check(self, condition: Dict[str, Any], actor_access: str, actor_id: str) -> bool:
         operator = condition['operator']
         if operator == 'equals':
             expected_access = condition['value']
@@ -227,8 +225,8 @@ class ConditionEvaluator:
             return current_level >= required_level
         else:
             raise ValueError(f"Unknown access check operator: {operator}")
-    def _evaluate_property_check(self, condition: Dict[str, Any], node: Node) -> bool:
 
+    def _evaluate_property_check(self, condition: Dict[str, Any], node: Node) -> bool:
         property_name = condition['property']
         operator = condition['operator']
         expected_value = condition['value']
@@ -243,8 +241,8 @@ class ConditionEvaluator:
             return actual_value is None
         else:
             raise ValueError(f"Unknown property check operator: {operator}")
-    def _evaluate_vulnerability_check(self, condition: Dict[str, Any], node: Node) -> bool:
 
+    def _evaluate_vulnerability_check(self, condition: Dict[str, Any], node: Node) -> bool:
         if 'cve' in condition:
             cve_id = condition['cve']
             status = condition.get('status', 'present')
@@ -269,8 +267,8 @@ class ConditionEvaluator:
             else:
                 raise ValueError(f"Unknown vulnerability count operator: {operator}")
         raise ValueError(f"Unknown vulnerability check type: {check_type}")
-    def _evaluate_assets_check(self, condition: Dict[str, Any], node: Node) -> bool:
 
+    def _evaluate_assets_check(self, condition: Dict[str, Any], node: Node) -> bool:
         check_type = condition.get('check_type', 'count')
         operator = condition['operator']
         if check_type == 'count':
@@ -285,8 +283,8 @@ class ConditionEvaluator:
             else:
                 raise ValueError(f"Unknown assets count operator: {operator}")
         raise ValueError(f"Unknown assets check type: {check_type}")
-    def _evaluate_network_check(self, condition: Dict[str, Any], node: Node, network_context: Dict = None) -> bool:
 
+    def _evaluate_network_check(self, condition: Dict[str, Any], node: Node, network_context: Dict = None) -> bool:
         check_type = condition.get('check_type', 'port_access')
         if check_type == 'port_access':
             ports = condition.get('ports', [])
@@ -328,16 +326,15 @@ class ConditionEvaluator:
             return False
         else:
             raise ValueError(f"Unknown network check type: {check_type}")
+
 class ActionExecutor:
-
     def __init__(self):
-
         self._simulator = None
+
     def set_simulator(self, simulator):
-
         self._simulator = simulator
-    def execute_postcondition(self, postcondition: Dict[str, Any], node: Node, actor_access: str, actor_id: str) -> None:
 
+    def execute_postcondition(self, postcondition: Dict[str, Any], node: Node, actor_access: str, actor_id: str) -> None:
         action_type = postcondition.get('type')
         if action_type == 'compound':
             self._execute_compound(postcondition, node, actor_access, actor_id)
@@ -363,13 +360,13 @@ class ActionExecutor:
             self._execute_remove_capability(postcondition, node)
         else:
             raise ValueError(f"Unknown postcondition type: {action_type}")
-    def _execute_compound(self, postcondition: Dict[str, Any], node: Node, actor_access: str, actor_id: str) -> None:
 
+    def _execute_compound(self, postcondition: Dict[str, Any], node: Node, actor_access: str, actor_id: str) -> None:
         actions = postcondition.get('actions', [])
         for action in actions:
             self.execute_postcondition(action, node, actor_access, actor_id)
-    def _execute_set_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
 
+    def _execute_set_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
         access_level = action['value']
         if not hasattr(node, 'access'):
             node.access = {}
@@ -377,26 +374,26 @@ class ActionExecutor:
         node.access[actor_id] = access_level
         if hasattr(self, '_simulator') and self._simulator:
             self._simulator.record_access_change(node, actor_id, old_access, access_level)
-    def _execute_set_property(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_set_property(self, action: Dict[str, Any], node: Node) -> None:
         property_name = action['property']
         value = action['value']
         setattr(node, property_name, value)
-    def _execute_set_software(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_set_software(self, action: Dict[str, Any], node: Node) -> None:
         software_key = action['software_key']
         value = action['value']
         if not hasattr(node, 'software'):
             node.software = {}
         node.software[software_key] = value
-    def _execute_add_vulnerability(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_add_vulnerability(self, action: Dict[str, Any], node: Node) -> None:
         vulnerability = action['vulnerability']
         if not hasattr(node, 'vulnerabilities'):
             node.vulnerabilities = []
         node.vulnerabilities.append(vulnerability)
-    def _execute_remove_vulnerability(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_remove_vulnerability(self, action: Dict[str, Any], node: Node) -> None:
         if not hasattr(node, 'vulnerabilities'):
             node.vulnerabilities = []
             return
@@ -424,32 +421,32 @@ class ActionExecutor:
                 node.vulnerabilities.remove(vulnerability)
         elif method == 'all':
             node.vulnerabilities.clear()
-    def _execute_increment_counter(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_increment_counter(self, action: Dict[str, Any], node: Node) -> None:
         counter_name = action['counter']
         increment = action.get('increment', 1)
         current_value = getattr(node, counter_name, 0)
         setattr(node, counter_name, current_value + increment)
-    def _execute_set_links_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
 
+    def _execute_set_links_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
         access_value = action['access_value']
         for link in node.links:
             if not hasattr(link, 'access'):
                 link.access = {}
             link.access[actor_id] = access_value
-    def _execute_clear_assets(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_clear_assets(self, action: Dict[str, Any], node: Node) -> None:
         if hasattr(node, 'assets'):
             node.assets.clear()
-    def _execute_add_capability(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_add_capability(self, action: Dict[str, Any], node: Node) -> None:
         capability = action['capability']
         if not hasattr(node, 'capabilities'):
             node.capabilities = []
         if capability not in node.capabilities:
             node.capabilities.append(capability)
-    def _execute_remove_capability(self, action: Dict[str, Any], node: Node) -> None:
 
+    def _execute_remove_capability(self, action: Dict[str, Any], node: Node) -> None:
         capability = action['capability']
         if hasattr(node, 'capabilities') and capability in node.capabilities:
             node.capabilities.remove(capability)

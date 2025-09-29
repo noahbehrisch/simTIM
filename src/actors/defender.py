@@ -3,9 +3,7 @@ from src.core.graph import Node
 from src.actions.action import Action
 
 class Defender(Actor):
-
     def __init__(self, id: str, strategy: str = "reactive"):
-
         super().__init__(id, "defender", strategy=strategy)
         self.is_defender = True
         self.visible_nodes = set()
@@ -15,11 +13,11 @@ class Defender(Actor):
         self.available_actions = []
         self.system_damage_prevented = 0.0
         self.detected_attacks = []
+
     def run(self, network_state):
-
         super().run(network_state)
-    def make_decision(self, network_state):
 
+    def make_decision(self, network_state):
         if not self.can_schedule_action():
             self.schedule_next_decision()
             return
@@ -42,8 +40,8 @@ class Defender(Actor):
                 })
                 self.ongoing_actions.add(action)
         self.schedule_next_decision()
-    def choose_best_action(self, network_state) -> tuple:
 
+    def choose_best_action(self, network_state) -> tuple:
         if self.strategy == "reactive":
             return self._choose_reactive_action(network_state)
         elif self.strategy == "proactive":
@@ -52,8 +50,8 @@ class Defender(Actor):
             return self._choose_monitoring_action(network_state)
         else:
             return self._choose_default_action(network_state)
-    def _choose_reactive_action(self, network_state) -> tuple:
 
+    def _choose_reactive_action(self, network_state) -> tuple:
         best = None
         best_priority = -1
         for action in self.available_actions:
@@ -66,8 +64,8 @@ class Defender(Actor):
                             best = (action, node)
                             best_priority = priority
         return best
-    def _choose_proactive_action(self, network_state) -> tuple:
 
+    def _choose_proactive_action(self, network_state) -> tuple:
         best = None
         best_priority = -1
         for action in self.available_actions:
@@ -80,8 +78,8 @@ class Defender(Actor):
                             best = (action, node)
                             best_priority = priority
         return best
-    def _choose_monitoring_action(self, network_state) -> tuple:
 
+    def _choose_monitoring_action(self, network_state) -> tuple:
         best = None
         best_priority = -1
         for action in self.available_actions:
@@ -94,8 +92,8 @@ class Defender(Actor):
                             best = (action, node)
                             best_priority = priority
         return best
-    def _choose_default_action(self, network_state) -> tuple:
 
+    def _choose_default_action(self, network_state) -> tuple:
         best = None
         best_cost = float('inf')
         for action in self.available_actions:
@@ -116,8 +114,8 @@ class Defender(Actor):
                             best = (action, link)
                             best_cost = cost
         return best
-    def _get_reactive_priority(self, action, node):
 
+    def _get_reactive_priority(self, action, node):
         priority = 0
         if node.compromised and "Incident Response" in action.name:
             priority += 100
@@ -127,8 +125,8 @@ class Defender(Actor):
             priority += 30 + len(node.vulnerabilities) * 10
         priority += len(node.assets) * 2
         return priority
-    def _get_proactive_priority(self, action, node):
 
+    def _get_proactive_priority(self, action, node):
         priority = 0
         if not node.compromised and len(node.vulnerabilities) > 0:
             if "Patch" in action.name or "Remediation" in action.name:
@@ -141,8 +139,8 @@ class Defender(Actor):
             if node.category in ['Security', 'Servers']:
                 priority += 40
         return priority
-    def _get_monitoring_priority(self, action, node):
 
+    def _get_monitoring_priority(self, action, node):
         priority = 0
         if "Monitoring" in action.name or "Detection" in action.name:
             priority += 90
@@ -152,16 +150,16 @@ class Defender(Actor):
         if node.compromised:
             priority += 70
         return priority
-    def repair(self, node: Node):
 
+    def repair(self, node: Node):
         node.compromised = False
         node.repaired = True
-    def on_action_finished(self, action, status, target=None):
 
+    def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
-    def on_attack_detected(self, detection_data):
 
+    def on_attack_detected(self, detection_data):
         detected_action = detection_data.get("detected_action")
         detected_target = detection_data.get("detected_target")
         detected_actor = detection_data.get("detected_actor")
@@ -172,8 +170,8 @@ class Defender(Actor):
             if defensive_actions and self.can_schedule_action():
                 response_action = defensive_actions[0]
                 self._execute_defensive_action(response_action, detected_target)
-    def _execute_defensive_action(self, action, target):
 
+    def _execute_defensive_action(self, action, target):
         if self.simulator and self.can_schedule_action():
             action_data = {
                 "actor": self,
@@ -187,8 +185,8 @@ class Defender(Actor):
                 action_data
             )
             self.ongoing_actions.add(action)
-    def get_economic_objective(self, time_interval=None):
 
+    def get_economic_objective(self, time_interval=None):
         defender_costs = self.calculate_total_costs(time_interval)
         system_damage = self._calculate_total_system_damage(time_interval)
         damage_from_events = 0.0
@@ -200,8 +198,8 @@ class Defender(Actor):
                     damage_from_events += event['value']
         total_damage = system_damage + damage_from_events
         return total_damage + defender_costs
-    def _calculate_total_system_damage(self, time_interval=None):
 
+    def _calculate_total_system_damage(self, time_interval=None):
         if hasattr(self.simulator, 'get_total_system_damage'):
             return self.simulator.get_total_system_damage(time_interval)
         estimated_damage = 0.0
@@ -220,8 +218,8 @@ class Defender(Actor):
                     else:
                         estimated_damage += damage_rate * getattr(self.simulator, 'current_time', 1.0)
         return estimated_damage
-    def on_attack_detected(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
 
+    def on_attack_detected(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
         timestamp = getattr(self.simulator, 'current_time', 0.0)
         self.incurredCost += detection_cost
         self.record_economic_event(timestamp, 'cost', detection_cost, {
@@ -239,14 +237,14 @@ class Defender(Actor):
             'damage_prevented': damage_prevented,
             'detection_cost': detection_cost
         })
-    def record_system_damage(self, damage_amount, timestamp=None, metadata=None):
 
+    def record_system_damage(self, damage_amount, timestamp=None, metadata=None):
         if timestamp is None:
             timestamp = getattr(self.simulator, 'current_time', 0.0)
         self.record_economic_event(timestamp, 'damage', damage_amount, 
                                  metadata or {'type': 'system_damage'})
-    def _calculate_one_off_damage(self, action_name, node_properties):
 
+    def _calculate_one_off_damage(self, action_name, node_properties):
         if 'data' in action_name.lower() or 'exfiltration' in action_name.lower():
             assets = node_properties.get('assets', [])
             sensitive_data = [a for a in assets if 'data' in str(a).lower() or 'sensitive' in str(a).lower()]

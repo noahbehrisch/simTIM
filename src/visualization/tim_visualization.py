@@ -5,13 +5,12 @@ import pandas as pd
 from typing import Dict, List, Tuple, Any, Optional
 import os
 from datetime import datetime
+
 plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_palette("husl")
 
 class TIMVisualizationEngine:
-
     def __init__(self, output_dir: str = "visualization_output"):
-
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         self.colors = {
@@ -210,8 +209,8 @@ class TIMVisualizationEngine:
             def_objs = econ_summary.get('defender_objectives', {})
             if def_objs:
                 all_defender_objectives.extend(def_objs.values())
-        def stats_summary(data, name):
 
+        def stats_summary(data, name):
             if not data:
                 return f"{name}: No data available"
             return f"""{name}:
@@ -250,8 +249,8 @@ class TIMVisualizationEngine:
                 f.write(report_text)
             print(f"Statistical report saved to: {report_path}")
         return report_text
-    def save_figure(self, fig: plt.Figure, filename: str, formats: List[str] = ['png', 'pdf']):
 
+    def save_figure(self, fig: plt.Figure, filename: str, formats: List[str] = ['png', 'pdf']):
         for fmt in formats:
             filepath = os.path.join(self.output_dir, f"{filename}.{fmt}")
             fig.savefig(filepath, format=fmt, dpi=300, bbox_inches='tight')
@@ -277,8 +276,8 @@ class TIMVisualizationEngine:
         print(f"✅ Generated {len(figures)} TIM-compliant visualizations")
         print(f"📊 Statistical analysis complete")
         return figures
-def create_sample_tim_visualization():
 
+def create_sample_tim_visualization():
     print("🚀 Creating sample TIM visualization...")
     np.random.seed(42)
     sample_results = []

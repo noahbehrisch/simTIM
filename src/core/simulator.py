@@ -7,22 +7,19 @@ logger = logging.getLogger(__name__)
 infinity = float('inf') 
 
 class Event:
-
     def __init__(self, time: float, event_type: str, data: Dict[str, Any]):
-
         self.time = time
         self.event_type = event_type
         self.data = data
+
     def __lt__(self, other):
-
         return self.time < other.time
+
     def __repr__(self):
-
         return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
+
 class Simulator:
-
     def __init__(self, network=None):
-
         self.current_time = 0.0
         self.event_queue: List[Event] = []
         self.history: List[Event] = []
@@ -32,8 +29,8 @@ class Simulator:
         from src.actions.json_conditions import action_executor
 
         action_executor.set_simulator(self)
-    def run(self, until: float):
 
+    def run(self, until: float):
         for actor in self.get_all_actors():
             actor.set_simulator(self)
             if hasattr(actor, 'is_attacker') and actor.is_attacker:
@@ -44,8 +41,8 @@ class Simulator:
             event = heapq.heappop(self.event_queue)
             self.current_time = event.time
             self.process_event((event.time, event.event_type, event.data))
-    def schedule_event(self, time: float, event_type: str, data: Dict[str, Any]):
 
+    def schedule_event(self, time: float, event_type: str, data: Dict[str, Any]):
         if event_type == "action":
             actor = data["actor"]
             if not actor.can_schedule_action():
@@ -62,23 +59,23 @@ class Simulator:
             heapq.heappush(self.event_queue, Event(time + data["action"].duration, "complete_action", data))
         else:
             heapq.heappush(self.event_queue, Event(time, event_type, data))
-    def timeout(self, delay: float, event_type: str, data: dict):
 
+    def timeout(self, delay: float, event_type: str, data: dict):
         self.schedule_event(
             time=self.current_time + delay,
             event_type=event_type,
             data=data
         )
-    def print_event_queue(self):
 
+    def print_event_queue(self):
         for event in sorted(self.event_queue, key=lambda e: e[0]):
             pass
-    def get_all_actors(self):
 
+    def get_all_actors(self):
         actors = self.network.get('actors', [])
         return actors
-    def interrupt(self, actor=None, target=None, action_type=None):
 
+    def interrupt(self, actor=None, target=None, action_type=None):
         to_interrupt = []
         for a in self.ongoing_actions:
             if ((actor is None or a.get("actor") == actor) and
@@ -88,21 +85,21 @@ class Simulator:
         for a in to_interrupt:
             self.ongoing_actions.remove(a)
             self.history.append((self.current_time, "action_interrupted", a))
-    def process_event(self, event):
 
+    def process_event(self, event):
         time, event_type, data = event
         handler = getattr(self, f"handle_{event_type}", None)
         if handler:
             handler(time, data)
         else:
             self.history.append((time, event_type, data))
-    def handle_actor_decide(self, time, data):
 
+    def handle_actor_decide(self, time, data):
         actor = data["actor"]
         if hasattr(actor, 'make_decision'):
             actor.make_decision(self.network)
-    def handle_start_action(self, time, data):
 
+    def handle_start_action(self, time, data):
         precond = data["action"].precondition(
             data["target"],
             data.get("actor_access"),
@@ -116,8 +113,8 @@ class Simulator:
         if hasattr(data["actor"], 'is_attacker') and data["actor"].is_attacker:
             self._schedule_detection_check(data)
         self._schedule_precondition_monitoring(data)
-    def handle_complete_action(self, time, data):
 
+    def handle_complete_action(self, time, data):
         ongoing = next((a for a in self.ongoing_actions
                         if a["actor"] == data["actor"] and
                            a["action"] == data["action"] and
@@ -148,8 +145,8 @@ class Simulator:
                     data["actor"].on_action_finished(data["action"], "aborted", data["target"])
                 self.history.append((self.current_time, "action_aborted", data))
             self.ongoing_actions.remove(ongoing)
-    def _schedule_detection_check(self, action_data):
 
+    def _schedule_detection_check(self, action_data):
         import random
 
         action = action_data["action"]
@@ -172,8 +169,8 @@ class Simulator:
                     "detection_probability": detection_prob
                 }
             )
-    def handle_attack_detected(self, time, data):
 
+    def handle_attack_detected(self, time, data):
         self.history.append((self.current_time, "attack_detected", data))
         for ongoing in self.ongoing_actions[:]:
             if (ongoing.get("action") == data["detected_action"] and
@@ -194,8 +191,8 @@ class Simulator:
         for defender in defenders:
             if hasattr(defender, 'on_attack_detected'):
                 defender.on_attack_detected(data)
-    def _schedule_precondition_monitoring(self, action_data):
 
+    def _schedule_precondition_monitoring(self, action_data):
         action = action_data["action"]
         duration = action.duration
         if duration > 0.1:
@@ -212,8 +209,8 @@ class Simulator:
                             "check_time": check_time
                         }
                     )
-    def handle_precondition_check(self, time, data):
 
+    def handle_precondition_check(self, time, data):
         action_data = data["action_data"]
         action = action_data["action"]
         target = action_data["target"]
@@ -236,8 +233,8 @@ class Simulator:
         precond_holds = action.precondition(target, current_access, actor.id)
         if not precond_holds:
             self._interrupt_action(ongoing_action, "precondition_failed")
-    def _interrupt_action(self, action_data, reason):
 
+    def _interrupt_action(self, action_data, reason):
         action = action_data["action"]
         actor = action_data["actor"]
         target = action_data["target"]
@@ -254,26 +251,26 @@ class Simulator:
             "reason": reason,
             "interrupted_at": self.current_time
         }))
-    def _calculate_economic_impact(self, action_data):
 
+    def _calculate_economic_impact(self, action_data):
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
         actor.record_action_cost(action, self.current_time)
-    def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
 
+    def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
         if hasattr(self, 'tim_economic_engine'):
             self.tim_economic_engine.record_access_change(
                 self.current_time, node, actor_id, old_access, new_access
             )
-    def record_property_change(self, node, property_name: str, old_value, new_value):
 
+    def record_property_change(self, node, property_name: str, old_value, new_value):
         if hasattr(self, 'tim_economic_engine'):
             self.tim_economic_engine.record_property_change(
                 self.current_time, node, property_name, old_value, new_value
             )
-    def get_tim_economic_summary(self, time_interval=None):
 
+    def get_tim_economic_summary(self, time_interval=None):
         if time_interval is None:
             time_interval = (0.0, self.current_time)
         all_actors = self.get_all_actors()
@@ -300,7 +297,7 @@ class Simulator:
             "num_economic_events": sum(len(actor.economic_events) for actor in all_actors),
             "num_actions": sum(len(actor.action_history) for actor in all_actors)
         }
-    def print_history(self):
 
+    def print_history(self):
         for entry in self.history:
             print(entry)

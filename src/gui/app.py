@@ -8,9 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from main import simtim_main
 
 class App(tk.Tk):
-
     def __init__(self):
-
         super().__init__()
         self.title("simTIM GUI")
         self.geometry("1700x800")
@@ -58,8 +56,8 @@ class App(tk.Tk):
         self.start_button = tk.Button(self.bottom_frame, text="Start Simulation", command=self.run_simulation_from_gui, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
         self.next_button = tk.Button(self.bottom_frame, text="Next", command=self.next_tab, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
         self.after(0, lambda: self.show_tab("Simulation"))
-    def create_tabs(self):
 
+    def create_tabs(self):
         tab_names = self.tab_names
         for name in tab_names:
             frame = tk.Frame(self, bg=self.tab_color)
@@ -112,8 +110,8 @@ class App(tk.Tk):
                 self.node_options = []
         except Exception as e:
             self.node_options = []
-    def browse_network_file(self):
 
+    def browse_network_file(self):
         network_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'networks', 'library')
         network_dir = os.path.abspath(network_dir)
         file_path = filedialog.askopenfilename(
@@ -132,8 +130,8 @@ class App(tk.Tk):
                     self.node_options = []
             except Exception as e:
                 self.node_options = []
-    def add_attacker_entry(self):
 
+    def add_attacker_entry(self):
         frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color)
         frame.pack(fill="x", padx=10, pady=5)
         attacker_id = len(self.attacker_entries) + 1
@@ -143,8 +141,8 @@ class App(tk.Tk):
         strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy", "random"], state="readonly", width=10)
         strategy_dropdown.pack(side="left", padx=5)
         self.attacker_entries.append((attacker_id, strategy_var))
-    def add_defender_entry(self):
 
+    def add_defender_entry(self):
         frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color)
         frame.pack(fill="x", padx=10, pady=5)
         defender_id = len(self.defender_entries) + 1
@@ -154,8 +152,8 @@ class App(tk.Tk):
         strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy"], state="readonly", width=10)
         strategy_dropdown.pack(side="left", padx=5)
         self.defender_entries.append((defender_id, strategy_var))
-    def show_tab(self, name):
 
+    def show_tab(self, name):
         if self.current_tab:
             self.tabs[self.current_tab].grid_remove()
         self.tabs[name].grid()
@@ -177,8 +175,8 @@ class App(tk.Tk):
             self.results_button.grid_remove()
             self.start_button.grid_remove()
             self.next_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
-    def update_overview(self):
 
+    def update_overview(self):
         overview = (
             f"Simulation Runs: {self.sim_runs_var.get()}\n"
             f"Simulation Time: {self.sim_time_var.get()}\n"
@@ -194,37 +192,37 @@ class App(tk.Tk):
         self.overview_text.delete(1.0, tk.END)
         self.overview_text.insert(tk.END, overview)
         self.overview_text.config(state=tk.DISABLED)
+
     def set_attacker_info(self):
-
         self.attacker_info_var.set("Attacker created")
+
     def set_defender_info(self):
-
         self.defender_info_var.set("Defender created")
-    def exit_fullscreen(self, event=None):
 
+    def exit_fullscreen(self, event=None):
         self.attributes("-fullscreen", False)
         self.fullscreen_state = False
         self.sidebar.update_fullscreen_switch()
-    def toggle_fullscreen(self, event=None):
 
+    def toggle_fullscreen(self, event=None):
         self.fullscreen_state = not self.fullscreen_state
         self.attributes("-fullscreen", self.fullscreen_state)
         self.sidebar.update_fullscreen_switch()
-    def next_tab(self):
 
+    def next_tab(self):
         if self.current_tab in self.tab_names:
             idx = self.tab_names.index(self.current_tab)
             if idx < len(self.tab_names) - 1:
                 self.show_tab(self.tab_names[idx + 1])
-    def open_create_network_window(self):
 
+    def open_create_network_window(self):
         win = tk.Toplevel(self)
         win.title("Create Network")
         win.geometry("1800x1200")
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
-    def open_results_window(self, all_histories):
 
+    def open_results_window(self, all_histories):
         import numpy as np
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -259,20 +257,20 @@ class App(tk.Tk):
         canvas = FigureCanvasTkAgg(fig, master=plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        def on_close():
 
+        def on_close():
             plt.close(fig)
             win.destroy()
         win.protocol("WM_DELETE_WINDOW", on_close)
-    def open_help_window(self):
 
+    def open_help_window(self):
         win = tk.Toplevel(self)
         win.title("Help")
         win.geometry("1800x1400")
         win.configure(bg=self.bg_color)
         tk.Label(win, text="Help!", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
-    def run_simulation_from_gui(self):
 
+    def run_simulation_from_gui(self):
         sim_runs = self.sim_runs_var.get()
         sim_time = self.sim_time_var.get()
         path_to_network_config = self.network_file_var.get()
@@ -301,8 +299,8 @@ class App(tk.Tk):
         custom_messagebox.geometry("800x400")
         tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
         tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
-    def launch_visualizer(self):
 
+    def launch_visualizer(self):
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         from src.networks.network_visualizer import NetworkVisualizer
         from src.core.graph import Graph
@@ -311,10 +309,9 @@ class App(tk.Tk):
         network = Graph.from_json(network_path)
         visualizer = NetworkVisualizer(network)
         visualizer.visualize()
+
 class Sidebar(tk.Frame):
-
     def __init__(self, master, toggle_fullscreen, fullscreen_state, switch_tab_callback, sidebar_color, highlight_color, button_color, button_fg):
-
         super().__init__(master, bd=2, relief=tk.RIDGE, bg=sidebar_color)
         self.grid_rowconfigure(6, weight=1)
         self.buttons = {}
@@ -333,15 +330,15 @@ class Sidebar(tk.Frame):
         self.fullscreen_switch = tk.Checkbutton(self, text="Fullscreen", variable=self.fullscreen_var, command=toggle_fullscreen, bg=sidebar_color, fg=button_fg, selectcolor=highlight_color, activebackground=highlight_color)
         self.fullscreen_switch.grid(row=7, column=0, pady=(0, 10), padx=20, sticky="s")
         self.highlight_tab("Simulation")
-    def highlight_tab(self, tab_name):
 
+    def highlight_tab(self, tab_name):
         for name, btn in self.buttons.items():
             if name == tab_name:
                 btn.config(bg=self.highlight_color, fg=self.button_fg, relief=tk.SUNKEN)
             else:
                 btn.config(bg=self.sidebar_color, fg=self.button_fg, relief=tk.FLAT)
-    def update_fullscreen_switch(self):
 
+    def update_fullscreen_switch(self):
         self.fullscreen_var.set(self.master.fullscreen_state)
 if __name__ == "__main__":
     app = App()

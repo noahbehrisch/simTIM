@@ -2,10 +2,10 @@ import sys
 import os
 import subprocess
 import time
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def run_test(test_file, description):
-
     print(f"\n{'='*60}")
     print(f"Running: {description}")
     print(f"File: {test_file}")
@@ -36,8 +36,8 @@ def run_test(test_file, description):
         duration = time.time() - start_time
         print(f"❌ ERROR ({duration:.2f}s): {e}")
         return False
-def main():
 
+def main():
     print("🚀 simTIM Test Suite Runner")
     print("=" * 60)
     tests = [

@@ -75,8 +75,8 @@ def simtim_main(
         for n in network.values():
             print(n)
     return all_histories
-def main():
 
+def main():
     simtim_main()
 if __name__ == "__main__":
     main()

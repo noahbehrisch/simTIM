@@ -1,7 +1,6 @@
 import json
 
 class Node:
-
     def __init__(
         self,
         id: str,
@@ -19,28 +18,28 @@ class Node:
         self.access: dict[str, str] = {} 
         self.properties: dict[str, any] = {}
         self.exposed_services: list[str] = []
+
     def add_link(self, link: "Link") -> None:
-
         self.links.append(link)
+
     def get_software(self, key, default=None):
-
         return self.software.get(key, default)
+
     def get_vulnerability(self, vuln):
-
         return vuln in self.vulnerabilities
+
     def get_asset(self, asset):
-
         return asset in self.assets
+
     def get_property(self, key, default=None):
-
         return self.properties.get(key, default)
-    def __repr__(self) -> str:
 
+    def __repr__(self) -> str:
         return (f"Node(id={self.id}, compromised={self.compromised}, "
                 f"assets={len(self.assets)}, vulnerabilities={len(self.vulnerabilities)}, "
                 f"links={len(self.links)})")
-class Link:
 
+class Link:
     def __init__(
         self,
         node1: Node,
@@ -55,49 +54,48 @@ class Link:
         node1.add_link(self)
         if bidirectional:
             node2.add_link(self)
+
     def get_latency(self):
-
         return self.latency
+
     def get_nodes(self):
-
         return (self.node1, self.node2)
-    def get_other_node(self, node):
 
+    def get_other_node(self, node):
         if node == self.node1:
             return self.node2
         elif node == self.node2:
             return self.node1
         else:
             return None
-    def __repr__(self) -> str:
 
+    def __repr__(self) -> str:
         direction = "<->" if self.bidirectional else "->"
         return f"Link({self.node1.id} {direction} {self.node2.id})"
+
 class Graph:
-
     def __init__(self):
-
         self.nodes = {}
         self.links = []
-    def insert_node(self, node: Node):
 
+    def insert_node(self, node: Node):
         if node.id not in self.nodes:
             self.nodes[node.id] = node
-    def insert_link(self, link: Link):
 
+    def insert_link(self, link: Link):
         if link not in self.links:
             self.links.append(link)
-    def remove_node(self, node: Node):
 
+    def remove_node(self, node: Node):
         if node.id in self.nodes:
             del self.nodes[node.id]
             self.links = [link for link in self.links if link.node1 != node and link.node2 != node]
-    def remove_link(self, link: Link):
 
+    def remove_link(self, link: Link):
         if link in self.links:
             self.links.remove(link)
-    def to_json(self, file_path):
 
+    def to_json(self, file_path):
         graph_data = {
             "nodes": [
                 {
@@ -125,7 +123,6 @@ class Graph:
             json.dump(graph_data, file, indent=4)
     @classmethod
     def from_json(cls, file_path):
-
         with open(file_path, "r") as file:
             graph_data = json.load(file)
         graph = cls()
@@ -155,6 +152,6 @@ class Graph:
             )
             graph.insert_link(link)
         return graph
-    def __repr__(self):
 
+    def __repr__(self):
         return f"Graph(nodes={len(self.nodes)}, links={len(self.links)})"

@@ -9,7 +9,6 @@ from tim_visualization import TIMVisualizationEngine
 from plot_results import plot_simulation_results, plot_violin, plot_damage_over_time
 
 def create_tim_demo_analysis():
-
     print("🎯 TIM Visualization Integration Demo")
     print("=====================================")
     print("Replicating TIM paper Figure 2 and Section 5 analysis\n")
@@ -152,8 +151,8 @@ def create_tim_demo_analysis():
     print(f"📁 All visualizations saved to: tim_demo_analysis/")
     print(f"🎯 Results replicate TIM paper Figure 2 and Section 5 findings")
     return simulation_results, figures, viz_engine
-def main():
 
+def main():
     print("🚀 Starting TIM Visualization Integration Demo...\n")
     try:
         results, figures, viz_engine = create_tim_demo_analysis()
