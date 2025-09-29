@@ -1,0 +1,384 @@
+import heapq
+import random
+import logging
+from typing import Any, Dict, List
+
+from .detection import DetectionEngine
+
+logger = logging.getLogger(__name__)
+infinity = float('inf') 
+
+class Event:
+    """Represents a simulation event with time, type, and associated data."""
+    
+    def __init__(self, time: float, event_type: str, data: Dict[str, Any]):
+        self.time = time
+        self.event_type = event_type
+        self.data = data
+    
+    def __lt__(self, other):
+        """Less than comparison for priority queue ordering."""
+        return self.time < other.time
+    def __repr__(self):
+        return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
+
+class Simulator:
+    def __init__(self, network=None):
+        self.current_time = 0.0
+        self.event_queue: List[Event] = []
+        self.history: List[Event] = []
+        self.network = network if network is not None else {}
+        self.ongoing_actions = []
+        
+        # TIM Section 4.5: Detection system
+        self.detection_engine = DetectionEngine()
+        
+        # TIM economic model is now integrated in actors
+        
+        # Set up economic tracking for action executor
+        from src.actions.json_conditions import action_executor
+        action_executor.set_simulator(self)
+        
+    def run(self, until: float):
+        for actor in self.get_all_actors():
+            actor.set_simulator(self)
+            if hasattr(actor, 'is_attacker') and actor.is_attacker:
+                all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
+                actor.visible_nodes = list(all_nodes)
+            actor.run(self.network)
+        
+        while self.event_queue and self.current_time <= until: 
+            event = heapq.heappop(self.event_queue)
+            self.current_time = event.time
+            self.process_event((event.time, event.event_type, event.data))
+
+    def schedule_event(self, time: float, event_type: str, data: Dict[str, Any]):
+        if event_type == "action":
+            # Check capacity constraints per TIM paper requirement R9
+            actor = data["actor"]
+            if not actor.can_schedule_action():
+                self.history.append((self.current_time, "action_capacity_exceeded", data))
+                return
+                
+            precond = data["action"].precondition(
+                data["target"],
+                getattr(data["target"].access, data["actor"].id, None),
+                data["actor"].id
+            )
+            if not precond:
+                return
+            heapq.heappush(self.event_queue, Event(time, "start_action", data))
+            heapq.heappush(self.event_queue, Event(time + data["action"].duration, "complete_action", data))
+        else:
+            heapq.heappush(self.event_queue, Event(time, event_type, data))
+
+    def timeout(self, delay: float, event_type: str, data: dict):
+        self.schedule_event(
+            time=self.current_time + delay,
+            event_type=event_type,
+            data=data
+        )
+
+    def print_event_queue(self):
+        for event in sorted(self.event_queue, key=lambda e: e[0]):
+            pass
+
+    def get_all_actors(self):
+        actors = self.network.get('actors', [])
+        return actors
+
+    def interrupt(self, actor=None, target=None, action_type=None):
+        to_interrupt = []
+        for a in self.ongoing_actions:
+            if ((actor is None or a.get("actor") == actor) and
+                (target is None or a.get("target") == target) and
+                (action_type is None or a.get("action") and a["action"].name == action_type)):
+                to_interrupt.append(a)
+        for a in to_interrupt:
+            self.ongoing_actions.remove(a)
+            self.history.append((self.current_time, "action_interrupted", a))
+
+    def process_event(self, event):
+        time, event_type, data = event
+        handler = getattr(self, f"handle_{event_type}", None)
+        if handler:
+            handler(time, data)
+        else:
+            self.history.append((time, event_type, data))
+
+    def handle_actor_decide(self, time, data):
+        actor = data["actor"]
+        if hasattr(actor, 'make_decision'):
+            actor.make_decision(self.network)
+
+    def handle_start_action(self, time, data):
+        precond = data["action"].precondition(
+            data["target"],
+            data.get("actor_access"),
+            data["actor"].id
+        )
+        if not precond:
+            self.history.append((self.current_time, "action_aborted", data))
+            return
+        self.ongoing_actions.append(data)
+        self.history.append((self.current_time, "start_action", data))
+        
+        # Implement detection system per TIM paper
+        if hasattr(data["actor"], 'is_attacker') and data["actor"].is_attacker:
+            self._schedule_detection_check(data)
+        
+        # Implement temporal precondition monitoring per TIM paper
+        self._schedule_precondition_monitoring(data)
+
+    def handle_complete_action(self, time, data):
+        ongoing = next((a for a in self.ongoing_actions
+                        if a["actor"] == data["actor"] and
+                           a["action"] == data["action"] and
+                           a["target"] == data["target"]), None)
+        if ongoing:
+            precond = data["action"].precondition(
+                data["target"],
+                data.get("actor_access"), 
+                data["actor"].id
+            )
+            if precond:
+                if random.random() < data["action"].success_probability:
+                    data["action"].postcondition(
+                        data["target"],
+                        data.get("actor_access"),  
+                        data["actor"].id
+                    )
+                    
+                    # Track economic impact per TIM paper
+                    self._calculate_economic_impact(data)
+                    
+                    if hasattr(data["actor"], "on_action_finished"):
+                        data["actor"].on_action_finished(data["action"], "success", data["target"])
+                    self.history.append((self.current_time, "action_succeeded", data))
+                else:
+                    if hasattr(data["actor"], "on_action_finished"):
+                        data["actor"].on_action_finished(data["action"], "failure", data["target"])
+                    self.history.append((self.current_time, "action_failed", data))
+            else:
+                if hasattr(data["actor"], "on_action_finished"):
+                    data["actor"].on_action_finished(data["action"], "aborted", data["target"])
+                self.history.append((self.current_time, "action_aborted", data))
+            self.ongoing_actions.remove(ongoing)
+
+    def _schedule_detection_check(self, action_data):
+        """Schedule detection check for attacker action per TIM paper Section 4.5"""
+        import random
+        
+        action = action_data["action"]
+        target = action_data["target"]
+        actor = action_data["actor"]
+        
+        # Use enhanced detection engine for TIM compliance
+        detection_prob = self.detection_engine.calculate_detection_probability(
+            action.name, 
+            target if isinstance(target, dict) else target.__dict__
+        )
+        
+        # Decide if attack will be detected during execution
+        if random.random() < detection_prob:
+            # Calculate detection time using proper distribution
+            detection_delay = self.detection_engine.sample_detection_time(action.name, action.duration)
+            
+            # Schedule detection event
+            self.schedule_event(
+                self.current_time + detection_delay,
+                "attack_detected",
+                {
+                    "detected_action": action,
+                    "detected_actor": actor,
+                    "detected_target": target,
+                    "detection_time": self.current_time + detection_delay,
+                    "detection_probability": detection_prob
+                }
+            )
+    
+    def handle_attack_detected(self, time, data):
+        """Handle attack detection event - notify defenders per TIM Section 4.5"""
+        self.history.append((self.current_time, "attack_detected", data))
+        
+        # Interrupt the detected action if still ongoing
+        for ongoing in self.ongoing_actions[:]:
+            if (ongoing.get("action") == data["detected_action"] and
+                ongoing.get("actor") == data["detected_actor"] and 
+                ongoing.get("target") == data["detected_target"]):
+                
+                # Remove from ongoing actions
+                self.ongoing_actions.remove(ongoing)
+                
+                # Add interruption event
+                interruption_event = Event(
+                    time=self.current_time,
+                    type="action_interrupted_by_detection",
+                    actor=data["detected_actor"].actor_id,
+                    action=data["detected_action"].__class__.__name__,
+                    target=data["detected_target"],
+                    detection_probability=data.get("detection_probability", 0.0)
+                )
+                self.history.append(interruption_event)
+        
+        # Notify all defenders about the detected attack
+        defenders = [actor for actor in self.get_all_actors() 
+                    if hasattr(actor, 'is_defender') and actor.is_defender]
+        
+        for defender in defenders:
+            if hasattr(defender, 'on_attack_detected'):
+                defender.on_attack_detected(data)
+
+    def _schedule_precondition_monitoring(self, action_data):
+        """Schedule periodic precondition checks for temporal monitoring per TIM paper"""
+        action = action_data["action"]
+        duration = action.duration
+        
+        # For TIM compliance, we need to monitor during execution interval [tstart, tstart + da)
+        # Schedule checks even for short actions to demonstrate temporal monitoring
+        
+        if duration > 0.1:  # Only monitor actions longer than 0.1 time units
+            # For longer actions, check multiple times
+            check_interval = max(0.05, duration / 3)  # Check at least 3 times or every 0.05 units
+            
+            num_checks = max(1, int(duration / check_interval))
+            for i in range(1, num_checks + 1):
+                check_time = self.current_time + (i * check_interval)
+                
+                # Only schedule if check time is before action completion
+                if check_time < self.current_time + duration:
+                    self.schedule_event(
+                        check_time,
+                        "precondition_check",
+                        {
+                            "action_data": action_data.copy(),
+                            "check_time": check_time
+                        }
+                    )
+
+    def handle_precondition_check(self, time, data):
+        """Handle periodic precondition check during action execution"""
+        action_data = data["action_data"]
+        action = action_data["action"]
+        target = action_data["target"]
+        actor = action_data["actor"]
+        
+        # Add precondition check to history for analysis
+        self.history.append((time, "precondition_check", {
+            "action": action.name,
+            "actor": actor.id,
+            "target": target.id
+        }))
+        
+        # Find if this action is still ongoing
+        ongoing_action = None
+        for ongoing in self.ongoing_actions:
+            if (ongoing["actor"] == actor and 
+                ongoing["action"] == action and 
+                ongoing["target"] == target):
+                ongoing_action = ongoing
+                break
+        
+        if ongoing_action is None:
+            # Action already completed or interrupted
+            return
+            
+        # Check if precondition still holds
+        current_access = target.access.get(actor.id, "NONE")
+        precond_holds = action.precondition(target, current_access, actor.id)
+        
+        if not precond_holds:
+            # Precondition failed - interrupt the action per TIM paper
+            self._interrupt_action(ongoing_action, "precondition_failed")
+    
+    def _interrupt_action(self, action_data, reason):
+        """Interrupt an ongoing action per TIM paper specification"""
+        action = action_data["action"]
+        actor = action_data["actor"]
+        target = action_data["target"]
+        
+        # Remove from ongoing actions
+        if action_data in self.ongoing_actions:
+            self.ongoing_actions.remove(action_data)
+        
+        # Notify actor
+        if hasattr(actor, 'on_action_finished'):
+            actor.on_action_finished(action, "interrupted", target)
+        
+        # Remove from actor's ongoing actions
+        if hasattr(actor, 'ongoing_actions') and action in actor.ongoing_actions:
+            actor.ongoing_actions.remove(action)
+        
+        # Record the interruption
+        self.history.append((self.current_time, "action_interrupted", {
+            "actor": actor,
+            "action": action,
+            "target": target,
+            "reason": reason,
+            "interrupted_at": self.current_time
+        }))
+
+    def _calculate_economic_impact(self, action_data):
+        """Calculate economic impact using TIM economic model integrated with actors"""
+        action = action_data["action"]
+        target = action_data["target"]
+        actor = action_data["actor"]
+        
+        # Record action cost per TIM formula C_x,[0,T]
+        actor.record_action_cost(action, self.current_time)
+
+    def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
+        """Record access level change for TIM economic calculations"""
+        if hasattr(self, 'tim_economic_engine'):
+            self.tim_economic_engine.record_access_change(
+                self.current_time, node, actor_id, old_access, new_access
+            )
+
+    def record_property_change(self, node, property_name: str, old_value, new_value):
+        """Record node property change for TIM economic calculations"""  
+        if hasattr(self, 'tim_economic_engine'):
+            self.tim_economic_engine.record_property_change(
+                self.current_time, node, property_name, old_value, new_value
+            )
+
+    def get_tim_economic_summary(self, time_interval=None):
+        """Get comprehensive TIM economic analysis using actor-based model"""
+        if time_interval is None:
+            time_interval = (0.0, self.current_time)
+        
+        # Get all actors
+        all_actors = self.get_all_actors()
+        attackers = [actor for actor in all_actors if hasattr(actor, 'is_attacker') and actor.is_attacker]
+        defenders = [actor for actor in all_actors if hasattr(actor, 'is_defender') and actor.is_defender]
+        
+        # Calculate TIM metrics using actor methods
+        attacker_objectives = {}
+        for attacker in attackers:
+            attacker_objectives[attacker.id] = attacker.get_economic_objective(time_interval)
+        
+        defender_objectives = {}
+        total_system_damage = 0.0
+        for defender in defenders:
+            defender_obj = defender.get_economic_objective(time_interval)
+            defender_objectives[defender.id] = defender_obj
+            total_system_damage += defender._calculate_total_system_damage(time_interval)
+        
+        # Calculate totals
+        total_attacker_gains = sum(attacker.total_gain for attacker in attackers)
+        total_costs = sum(actor.incurredCost for actor in all_actors)
+        
+        return {
+            "time_interval": time_interval,
+            "total_damage": total_system_damage,
+            "defender_objectives": defender_objectives,  # minimize these
+            "attacker_objectives": attacker_objectives,  # maximize these
+            "total_attacker_gains": total_attacker_gains,
+            "total_costs": total_costs,
+            "num_economic_events": sum(len(actor.economic_events) for actor in all_actors),
+            "num_actions": sum(len(actor.action_history) for actor in all_actors)
+        }
+
+    def print_history(self):
+        for entry in self.history:
+            print(entry)
+

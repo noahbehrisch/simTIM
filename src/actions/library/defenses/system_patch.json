@@ -1,0 +1,49 @@
+{
+  "name": "System Patch",
+  "action_type": "node",
+  "cost": 300,
+  "duration": 1.5,
+  "success_probability": 0.95,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "vulnerability_check",
+        "check_type": "count",
+        "operator": "greater_than",
+        "value": 0
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "remove_vulnerability",
+        "method": "pop"
+      },
+      {
+        "type": "increment_counter",
+        "counter": "security_patches",
+        "increment": 1
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 0.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

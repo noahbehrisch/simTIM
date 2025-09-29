@@ -1,0 +1,90 @@
+{
+  "nodes": [
+    {
+      "id": "c",
+      "software": {
+        "OS": "Linux",
+        "version": "5.10"
+      },
+      "vulnerabilities": ["CVE-2023-12345"],
+      "assets": ["database"],
+      "properties": {
+        "critical": true
+      }
+    },
+    {
+      "id": "n1",
+      "software": {
+        "OS": "Windows",
+        "version": "10"
+      },
+      "vulnerabilities": ["CVE-2022-67890"],
+      "assets": ["web_server"],
+      "properties": {
+        "critical": false
+      }
+    },
+    {
+      "id": "n2",
+      "software": {
+        "OS": "Linux",
+        "version": "4.19"
+      },
+      "vulnerabilities": [],
+      "assets": ["file_server"],
+      "properties": {
+        "critical": false
+      }
+    },
+    {
+      "id": "n3",
+      "software": {
+        "OS": "macOS",
+        "version": "11.2"
+      },
+      "vulnerabilities": ["CVE-2021-54321"],
+      "assets": ["backup"],
+      "properties": {
+        "critical": false
+      }
+    },
+    {
+      "id": "n4",
+      "software": {
+        "OS": "Linux",
+        "version": "5.4"
+      },
+      "vulnerabilities": ["CVE-2020-11111"],
+      "assets": ["application_server"],
+      "properties": {
+        "critical": false
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "c",
+      "node2": "n1",
+      "bidirectional": true,
+      "latency": 10.0
+    },
+    {
+      "node1": "c",
+      "node2": "n2",
+      "bidirectional": true,
+      "latency": 15.0
+    },
+    {
+      "node1": "c",
+      "node2": "n3",
+      "bidirectional": true,
+      "latency": 20.0
+    },
+    {
+      "node1": "c",
+      "node2": "n4",
+      "bidirectional": true,
+      "latency": 25.0
+    }
+  ]
+}

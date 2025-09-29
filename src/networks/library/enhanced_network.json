@@ -1,0 +1,118 @@
+{
+  "nodes": [
+    {
+      "id": "web_server",
+      "software": {
+        "WebApp framework name": "Apache Tapestry",
+        "WebApp framework version": "5.6.2",
+        "Endpoint protection": "Sophos",
+        "IDS": "Snort"
+      },
+      "vulnerabilities": [
+        "CVE-2021-1234"
+      ],
+      "assets": [
+        "website",
+        "customer_data"
+      ],
+      "properties": {
+        "location": "DMZ",
+        "physical_security": "medium",
+        "email_enabled": true,
+        "usb_enabled": true,
+        "security_level": "medium"
+      }
+    },
+    {
+      "id": "database_server",
+      "software": {
+        "DBMS name": "MySQL",
+        "DBMS version": "8.0.20",
+        "SIEM_agent": "Splunk"
+      },
+      "vulnerabilities": [
+        "CVE-2022-5678"
+      ],
+      "assets": [
+        "user_database",
+        "financial_records"
+      ],
+      "properties": {
+        "location": "internal",
+        "physical_security": "high",
+        "email_enabled": false,
+        "usb_enabled": false,
+        "security_level": "high"
+      }
+    },
+    {
+      "id": "workstation",
+      "software": {
+        "OS": "Windows 10",
+        "Endpoint protection": "Windows Defender"
+      },
+      "vulnerabilities": [],
+      "assets": [
+        "employee_files"
+      ],
+      "properties": {
+        "location": "office",
+        "physical_security": "low",
+        "email_enabled": true,
+        "usb_enabled": true,
+        "security_level": "low",
+        "user_accounts": [
+          "john.doe",
+          "jane.smith"
+        ]
+      }
+    },
+    {
+      "id": "file_server",
+      "software": {
+        "OS": "Linux Ubuntu",
+        "File_system": "NFS"
+      },
+      "vulnerabilities": [
+        "CVE-2023-1111"
+      ],
+      "assets": [
+        "shared_files",
+        "backups"
+      ],
+      "properties": {
+        "location": "internal",
+        "physical_security": "high",
+        "email_enabled": false,
+        "usb_enabled": false,
+        "security_level": "medium"
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "web_server",
+      "node2": "database_server",
+      "bidirectional": true,
+      "latency": 1.0
+    },
+    {
+      "node1": "database_server",
+      "node2": "file_server",
+      "bidirectional": true,
+      "latency": 0.5
+    },
+    {
+      "node1": "workstation",
+      "node2": "file_server",
+      "bidirectional": true,
+      "latency": 0.3
+    },
+    {
+      "node1": "workstation",
+      "node2": "web_server",
+      "bidirectional": true,
+      "latency": 2.0
+    }
+  ]
+}

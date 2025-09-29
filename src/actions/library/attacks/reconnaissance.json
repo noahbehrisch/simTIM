@@ -1,0 +1,26 @@
+{
+  "name": "Reconnaissance",
+  "action_type": "node",
+  "cost": 50,
+  "duration": 0.5,
+  "success_probability": 0.9,
+  "precondition": {
+    "type": "access_check",
+    "operator": "equals",
+    "value": "NONE"
+  },
+  "postcondition": {
+    "type": "set_access",
+    "value": "VISIBLE"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.1
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 10.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}
