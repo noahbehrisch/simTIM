@@ -15,8 +15,8 @@ class Attacker(Actor):
 
     def run(self, network_state):
         super().run(network_state)
-        all_nodes = network_state.get('nodes', network_state.get('nodes_list', []))
-        self.visible_nodes = list(all_nodes)
+        # visible_nodes are now set by the simulator based on initial exposure
+        # Don't override the simulator's initialization
 
     def make_decision(self, network_state):
         if not self.can_schedule_action():

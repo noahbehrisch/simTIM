@@ -35,8 +35,12 @@ class Simulator:
         for actor in self.get_all_actors():
             actor.set_simulator(self)
             if hasattr(actor, 'is_attacker') and actor.is_attacker:
+                # Initialize attacker with only internet-exposed nodes
                 all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
-                actor.visible_nodes = list(all_nodes)
+                exposed_nodes = [node for node in all_nodes 
+                               if hasattr(node, 'properties') and 
+                               node.properties.get('exposed_to_internet', False)]
+                actor.visible_nodes = exposed_nodes
             actor.run(self.network)
         while self.event_queue and self.current_time <= until: 
             event = heapq.heappop(self.event_queue)
@@ -341,6 +345,15 @@ class Simulator:
             "total_costs": summary['total_costs'],
             "num_actions": summary['num_actions']
         }
+
+    def notify_nodes_discovered(self, actor_id: str, discovered_nodes: list):
+        """Notify when an actor discovers new nodes through reconnaissance or scanning"""
+        for actor in self.get_all_actors():
+            if actor.id == actor_id and hasattr(actor, 'visible_nodes'):
+                # Add newly discovered nodes to the actor's visible nodes
+                for node in discovered_nodes:
+                    if node not in actor.visible_nodes:
+                        actor.visible_nodes.append(node)
 
     def print_history(self):
         for entry in self.history:

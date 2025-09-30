@@ -407,6 +407,11 @@ class ActionExecutor:
                     if actor.id == actor_id and hasattr(actor, 'compromised_nodes'):
                         actor.compromised_nodes.add(node.id)
         
+        # Notify about node discovery when going from NONE to VISIBLE
+        if old_access == "NONE" and access_level == "VISIBLE":
+            if hasattr(self, '_simulator') and self._simulator:
+                self._simulator.notify_nodes_discovered(actor_id, [node])
+        
         if hasattr(self, '_simulator') and self._simulator:
             self._simulator.record_access_change(node, actor_id, old_access, access_level)
 
@@ -500,10 +505,21 @@ class ActionExecutor:
 
     def _execute_set_links_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
         access_value = action['access_value']
+        discovered_nodes = []
+        
         for link in node.links:
             if not hasattr(link, 'access'):
                 link.access = {}
+            old_access = link.access.get(actor_id, "NONE")
             link.access[actor_id] = access_value
+            
+            # If this is a new discovery (from NONE to VISIBLE), track the discovered node
+            if old_access == "NONE" and access_value == "VISIBLE":
+                discovered_nodes.append(link)
+        
+        # Notify the simulator about newly discovered nodes so it can update actor visibility
+        if discovered_nodes and hasattr(self, '_simulator') and self._simulator:
+            self._simulator.notify_nodes_discovered(actor_id, discovered_nodes)
 
     def _execute_clear_assets(self, action: Dict[str, Any], node: Node) -> None:
         if hasattr(node, 'assets'):

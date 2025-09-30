@@ -66,14 +66,18 @@ def simtim_main(
             defender.available_actions = defense_actions
             defender_objs.append(defender)
         network['actors'] = attacker_objs + defender_objs
+        
+        # Initialize access: attackers start with no access, defenders see everything
         for attacker in attacker_objs:
             for node in network['nodes_list']:
-                if hasattr(node, 'exposed_to_internet') and node.exposed_to_internet:
-                    node.access[attacker.id] = 'VISIBLE'
-                else:
-                    node.access[attacker.id] = 'NONE'
+                if not hasattr(node, 'access'):
+                    node.access = {}
+                node.access[attacker.id] = 'NONE'  # Progressive discovery: start with no access
+                
         for defender in defender_objs:
             for node in network['nodes_list']:
+                if not hasattr(node, 'access'):
+                    node.access = {}
                 node.access[defender.id] = 'ADMIN'
         
         # Update the simulator network with actors  
