@@ -100,20 +100,42 @@ class Simulator:
         if hasattr(actor, 'make_decision'):
             actor.make_decision(self.network)
 
-    def handle_start_action(self, time, data):
-        precond = data["action"].precondition(
-            data["target"],
-            data.get("actor_access"),
-            data["actor"].id
-        )
-        if not precond:
-            self.history.append((self.current_time, "action_aborted", data))
+    def handle_start_action(self, time, event_data):
+        action = event_data["action"]
+        actor = event_data["actor"]
+        target = event_data["target"]
+        
+        # Check if actor has capacity for this action
+        if not actor.can_schedule_action():
+            self.history.append((self.current_time, "action_capacity_exceeded", event_data))
             return
-        self.ongoing_actions.append(data)
-        self.history.append((self.current_time, "start_action", data))
-        if hasattr(data["actor"], 'is_attacker') and data["actor"].is_attacker:
-            self._schedule_detection_check(data)
-        self._schedule_precondition_monitoring(data)
+        
+        # Add to ongoing actions
+        ongoing_action = {
+            "action": action,
+            "actor": actor,
+            "target": target,
+            "start_time": self.current_time,
+            "end_time": self.current_time + action.duration
+        }
+        self.ongoing_actions.append(ongoing_action)
+        
+        # Schedule action completion
+        self.schedule_event(
+            self.current_time + action.duration,
+            "action_finished",
+            event_data
+        )
+        
+        # Schedule detection check for attack actions
+        if hasattr(actor, 'is_attacker') and actor.is_attacker:
+            self._schedule_detection_check(event_data)
+        
+        # Log action start
+        self.history.append((self.current_time, "start_action", event_data))
+        
+        # Update actor's ongoing actions
+        actor.schedule_action(action)
 
     def handle_complete_action(self, time, data):
         ongoing = next((a for a in self.ongoing_actions
@@ -153,18 +175,20 @@ class Simulator:
             self.ongoing_actions.remove(ongoing)
 
     def _schedule_detection_check(self, action_data):
-        """Schedule detection check using the new action-aware detection engine"""
+        """Schedule detection check for attack actions"""
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
         actor_access = action_data.get("actor_access", "NONE")
         
-        # Update detection engine with current time
-        self.detection_engine.update_time(self.current_time)
+        # Calculate detection probability
+        detection_prob = self.detection_engine.calculate_detection_probability(action, target, actor_access, actor)
         
-        # Use new detection engine API
-        if self.detection_engine.should_detect_action(action, target, actor_access, actor):
-            detection_delay = self.detection_engine.sample_detection_time(action, action.duration)
+        # Roll for detection
+        import random
+        if random.random() < detection_prob:
+            # Schedule detection event during action execution
+            detection_delay = self.detection_engine.sample_detection_time(action.name, action.duration)
             self.schedule_event(
                 self.current_time + detection_delay,
                 "attack_detected",
@@ -173,7 +197,7 @@ class Simulator:
                     "detected_actor": actor,
                     "detected_target": target,
                     "detection_time": self.current_time + detection_delay,
-                    "detection_probability": self.detection_engine.calculate_detection_probability(action, target, actor_access, actor)
+                    "detection_probability": detection_prob
                 }
             )
 

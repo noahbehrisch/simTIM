@@ -42,6 +42,11 @@ def simtim_main(
             network['links_list'] = list(links)
         attack_actions = get_attack_actions()
         defense_actions = get_defense_actions()
+        
+        # Create simulator and load detection rates
+        simulator = Simulator(network)
+        simulator.detection_engine.load_action_detection_rates()
+        
         attacker_objs = []
         for attacker_config in attackers:
             attacker = Attacker(
@@ -70,9 +75,11 @@ def simtim_main(
         for defender in defender_objs:
             for node in network['nodes_list']:
                 node.access[defender.id] = 'ADMIN'
-        sim = Simulator(network=network)
-        sim.run(until=sim_time)
-        all_histories.append(list(sim.history))
+        
+        # Update the simulator network with actors  
+        simulator.network = network
+        simulator.run(until=sim_time)
+        all_histories.append(list(simulator.history))
         print("\nFinal network state:")
         for n in network.values():
             print(n)

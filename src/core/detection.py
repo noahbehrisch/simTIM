@@ -39,27 +39,10 @@ class SimpleDetectionEngine:
             logger.warning(f"Failed to load action detection rates: {e}")
             logger.warning("Using default detection rates")
     
-    def calculate_detection_probability(self, action, target_node, actor_access: str = None, actor = None) -> float:
-        self.load_action_detection_rates()
-        
-        action_name = action.name if hasattr(action, 'name') else str(action)
-        base_rate = self.action_detection_rates.get(action_name, self.default_detection_rate)
-        security_multiplier = 1.0
-        
-        node_properties = target_node if isinstance(target_node, dict) else {}
-        if hasattr(target_node, '__dict__'):
-            node_properties = target_node.__dict__
-        
-        if isinstance(node_properties, dict):
-            if node_properties.get('security_level') == 'high':
-                security_multiplier = 2.0
-            elif node_properties.get('security_level') == 'low':
-                security_multiplier = 0.5
-            
-            if node_properties.get('monitoring', False):
-                security_multiplier *= 1.5
-        
-        return min(0.95, base_rate * security_multiplier)
+    def calculate_detection_probability(self, action, target, actor_access, actor):
+        """Calculate detection probability for an action"""
+        base_rate = self.action_detection_rates.get(action.name, 0.2)
+        return min(base_rate, 0.95)
     
     def should_detect_action(self, action_name: str, node_properties: Dict[str, Any], actor_access: str = None, actor = None) -> bool:
         detection_prob = self.calculate_detection_probability(action_name, node_properties)
