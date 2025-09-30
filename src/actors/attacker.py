@@ -121,8 +121,10 @@ class Attacker(Actor):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
         if status == "success" and target is not None:
-            if hasattr(target, 'id'):
-                self.compromised_nodes.add(target.id)
+            # Only add to compromised_nodes if the target is actually compromised
+            if hasattr(target, 'compromised') and target.compromised:
+                if hasattr(target, 'id'):
+                    self.compromised_nodes.add(target.id)
             if hasattr(self, 'simulator') and self.simulator:
                 self.on_successful_attack(action, target, self.simulator.current_time)
 

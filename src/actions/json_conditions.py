@@ -365,6 +365,8 @@ class ActionExecutor:
             self._execute_set_access(postcondition, node, actor_id)
         elif action_type == 'set_property':
             self._execute_set_property(postcondition, node)
+        elif action_type == 'modify_property':
+            self._execute_modify_property(postcondition, node)
         elif action_type == 'set_software':
             self._execute_set_software(postcondition, node)
         elif action_type == 'add_vulnerability':
@@ -412,6 +414,41 @@ class ActionExecutor:
         property_name = action['property']
         value = action['value']
         setattr(node, property_name, value)
+
+    def _execute_modify_property(self, action: Dict[str, Any], node: Node) -> None:
+        property_name = action['property']
+        operation = action.get('operation', 'set')
+        value = action['value']
+        
+        if not hasattr(node, property_name):
+            if operation in ['add', 'subtract']:
+                setattr(node, property_name, 0)
+            else:
+                setattr(node, property_name, None)
+        
+        current_value = getattr(node, property_name)
+        
+        if operation == 'add':
+            if isinstance(current_value, (int, float)):
+                setattr(node, property_name, current_value + value)
+            elif isinstance(current_value, list):
+                # For lists, add means append
+                if not isinstance(value, list):
+                    value = [value]
+                setattr(node, property_name, current_value + value)
+        elif operation == 'subtract':
+            if isinstance(current_value, (int, float)):
+                setattr(node, property_name, max(0, current_value - value))
+            elif isinstance(current_value, list):
+                # For lists, subtract means remove first N items
+                new_list = current_value[:]
+                items_to_remove = min(value, len(new_list))
+                setattr(node, property_name, new_list[items_to_remove:])
+        elif operation == 'multiply':
+            if isinstance(current_value, (int, float)):
+                setattr(node, property_name, current_value * value)
+        else:  # Default to set
+            setattr(node, property_name, value)
 
     def _execute_set_software(self, action: Dict[str, Any], node: Node) -> None:
         software_key = action['software_key']
