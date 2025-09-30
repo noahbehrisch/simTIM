@@ -71,15 +71,15 @@ class App(tk.Tk):
             self.tabs[name + "_pad"] = pad_frame
         sim_frame = self.tabs["Simulation_pad"]
         tk.Label(sim_frame, text="Simulation Runs:", bg=self.tab_color, fg=self.button_fg).grid(row=0, column=0, padx=10, pady=10, sticky="w")
-        self.sim_runs_var = tk.IntVar(value=1)
+        self.sim_runs_var = tk.IntVar(value=5)
         tk.Entry(sim_frame, textvariable=self.sim_runs_var, width=10, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=0, column=1, padx=10, pady=10, sticky="w")
         tk.Label(sim_frame, text="Simulation Time:", bg=self.tab_color, fg=self.button_fg).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        self.sim_time_var = tk.DoubleVar(value=10.0)
+        self.sim_time_var = tk.DoubleVar(value=20.0)
         tk.Entry(sim_frame, textvariable=self.sim_time_var, width=10, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
         net_frame = self.tabs["Network_pad"]
         tk.Button(net_frame, text="Create Network", command=self.open_create_network_window, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=0, column=0, padx=10, pady=10, sticky="w")
         tk.Label(net_frame, text="Load Network File:", bg=self.tab_color, fg=self.button_fg).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        default_network_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'networks', 'library', 'network1.json'))
+        default_network_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'networks', 'library', 'realistic_enterprise_network.json'))
         self.network_file_var = tk.StringVar(value=default_network_path)
         tk.Entry(net_frame, textvariable=self.network_file_var, width=30, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
         tk.Button(net_frame, text="Browse", command=self.browse_network_file, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=1, column=2, padx=5, pady=10, sticky="w")
