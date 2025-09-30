@@ -395,6 +395,16 @@ class ActionExecutor:
             node.access = {}
         old_access = node.access.get(actor_id, "NONE")
         node.access[actor_id] = access_level
+        
+        # Set compromised flag when attacker gains USER or higher access
+        if access_level in ["USER", "ADMIN", "ROOT"] and old_access in ["NONE", "VISIBLE"]:
+            node.compromised = True
+            # Also update the actor's compromised nodes set if it's an attacker
+            if hasattr(self, '_simulator') and self._simulator:
+                for actor in self._simulator.get_all_actors():
+                    if actor.id == actor_id and hasattr(actor, 'compromised_nodes'):
+                        actor.compromised_nodes.add(node.id)
+        
         if hasattr(self, '_simulator') and self._simulator:
             self._simulator.record_access_change(node, actor_id, old_access, access_level)
 
