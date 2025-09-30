@@ -40,7 +40,6 @@ class SimpleDetectionEngine:
             logger.warning("Using default detection rates")
     
     def calculate_detection_probability(self, action, target, actor_access, actor):
-        """Calculate detection probability for an action"""
         base_rate = self.action_detection_rates.get(action.name, 0.2)
         return min(base_rate, 0.95)
     
