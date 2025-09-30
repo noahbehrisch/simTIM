@@ -6,6 +6,7 @@ class Defender(Actor):
     def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2):
         super().__init__(id, "defender", capacity=capacity, strategy=strategy)
         self.is_defender = True
+        self.is_attacker = False
         self.visible_nodes = set()
         self.compromised_nodes = set()
         self.visible_links = set()

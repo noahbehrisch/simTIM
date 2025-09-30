@@ -253,7 +253,13 @@ class ConditionEvaluator:
         property_name = condition['property']
         operator = condition['operator']
         expected_value = condition['value']
-        actual_value = getattr(node, property_name, None)
+        
+        # First try to get from properties dictionary, then fall back to direct attribute
+        if hasattr(node, 'properties') and property_name in node.properties:
+            actual_value = node.properties[property_name]
+        else:
+            actual_value = getattr(node, property_name, None)
+            
         if operator == 'equals':
             return actual_value == expected_value
         elif operator == 'not_equals':
@@ -418,7 +424,13 @@ class ActionExecutor:
     def _execute_set_property(self, action: Dict[str, Any], node: Node) -> None:
         property_name = action['property']
         value = action['value']
-        setattr(node, property_name, value)
+        
+        # Ensure node has properties dictionary
+        if not hasattr(node, 'properties'):
+            node.properties = {}
+        
+        # Set property in the properties dictionary
+        node.properties[property_name] = value
 
     def _execute_modify_property(self, action: Dict[str, Any], node: Node) -> None:
         property_name = action['property']

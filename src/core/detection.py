@@ -44,7 +44,10 @@ class SimpleDetectionEngine:
         return min(base_rate, 0.95)
     
     def should_detect_action(self, action_name: str, node_properties: Dict[str, Any], actor_access: str = None, actor = None) -> bool:
-        detection_prob = self.calculate_detection_probability(action_name, node_properties)
+        # Create a mock action object for detection probability calculation
+        mock_action = type('MockAction', (), {'name': action_name})()
+        mock_target = type('MockTarget', (), {'properties': node_properties})()
+        detection_prob = self.calculate_detection_probability(mock_action, mock_target, actor_access, actor)
         return random.random() < detection_prob
     
     def sample_detection_time(self, action_name: str, action_duration: float) -> float:
