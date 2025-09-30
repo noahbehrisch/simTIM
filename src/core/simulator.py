@@ -137,6 +137,10 @@ class Simulator:
         # Update actor's ongoing actions
         actor.schedule_action(action)
 
+    def handle_action_finished(self, time, data):
+        """Handle action completion - calls the existing complete_action logic"""
+        self.handle_complete_action(time, data)
+
     def handle_complete_action(self, time, data):
         ongoing = next((a for a in self.ongoing_actions
                         if a["actor"] == data["actor"] and
