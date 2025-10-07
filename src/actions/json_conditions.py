@@ -411,12 +411,16 @@ class ActionExecutor:
             if hasattr(self, '_simulator') and self._simulator:
                 for actor in self._simulator.get_all_actors():
                     if actor.id == actor_id and hasattr(actor, 'compromised_nodes'):
-                        actor.compromised_nodes.add(node.id)
+                        # Ensure we're working with a Node object that has an id attribute
+                        if hasattr(node, 'id'):
+                            actor.compromised_nodes.add(node.id)
         
         # Notify about node discovery when going from NONE to VISIBLE
         if old_access == "NONE" and access_level == "VISIBLE":
             if hasattr(self, '_simulator') and self._simulator:
-                self._simulator.notify_nodes_discovered(actor_id, [node])
+                # Only notify for actual Node objects, not Link objects
+                if hasattr(node, 'id'):
+                    self._simulator.notify_nodes_discovered(actor_id, [node])
         
         if hasattr(self, '_simulator') and self._simulator:
             self._simulator.record_access_change(node, actor_id, old_access, access_level)
@@ -516,6 +520,10 @@ class ActionExecutor:
         setattr(node, counter_name, current_value + increment)
 
     def _execute_set_links_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
+        # Ensure we're working with a Node object that has links
+        if not hasattr(node, 'links'):
+            return  # Skip if not a Node object
+            
         access_value = action['access_value']
         discovered_nodes = []
         

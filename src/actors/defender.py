@@ -66,7 +66,7 @@ class Defender(Actor):
         detected_action = detection_data.get("detected_action")
         detected_target = detection_data.get("detected_target")
         detected_actor = detection_data.get("detected_actor")
-        print(f"🚨 Defender {self.id}: Detected {detected_action.name} by {detected_actor.id} on {detected_target.id}")
+        print(f"🚨 Defender {self.id}: Detected {detected_action.name} by {detected_actor.id} on {getattr(detected_target, 'id', str(detected_target))}")
         if hasattr(self, 'available_actions'):
             defensive_actions = [action for action in self.available_actions 
                                if 'patch' in action.name.lower() or 'firewall' in action.name.lower()]

@@ -557,7 +557,12 @@ class App(tk.Tk):
             tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
             
         except Exception as e:
-            tk.messagebox.showerror("Simulation Error", f"Failed to run simulation:\n{str(e)}")
+            import traceback
+            error_msg = f"Failed to run simulation:\n{str(e)}"
+            print(f"\n🚨 SIMULATION ERROR: {error_msg}")
+            print("🔍 Full traceback:")
+            traceback.print_exc()
+            tk.messagebox.showerror("Simulation Error", error_msg)
 
     def launch_visualizer(self):
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg

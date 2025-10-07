@@ -21,12 +21,20 @@ class MonitoringDefenderStrategy:
         for action in defender.available_actions:
             if action.is_node_action():
                 for node in network_state.get('nodes_list', []):
+                    # Ensure we're only processing Node objects, not Link objects
+                    if not hasattr(node, 'links'):
+                        continue  # Skip Link objects or other invalid types
+                    
                     actor_access = node.access.get(defender.id, None)
-                    if action.precondition(node, actor_access, defender.id):
-                        priority = self.get_priority(action, node)
-                        if priority > best_priority:
-                            best = (action, node)
-                            best_priority = priority
+                    try:
+                        if action.precondition(node, actor_access, defender.id):
+                            priority = self.get_priority(action, node)
+                            if priority > best_priority:
+                                best = (action, node)
+                                best_priority = priority
+                    except Exception as e:
+                        # Skip actions that fail precondition check or priority calculation
+                        continue
         
         return best
     

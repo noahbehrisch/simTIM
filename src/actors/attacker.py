@@ -101,7 +101,7 @@ class Attacker(Actor):
         self.total_gain += one_off_gain
         self.record_economic_event(timestamp, 'gain', one_off_gain, {
             'action': action.name,
-            'target': target.id,
+            'target': getattr(target, 'id', str(target)),  # Handle both Node and Link objects
             'type': 'one_off_gain'
         })
         if actor_access in ['USER', 'ADMIN']:
@@ -109,7 +109,7 @@ class Attacker(Actor):
             self.time_proportional_gain_rate += gain_rate
             self.record_economic_event(timestamp, 'access_gain', gain_rate, {
                 'access_level': actor_access,
-                'target': target.id,
+                'target': getattr(target, 'id', str(target)),  # Handle both Node and Link objects
                 'type': 'time_proportional_rate'
             })
 

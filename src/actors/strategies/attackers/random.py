@@ -23,17 +23,27 @@ class RandomAttackerStrategy:
         for action in attacker.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
+                    # Skip already compromised nodes
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
                     actor_access = node.access.get(attacker.id, None)
-                    if action.precondition(node, actor_access, attacker.id):
-                        possible_actions.append((action, node))
+                    try:
+                        if action.precondition(node, actor_access, attacker.id):
+                            possible_actions.append((action, node))
+                    except Exception as e:
+                        # Skip actions that fail precondition check
+                        continue
             elif action.is_link_action():
                 for link in visible_links:
-                    if hasattr(link, 'id') and link.id in attacker.compromised_links:
+                    # Links don't have id attribute, so check differently
+                    if link in attacker.compromised_links:
                         continue
                     actor_access = getattr(link, 'access', {}).get(attacker.id, None)
-                    if action.precondition(link, actor_access, attacker.id):
-                        possible_actions.append((action, link))
+                    try:
+                        if action.precondition(link, actor_access, attacker.id):
+                            possible_actions.append((action, link))
+                    except Exception as e:
+                        # Skip actions that fail precondition check
+                        continue
         
         return random.choice(possible_actions) if possible_actions else None
