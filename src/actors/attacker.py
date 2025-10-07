@@ -1,6 +1,7 @@
 from .actor import Actor
 from src.core.graph import Node, Link
 from src.actions.action import Action
+from .strategies import get_attacker_strategy
 
 class Attacker(Actor):
     def __init__(self, id: str, strategy: str = "random", capacity: int = 3):
@@ -12,6 +13,8 @@ class Attacker(Actor):
         self.compromised_links = set()
         self.available_actions = []
         self.time_proportional_gain_rate = 0.0
+        # Initialize strategy component
+        self._strategy_component = get_attacker_strategy(strategy)
 
     def run(self, network_state):
         super().run(network_state)
@@ -43,65 +46,13 @@ class Attacker(Actor):
         self.schedule_next_decision()
 
     def choose_action(self, network_state):
-        match self.strategy:
-            case "greedy":
-                return  self.choose_best_action(network_state)
-            case "random":
-                return self.choose_random_action(network_state)
-            case _:
-                return self.choose_best_action(network_state)
+        # Delegate to strategy component
+        return self._strategy_component.choose_action(self, network_state)
 
-    def choose_best_action(self, network_state) -> tuple:
-        visible_nodes = list(self.visible_nodes)
-        visible_links = list(self.visible_links)
-        best = None
-        best_gain = float('-inf')
-        for action in self.available_actions:
-            if action.is_node_action():
-                for node in visible_nodes:
-                    if hasattr(node, 'id') and node.id in self.compromised_nodes:
-                        continue
-                    actor_access = node.access.get(self.id, None)
-                    if action.precondition(node, actor_access, self.id):
-                        gain = action.get_one_off_gain(node, actor_access, self.id)
-                        if gain > best_gain:
-                            best = (action, node)
-                            best_gain = gain
-            elif action.is_link_action():
-                for link in visible_links:
-                    if hasattr(link, 'id') and link.id in self.compromised_links:
-                        continue
-                    actor_access = getattr(link, 'access', {}).get(self.id, None)
-                    if action.precondition(link, actor_access, self.id):
-                        gain = action.get_one_off_gain(link, actor_access, self.id)
-                        if gain > best_gain:
-                            best = (action, link)
-                            best_gain = gain
-        return best
-
-    def choose_random_action(self, network_state) -> tuple:
-        import random
-
-        visible_nodes = list(self.visible_nodes)
-        visible_links = list(self.visible_links)
-        possible_actions = []
-        for action in self.available_actions:
-            if action.is_node_action():
-                for node in visible_nodes:
-                    if hasattr(node, 'id') and node.id in self.compromised_nodes:
-                        continue
-                    actor_access = node.access.get(self.id, None)
-                    if action.precondition(node, actor_access, self.id):
-                        possible_actions.append((action, node))
-            elif action.is_link_action():
-                for link in visible_links:
-                    if hasattr(link, 'id') and link.id in self.compromised_links:
-                        continue
-                    actor_access = getattr(link, 'access', {}).get(self.id, None)
-                    if action.precondition(link, actor_access, self.id):
-                        possible_actions.append((action, link))
-        chosen_action = random.choice(possible_actions) if possible_actions else None
-        return chosen_action
+    def change_strategy(self, new_strategy: str):
+        """Allow runtime strategy changes"""
+        self.strategy = new_strategy
+        self._strategy_component = get_attacker_strategy(new_strategy)
 
     def exploit(self, node: Node):
         node.compromised = True

@@ -1,6 +1,7 @@
 from .actor import Actor
 from src.core.graph import Node
 from src.actions.action import Action
+from .strategies import get_defender_strategy
 
 class Defender(Actor):
     def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2):
@@ -14,6 +15,8 @@ class Defender(Actor):
         self.available_actions = []
         self.system_damage_prevented = 0.0
         self.detected_attacks = []
+        # Initialize strategy component
+        self._strategy_component = get_defender_strategy(strategy)
 
     def run(self, network_state):
         super().run(network_state)
@@ -43,114 +46,13 @@ class Defender(Actor):
         self.schedule_next_decision()
 
     def choose_best_action(self, network_state) -> tuple:
-        if self.strategy == "reactive":
-            return self._choose_reactive_action(network_state)
-        elif self.strategy == "proactive":
-            return self._choose_proactive_action(network_state)
-        elif self.strategy == "monitoring":
-            return self._choose_monitoring_action(network_state)
-        else:
-            return self._choose_default_action(network_state)
+        # Delegate to strategy component
+        return self._strategy_component.choose_action(self, network_state)
 
-    def _choose_reactive_action(self, network_state) -> tuple:
-        best = None
-        best_priority = -1
-        for action in self.available_actions:
-            if action.is_node_action():
-                for node in network_state.get('nodes_list', []):
-                    actor_access = node.access.get(self.id, None)
-                    if action.precondition(node, actor_access, self.id):
-                        priority = self._get_reactive_priority(action, node)
-                        if priority > best_priority:
-                            best = (action, node)
-                            best_priority = priority
-        return best
-
-    def _choose_proactive_action(self, network_state) -> tuple:
-        best = None
-        best_priority = -1
-        for action in self.available_actions:
-            if action.is_node_action():
-                for node in network_state.get('nodes_list', []):
-                    actor_access = node.access.get(self.id, None)
-                    if action.precondition(node, actor_access, self.id):
-                        priority = self._get_proactive_priority(action, node)
-                        if priority > best_priority:
-                            best = (action, node)
-                            best_priority = priority
-        return best
-
-    def _choose_monitoring_action(self, network_state) -> tuple:
-        best = None
-        best_priority = -1
-        for action in self.available_actions:
-            if action.is_node_action():
-                for node in network_state.get('nodes_list', []):
-                    actor_access = node.access.get(self.id, None)
-                    if action.precondition(node, actor_access, self.id):
-                        priority = self._get_monitoring_priority(action, node)
-                        if priority > best_priority:
-                            best = (action, node)
-                            best_priority = priority
-        return best
-
-    def _choose_default_action(self, network_state) -> tuple:
-        best = None
-        best_cost = float('inf')
-        for action in self.available_actions:
-            if action.is_node_action():
-                for node in network_state.get('nodes_list', []):
-                    actor_access = node.access.get(self.id, None)
-                    if action.precondition(node, actor_access, self.id):
-                        cost = action.get_cost()
-                        if cost < best_cost:
-                            best = (action, node)
-                            best_cost = cost
-            elif action.is_link_action():
-                for link in network_state.get('links_list', []):
-                    actor_access = getattr(link, 'access', {}).get(self.id, None)
-                    if action.precondition(link, actor_access, self.id):
-                        cost = action.get_cost()
-                        if cost < best_cost:
-                            best = (action, link)
-                            best_cost = cost
-        return best
-
-    def _get_reactive_priority(self, action, node):
-        priority = 0
-        if node.compromised and "Incident Response" in action.name:
-            priority += 100
-        elif node.compromised:
-            priority += 50
-        if len(node.vulnerabilities) > 0 and ("Patch" in action.name or "Remediation" in action.name):
-            priority += 30 + len(node.vulnerabilities) * 10
-        priority += len(node.assets) * 2
-        return priority
-
-    def _get_proactive_priority(self, action, node):
-        priority = 0
-        if not node.compromised and len(node.vulnerabilities) > 0:
-            if "Patch" in action.name or "Remediation" in action.name:
-                priority += 80 + len(node.vulnerabilities) * 15
-        if "Firewall" in action.name or "Detection" in action.name:
-            priority += 60
-        if len(node.assets) > 2:
-            priority += len(node.assets) * 10
-        if hasattr(node, 'category'):
-            if node.category in ['Security', 'Servers']:
-                priority += 40
-        return priority
-
-    def _get_monitoring_priority(self, action, node):
-        priority = 0
-        if "Monitoring" in action.name or "Detection" in action.name:
-            priority += 90
-        if len(node.assets) > 2:
-            priority += len(node.assets) * 15
-        priority += len(node.links) * 5
-        if node.compromised:
-            priority += 70
-        return priority
+    def change_strategy(self, new_strategy: str):
+        """Allow runtime strategy changes"""
+        self.strategy = new_strategy
+        self._strategy_component = get_defender_strategy(new_strategy)
 
     def repair(self, node: Node):
         node.compromised = False
