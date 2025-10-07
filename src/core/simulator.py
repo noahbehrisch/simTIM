@@ -165,10 +165,6 @@ class Simulator:
                     )
                     self._calculate_economic_impact(data)
                     
-                    # Register defense capabilities with detection engine
-                    if hasattr(data["actor"], 'is_attacker') and not data["actor"].is_attacker:
-                        self._register_defense_capability(data)
-                    
                     if hasattr(data["actor"], "on_action_finished"):
                         data["actor"].on_action_finished(data["action"], "success", data["target"])
                     self.history.append((self.current_time, "action_succeeded", data))
