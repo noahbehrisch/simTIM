@@ -257,58 +257,17 @@ class App(tk.Tk):
         tk.Label(win, text="Help!", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
 
     def run_simulation_from_gui(self):
-        sim_runs = self.sim_runs_var.get()
-        sim_time = self.sim_time_var.get()
-        path_to_network_config = self.network_file_var.get()
+        # Get configuration from all tabs
+        sim_config = self.simulation_tab.get_simulation_config()
+        network_config = self.network_tab.get_network_config()
+        attackers = self.attacker_tab.get_attacker_config()
+        defenders = self.defender_tab.get_defender_config()
         
-        attackers = []
-        for entry in self.attacker_entries:
-            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, _ = entry
-            
-            # Handle infinite capacity
-            if infinite_var.get():
-                capacity = float('inf')
-            else:
-                try:
-                    capacity = int(capacity_var.get())
-                except ValueError:
-                    capacity = 3  # fallback
-            
-            # Handle budget
-            try:
-                budget = float(budget_var.get())
-            except ValueError:
-                budget = 1000.0  # fallback
-            
-            attackers.append({
-                'id': f"attacker{attacker_id}",
-                'strategy': strategy_var.get(),
-                'capacity': capacity,
-                'budget': budget
-            })
-        
-        defenders = []
-        for entry in self.defender_entries:
-            defender_id, strategy_var, capacity_var, budget_var, _ = entry
-            
-            # Handle capacity
-            try:
-                capacity = int(capacity_var.get())
-            except ValueError:
-                capacity = 2  # fallback
-            
-            # Handle budget
-            try:
-                budget = float(budget_var.get())
-            except ValueError:
-                budget = 2000.0  # fallback
-            
-            defenders.append({
-                'id': f"defender{defender_id}",
-                'strategy': strategy_var.get(),
-                'capacity': capacity,
-                'budget': budget
-            })
+        # Extract values
+        sim_runs = sim_config['runs']
+        sim_time = sim_config['time']
+        detection_engine_type = sim_config['detection_engine_type']
+        path_to_network_config = network_config['file_path']
         
         # Validate inputs
         if not attackers:
@@ -324,7 +283,8 @@ class App(tk.Tk):
                 sim_runs=sim_runs,
                 sim_time=sim_time,
                 attackers=attackers,
-                defenders=defenders
+                defenders=defenders,
+                detection_engine_type=detection_engine_type
             )
             self.all_histories = all_histories
             self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))

@@ -113,7 +113,18 @@ class SimpleTIMDetectionEngine:
             node_properties = {}
         
         # Look up configured detection probability
-        property_hash = hash(frozenset(node_properties.items()))
+        # Handle unhashable types (like lists) by converting them to tuples
+        hashable_properties = {}
+        for key, value in node_properties.items():
+            if isinstance(value, list):
+                hashable_properties[key] = tuple(value)
+            elif isinstance(value, dict):
+                # For nested dicts, convert to tuple of sorted items
+                hashable_properties[key] = tuple(sorted(value.items()))
+            else:
+                hashable_properties[key] = value
+        
+        property_hash = hash(frozenset(hashable_properties.items()))
         key = (action_name, property_hash)
         
         if key in self.detection_probability_map:

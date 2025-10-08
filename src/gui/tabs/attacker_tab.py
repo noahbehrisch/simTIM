@@ -173,13 +173,26 @@ class AttackerTab(BaseTab):
         for entry in self.attacker_entries:
             attacker_id, strategy_var, capacity_var, infinite_var, budget_var, frame = entry
             
-            capacity = float('inf') if infinite_var.get() else int(capacity_var.get())
+            # Handle infinite capacity
+            if infinite_var.get():
+                capacity = float('inf')
+            else:
+                try:
+                    capacity = int(capacity_var.get())
+                except ValueError:
+                    capacity = 3  # fallback
+            
+            # Handle budget
+            try:
+                budget = float(budget_var.get())
+            except ValueError:
+                budget = 1000.0  # fallback
             
             attackers.append({
-                'id': attacker_id,
+                'id': f"attacker{attacker_id}",
                 'strategy': strategy_var.get(),
                 'capacity': capacity,
-                'budget': float(budget_var.get())
+                'budget': budget
             })
         
         return attackers

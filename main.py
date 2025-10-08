@@ -10,6 +10,7 @@ def simtim_main(
     sim_time=None,
     attackers=None,
     defenders=None,
+    detection_engine_type="legacy",
 ):
     if not path_to_network_config:
         print("Error: No network configuration file provided.")
@@ -44,8 +45,11 @@ def simtim_main(
         defense_actions = get_defense_actions()
         
         # Create simulator and load detection rates
-        simulator = Simulator(network)
-        simulator.detection_engine.load_action_detection_rates()
+        simulator = Simulator(network, detection_engine_type=detection_engine_type)
+        
+        # Only load action detection rates for legacy detection engine
+        if hasattr(simulator.detection_engine, 'load_action_detection_rates'):
+            simulator.detection_engine.load_action_detection_rates()
         
         attacker_objs = []
         for attacker_config in attackers:
@@ -83,7 +87,16 @@ def simtim_main(
         # Update the simulator network with actors  
         simulator.network = network
         simulator.run(until=sim_time)
-        all_histories.append(list(simulator.history))
+        
+        # Convert history to consistent tuple format
+        history_tuples = []
+        for event in simulator.history:
+            if hasattr(event, 'time'):  # Event object
+                history_tuples.append((event.time, event.event_type, event.data))
+            else:  # Already a tuple
+                history_tuples.append(event)
+        
+        all_histories.append(history_tuples)
         print("\nFinal network state:")
         for n in network.values():
             print(n)

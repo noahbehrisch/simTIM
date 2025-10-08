@@ -159,11 +159,23 @@ class DefenderTab(BaseTab):
         for entry in self.defender_entries:
             defender_id, strategy_var, capacity_var, budget_var, frame = entry
             
+            # Handle capacity
+            try:
+                capacity = int(capacity_var.get())
+            except ValueError:
+                capacity = 2  # fallback
+            
+            # Handle budget
+            try:
+                budget = float(budget_var.get())
+            except ValueError:
+                budget = 2000.0  # fallback
+            
             defenders.append({
-                'id': defender_id,
+                'id': f"defender{defender_id}",
                 'strategy': strategy_var.get(),
-                'capacity': int(capacity_var.get()),
-                'budget': float(budget_var.get())
+                'capacity': capacity,
+                'budget': budget
             })
         
         return defenders
