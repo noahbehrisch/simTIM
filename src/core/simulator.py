@@ -311,11 +311,8 @@ class Simulator:
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
-        self.history.append((time, "precondition_check", {
-            "action": action.name,
-            "actor": actor.id,
-            "target": target.id
-        }))
+        
+        # Find the ongoing action to check
         ongoing_action = None
         for ongoing in self.ongoing_actions:
             if (ongoing["actor"] == actor and 
@@ -323,8 +320,11 @@ class Simulator:
                 ongoing["target"] == target):
                 ongoing_action = ongoing
                 break
+        
         if ongoing_action is None:
             return
+        
+        # Check if precondition still holds
         current_access = target.access.get(actor.id, "NONE")
         precond_holds = action.precondition(target, current_access, actor.id)
         if not precond_holds:

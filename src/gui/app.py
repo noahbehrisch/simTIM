@@ -8,6 +8,7 @@ from tkinter import messagebox
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from main import simtim_main
 from src.gui.results_window import ResultsWindow
+from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab
 
 class App(tk.Tk):
     def __init__(self):
@@ -33,6 +34,17 @@ class App(tk.Tk):
         self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Overview"]
         self.tabs = {}
         self.current_tab = None
+        
+        # Create theme colors dictionary for tabs
+        self.theme_colors = {
+            'bg_color': self.bg_color,
+            'tab_color': self.tab_color,
+            'sidebar_color': self.sidebar_color,
+            'highlight_color': self.highlight_color,
+            'button_color': self.button_color,
+            'button_fg': self.button_fg
+        }
+        
         self.create_tabs()
         self.sidebar = Sidebar(
             self, self.toggle_fullscreen, self.fullscreen_state, lambda name: self.show_tab(name),
@@ -60,85 +72,56 @@ class App(tk.Tk):
         self.after(0, lambda: self.show_tab("Simulation"))
 
     def create_tabs(self):
-        tab_names = self.tab_names
-        for name in tab_names:
-            frame = tk.Frame(self, bg=self.tab_color)
-            frame.grid(row=1, column=1, sticky="nswe")
-            frame.grid_remove()
-            self.tabs[name] = frame
-            frame.grid_propagate(False)
-            pad_frame = tk.Frame(frame, padx=50, pady=50, bg=self.tab_color)
-            pad_frame.pack(expand=True, fill="both")
-            self.tabs[name + "_pad"] = pad_frame
-        sim_frame = self.tabs["Simulation_pad"]
-        tk.Label(sim_frame, text="Simulation Runs:", bg=self.tab_color, fg=self.button_fg).grid(row=0, column=0, padx=10, pady=10, sticky="w")
-        self.sim_runs_var = tk.IntVar(value=5)
-        tk.Entry(sim_frame, textvariable=self.sim_runs_var, width=10, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=0, column=1, padx=10, pady=10, sticky="w")
-        tk.Label(sim_frame, text="Simulation Time:", bg=self.tab_color, fg=self.button_fg).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        self.sim_time_var = tk.DoubleVar(value=20.0)
-        tk.Entry(sim_frame, textvariable=self.sim_time_var, width=10, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
-        net_frame = self.tabs["Network_pad"]
-        tk.Button(net_frame, text="Create Network", command=self.open_create_network_window, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=0, column=0, padx=10, pady=10, sticky="w")
-        tk.Label(net_frame, text="Load Network File:", bg=self.tab_color, fg=self.button_fg).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        default_network_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'networks', 'library', 'realistic_enterprise_network.json'))
-        self.network_file_var = tk.StringVar(value=default_network_path)
-        tk.Entry(net_frame, textvariable=self.network_file_var, width=30, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg).grid(row=1, column=1, padx=10, pady=10, sticky="w")
-        tk.Button(net_frame, text="Browse", command=self.browse_network_file, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=1, column=2, padx=5, pady=10, sticky="w")
-        tk.Button(net_frame, text="Visualize Network", command=self.launch_visualizer, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).grid(row=2, column=0, padx=10, pady=10, sticky="w")
-        atk_frame = self.tabs["Attackers_pad"]
-        self.attacker_entries = []
-        self.attacker_list = []
+        """Create modular tabs using the new tab system."""
+        # Create individual tab objects
+        self.simulation_tab = SimulationTab(self, self.theme_colors)
+        self.network_tab = NetworkTab(self, self.theme_colors)
+        self.attacker_tab = AttackerTab(self, self.theme_colors)
+        self.defender_tab = DefenderTab(self, self.theme_colors)
         
-        # Strategy descriptions
-        strategy_info = tk.Frame(atk_frame, bg="#f0f8ff", relief="ridge", bd=1)
-        strategy_info.pack(fill="x", padx=10, pady=5)
-        tk.Label(strategy_info, text="Attacker Strategies:", bg="#f0f8ff", fg=self.button_fg, font=("Arial", 10, "bold")).pack(anchor="w", padx=5)
-        tk.Label(strategy_info, text="• Greedy: Chooses actions with highest expected gain", bg="#f0f8ff", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
-        tk.Label(strategy_info, text="• Random: Selects valid actions randomly", bg="#f0f8ff", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
+        # Store tab objects in tabs dict for easy access
+        self.tabs["Simulation"] = self.simulation_tab.frame
+        self.tabs["Network"] = self.network_tab.frame
+        self.tabs["Attackers"] = self.attacker_tab.frame
+        self.tabs["Defenders"] = self.defender_tab.frame
         
-        # Header row
-        header_frame = tk.Frame(atk_frame, bg=self.tab_color)
-        header_frame.pack(fill="x", padx=10, pady=5)
-        tk.Label(header_frame, text="ID", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=0, padx=1)
-        tk.Label(header_frame, text="Strategy", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=1, padx=1)
-        tk.Label(header_frame, text="Capacity", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=2, padx=1)
-        tk.Label(header_frame, text="∞", bg=self.sidebar_color, fg=self.button_fg, width=6, relief="ridge").grid(row=0, column=3, padx=1)
-        tk.Label(header_frame, text="Budget ($)", bg=self.sidebar_color, fg=self.button_fg, width=10, relief="ridge").grid(row=0, column=4, padx=1)
-        tk.Label(header_frame, text="Actions", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=5, padx=1)
+        # Create Overview tab (keeping it in main app as it summarizes all tabs)
+        overview_frame = tk.Frame(self, bg=self.tab_color)
+        overview_frame.grid(row=1, column=1, sticky="nswe")
+        overview_frame.grid_remove()
+        overview_frame.grid_propagate(False)
         
-        tk.Button(atk_frame, text="Add Attacker", command=self.add_attacker_entry, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).pack(padx=10, pady=10, anchor="w")
-        self.attacker_entries_frame = tk.Frame(atk_frame, bg=self.tab_color)
-        self.attacker_entries_frame.pack(fill="both", expand=True)
-        def_frame = self.tabs["Defenders_pad"]
-        self.defender_entries = []
-        self.defender_list = []
+        # Overview tab content
+        overview_pad_frame = tk.Frame(overview_frame, padx=50, pady=50, bg=self.tab_color)
+        overview_pad_frame.pack(expand=True, fill="both")
         
-        # Strategy descriptions
-        strategy_info = tk.Frame(def_frame, bg="#f0fff0", relief="ridge", bd=1)
-        strategy_info.pack(fill="x", padx=10, pady=5)
-        tk.Label(strategy_info, text="Defender Strategies:", bg="#f0fff0", fg=self.button_fg, font=("Arial", 10, "bold")).pack(anchor="w", padx=5)
-        tk.Label(strategy_info, text="• Reactive: Responds to detected threats and vulnerabilities", bg="#f0fff0", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
-        tk.Label(strategy_info, text="• Proactive: Actively hardens systems and patches vulnerabilities", bg="#f0fff0", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
-        tk.Label(strategy_info, text="• Monitoring: Focuses on detection and surveillance capabilities", bg="#f0fff0", fg=self.button_fg, font=("Arial", 9)).pack(anchor="w", padx=15)
-        
-        # Header row
-        header_frame = tk.Frame(def_frame, bg=self.tab_color)
-        header_frame.pack(fill="x", padx=10, pady=5)
-        tk.Label(header_frame, text="ID", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=0, padx=1)
-        tk.Label(header_frame, text="Strategy", bg=self.sidebar_color, fg=self.button_fg, width=12, relief="ridge").grid(row=0, column=1, padx=1)
-        tk.Label(header_frame, text="Capacity", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=2, padx=1)
-        tk.Label(header_frame, text="Budget ($)", bg=self.sidebar_color, fg=self.button_fg, width=10, relief="ridge").grid(row=0, column=3, padx=1)
-        tk.Label(header_frame, text="Actions", bg=self.sidebar_color, fg=self.button_fg, width=8, relief="ridge").grid(row=0, column=4, padx=1)
-        
-        tk.Button(def_frame, text="Add Defender", command=self.add_defender_entry, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color).pack(padx=10, pady=10, anchor="w")
-        self.defender_entries_frame = tk.Frame(def_frame, bg=self.tab_color)
-        self.defender_entries_frame.pack(fill="both", expand=True)
-        self.add_attacker_entry()
-        self.add_defender_entry()
-        overview_frame = self.tabs["Overview_pad"]
-        self.overview_text = tk.Text(overview_frame, width=60, height=30, state=tk.DISABLED, bg="#eaf1fb", fg=self.button_fg, insertbackground=self.button_fg)
+        self.overview_text = tk.Text(
+            overview_pad_frame, 
+            width=60, 
+            height=30, 
+            state=tk.DISABLED, 
+            bg="#eaf1fb", 
+            fg=self.button_fg, 
+            insertbackground=self.button_fg
+        )
         self.overview_text.pack(expand=True, fill="both", padx=10, pady=10)
+        
+        self.tabs["Overview"] = overview_frame
+        
+        # Set up backward compatibility by linking tab variables
+        self.sim_runs_var = self.simulation_tab.sim_runs_var
+        self.sim_time_var = self.simulation_tab.sim_time_var
+        self.network_file_var = self.network_tab.network_file_var
+        self.attacker_entries = self.attacker_tab.attacker_entries
+        self.defender_entries = self.defender_tab.defender_entries
+        
+        # Load initial node options from default network
+        self._load_default_network_nodes()
+    
+    def _load_default_network_nodes(self):
+        """Load node options from the default network file."""
         self.node_options = []
+        default_network_path = self.network_tab.network_file_var.get()
         try:
             with open(default_network_path, 'r') as f:
                 data = json.load(f)
@@ -150,129 +133,56 @@ class App(tk.Tk):
             self.node_options = []
 
     def browse_network_file(self):
-        network_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'networks', 'library')
-        network_dir = os.path.abspath(network_dir)
-        file_path = filedialog.askopenfilename(
-            title="Select Network File",
-            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
-            initialdir=network_dir
-        )
-        if file_path:
-            self.network_file_var.set(file_path)
-            try:
-                with open(file_path, 'r') as f:
-                    data = json.load(f)
-                if 'nodes' in data:
-                    self.node_options = [n['id'] for n in data['nodes'] if 'id' in n]
-                else:
-                    self.node_options = []
-            except Exception as e:
-                self.node_options = []
+        """Delegate to network tab."""
+        self.network_tab.browse_network_file()
 
     def add_attacker_entry(self):
-        frame = tk.Frame(self.attacker_entries_frame, bg=self.tab_color)
-        frame.pack(fill="x", padx=10, pady=2)
-        
-        attacker_id = len(self.attacker_entries) + 1
-        
-        # ID
-        id_label = tk.Label(frame, text=f"Attacker {attacker_id}", bg="#eaf1fb", fg=self.button_fg, width=12, relief="sunken")
-        id_label.grid(row=0, column=0, padx=1, sticky="w")
-        
-        # Strategy
-        strategy_var = tk.StringVar(value="greedy")
-        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["greedy", "random"], state="readonly", width=10)
-        strategy_dropdown.grid(row=0, column=1, padx=1, sticky="w")
-        
-        # Capacity
-        capacity_var = tk.StringVar(value="3")
-        capacity_entry = tk.Entry(frame, textvariable=capacity_var, width=6, bg="#eaf1fb", fg=self.button_fg)
-        capacity_entry.grid(row=0, column=2, padx=1, sticky="w")
-        
-        # Infinite capacity checkbox
-        infinite_var = tk.BooleanVar(value=False)
-        infinite_check = tk.Checkbutton(frame, text="", variable=infinite_var, bg=self.tab_color, fg=self.button_fg,
-                                       command=lambda: self._toggle_capacity(capacity_entry, infinite_var))
-        infinite_check.grid(row=0, column=3, padx=1, sticky="w")
-        
-        # Budget
-        budget_var = tk.StringVar(value="1000")
-        budget_entry = tk.Entry(frame, textvariable=budget_var, width=8, bg="#eaf1fb", fg=self.button_fg)
-        budget_entry.grid(row=0, column=4, padx=1, sticky="w")
-        
-        # Remove button
-        remove_btn = tk.Button(frame, text="Remove", command=lambda: self._remove_attacker(frame), 
-                              bg="#ffcccc", fg=self.button_fg, activebackground="#ff9999", width=6)
-        remove_btn.grid(row=0, column=5, padx=1, sticky="w")
-        
-        self.attacker_entries.append((attacker_id, strategy_var, capacity_var, infinite_var, budget_var, frame))
-
-    def _toggle_capacity(self, capacity_entry, infinite_var):
-        if infinite_var.get():
-            capacity_entry.config(state="disabled")
-        else:
-            capacity_entry.config(state="normal")
-    
-    def _remove_attacker(self, frame):
-        # Find and remove the entry
-        for i, entry in enumerate(self.attacker_entries):
-            if entry[5] == frame:  # frame is the last element
-                self.attacker_entries.pop(i)
-                frame.destroy()
-                break
+        """Delegate to attacker tab."""
+        self.attacker_tab.add_attacker_entry()
 
     def add_defender_entry(self):
-        frame = tk.Frame(self.defender_entries_frame, bg=self.tab_color)
-        frame.pack(fill="x", padx=10, pady=2)
-        
-        defender_id = len(self.defender_entries) + 1
-        
-        # ID
-        id_label = tk.Label(frame, text=f"Defender {defender_id}", bg="#eaf1fb", fg=self.button_fg, width=12, relief="sunken")
-        id_label.grid(row=0, column=0, padx=1, sticky="w")
-        
-        # Strategy
-        strategy_var = tk.StringVar(value="reactive")
-        strategy_dropdown = ttk.Combobox(frame, textvariable=strategy_var, values=["reactive", "proactive", "monitoring"], state="readonly", width=10)
-        strategy_dropdown.grid(row=0, column=1, padx=1, sticky="w")
-        
-        # Capacity
-        capacity_var = tk.StringVar(value="2")
-        capacity_entry = tk.Entry(frame, textvariable=capacity_var, width=6, bg="#eaf1fb", fg=self.button_fg)
-        capacity_entry.grid(row=0, column=2, padx=1, sticky="w")
-        
-        # Budget
-        budget_var = tk.StringVar(value="2000")
-        budget_entry = tk.Entry(frame, textvariable=budget_var, width=8, bg="#eaf1fb", fg=self.button_fg)
-        budget_entry.grid(row=0, column=3, padx=1, sticky="w")
-        
-        # Remove button
-        remove_btn = tk.Button(frame, text="Remove", command=lambda: self._remove_defender(frame), 
-                              bg="#ffcccc", fg=self.button_fg, activebackground="#ff9999", width=6)
-        remove_btn.grid(row=0, column=4, padx=1, sticky="w")
-        
-        self.defender_entries.append((defender_id, strategy_var, capacity_var, budget_var, frame))
-    
-    def _remove_defender(self, frame):
-        # Find and remove the entry
-        for i, entry in enumerate(self.defender_entries):
-            if entry[4] == frame:  # frame is now the 5th element (index 4)
-                self.defender_entries.pop(i)
-                frame.destroy()
-                break
+        """Delegate to defender tab."""
+        self.defender_tab.add_defender_entry()
 
     def show_tab(self, name):
+        """Show the specified tab and hide others."""
+        # Hide current tab
         if self.current_tab:
-            self.tabs[self.current_tab].grid_remove()
-        self.tabs[name].grid()
+            tab_name_map = {
+                "Simulation": "simulation_tab",
+                "Network": "network_tab", 
+                "Attackers": "attacker_tab",
+                "Defenders": "defender_tab"
+            }
+            
+            if self.current_tab in tab_name_map:
+                # Use new tab system
+                tab_obj = getattr(self, tab_name_map[self.current_tab])
+                tab_obj.hide()
+            elif self.current_tab in self.tabs:
+                # Use old tab system for Overview
+                self.tabs[self.current_tab].grid_remove()
+        
+        # Show new tab
+        tab_name_map = {
+            "Simulation": "simulation_tab",
+            "Network": "network_tab", 
+            "Attackers": "attacker_tab",
+            "Defenders": "defender_tab"
+        }
+        
+        if name in tab_name_map:
+            # Use new tab system
+            tab_obj = getattr(self, tab_name_map[name])
+            tab_obj.show()
+        elif name in self.tabs:
+            # Use old tab system for Overview
+            self.tabs[name].grid()
+        
         self.current_tab = name
         self.sidebar.highlight_tab(name)
-        for tname in self.tab_names:
-            pad = self.tabs[tname + "_pad"]
-            if tname == name:
-                pad.pack(expand=True, fill="both")
-            else:
-                pad.pack_forget()
+        
+        # Handle Overview tab special behavior
         if name == "Overview":
             self.update_overview()
             self.results_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
@@ -329,11 +239,8 @@ class App(tk.Tk):
                 self.show_tab(self.tab_names[idx + 1])
 
     def open_create_network_window(self):
-        win = tk.Toplevel(self)
-        win.title("Create Network")
-        win.geometry("1800x1200")
-        win.configure(bg=self.bg_color)
-        tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
+        """Delegate to network tab."""
+        self.network_tab.open_create_network_window()
 
     def open_results_window(self, all_histories):
         theme_colors = {
@@ -438,14 +345,8 @@ class App(tk.Tk):
             tk.messagebox.showerror("Simulation Error", error_msg)
 
     def launch_visualizer(self):
-        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from src.networks.network_visualizer import NetworkVisualizer
-        from src.core.graph import Graph
-
-        network_path = self.network_file_var.get()
-        network = Graph.from_json(network_path)
-        visualizer = NetworkVisualizer(network)
-        visualizer.visualize()
+        """Delegate to network tab."""
+        self.network_tab.launch_visualizer()
 
 class Sidebar(tk.Frame):
     def __init__(self, master, toggle_fullscreen, fullscreen_state, switch_tab_callback, sidebar_color, highlight_color, button_color, button_fg):
