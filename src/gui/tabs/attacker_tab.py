@@ -98,7 +98,7 @@ class AttackerTab(BaseTab):
         )
         strategy_dropdown.grid(row=0, column=1, padx=1, sticky="w")
         
-        # Capacity
+        # Capacity (default to infinite for demo purposes)
         capacity_var = tk.StringVar(value="3")
         capacity_entry = tk.Entry(
             frame, 
@@ -109,8 +109,8 @@ class AttackerTab(BaseTab):
         )
         capacity_entry.grid(row=0, column=2, padx=1, sticky="w")
         
-        # Infinite capacity checkbox
-        infinite_var = tk.BooleanVar(value=False)
+        # Infinite capacity checkbox (default to True for demo)
+        infinite_var = tk.BooleanVar(value=True)
         infinite_check = tk.Checkbutton(
             frame, 
             text="", 
@@ -120,6 +120,9 @@ class AttackerTab(BaseTab):
             command=lambda: self._toggle_capacity(capacity_entry, infinite_var)
         )
         infinite_check.grid(row=0, column=3, padx=1, sticky="w")
+        
+        # Disable capacity entry initially since infinite is checked
+        capacity_entry.config(state="disabled")
         
         # Budget
         budget_var = tk.StringVar(value="1000")

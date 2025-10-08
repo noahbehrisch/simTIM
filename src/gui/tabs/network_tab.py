@@ -16,14 +16,14 @@ class NetworkTab(BaseTab):
     
     def __init__(self, parent, theme_colors):
         """Initialize network tab."""
-        # Default network path
+        # Default network path (updated to demo network)
         default_network_path = os.path.abspath(
             os.path.join(
                 os.path.dirname(__file__), 
                 '..', '..', 
                 'networks', 
                 'library', 
-                'realistic_enterprise_network.json'
+                'demo_network.json'
             )
         )
         self.network_file_var = tk.StringVar(value=default_network_path)

@@ -1,0 +1,70 @@
+{
+  "name": "Demo Network",
+  "description": "Minimal 2-node demo network: Internet-facing web server → Internal data server. Perfect for demonstrations and tutorials showing basic attack progression from external compromise to valuable data access.",
+  "nodes": [
+    {
+      "id": "web_server",
+      "name": "Internet-Facing Web Server",
+      "software": {
+        "os": "Ubuntu",
+        "version": "20.04",
+        "services": ["apache", "php", "ssh"]
+      },
+      "vulnerabilities": [
+        "CVE-2021-44228",
+        "CVE-2022-22965"
+      ],
+      "assets": [
+        "web_application",
+        "access_logs"
+      ],
+      "properties": {
+        "exposed_to_internet": true,
+        "critical": false,
+        "category": "Web Server",
+        "network_segment": "DMZ",
+        "entry_point": true
+      }
+    },
+    {
+      "id": "data_server",
+      "name": "Internal Data Server",
+      "software": {
+        "os": "Windows Server",
+        "version": "2019",
+        "services": ["file_server", "sql_server", "rdp"]
+      },
+      "vulnerabilities": [
+        "CVE-2020-1472"
+      ],
+      "assets": [
+        "customer_database",
+        "financial_records",
+        "employee_data",
+        "company_secrets",
+        "intellectual_property"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true,
+        "category": "Data Server",
+        "network_segment": "Internal",
+        "high_value_target": true,
+        "contains_sensitive_data": true
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "web_server",
+      "node2": "data_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "internal_network",
+        "bandwidth": 1000,
+        "secured": false,
+        "description": "Direct connection from DMZ to internal network"
+      }
+    }
+  ]
+}

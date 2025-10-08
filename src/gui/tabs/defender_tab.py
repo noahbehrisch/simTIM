@@ -103,8 +103,8 @@ class DefenderTab(BaseTab):
         )
         strategy_dropdown.grid(row=0, column=1, padx=1, sticky="w")
         
-        # Capacity
-        capacity_var = tk.StringVar(value="2")
+        # Capacity (default to 1 for demo purposes)
+        capacity_var = tk.StringVar(value="1")
         capacity_entry = tk.Entry(
             frame, 
             textvariable=capacity_var, 
