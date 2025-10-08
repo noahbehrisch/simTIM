@@ -2,7 +2,7 @@ import heapq
 import random
 import logging
 from typing import Any, Dict, List
-from .detection import DetectionEngine
+from src.detection import LegacyDetectionEngine, SimpleTIMDetectionEngine, AdvancedTIMDetectionEngine
 from .economic_model import economic_model, calculate_action_damage, calculate_action_gain
 logger = logging.getLogger(__name__)
 infinity = float('inf') 
@@ -20,13 +20,31 @@ class Event:
         return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
 
 class Simulator:
-    def __init__(self, network=None):
+    def __init__(self, network=None, detection_engine_type="legacy"):
+        """
+        Initialize simulator with configurable detection engine.
+        
+        Args:
+            network: Network configuration
+            detection_engine_type: "legacy", "simple_tim", or "advanced_tim"
+        """
         self.current_time = 0.0
         self.event_queue: List[Event] = []
         self.history: List[Event] = []
         self.network = network if network is not None else {}
         self.ongoing_actions = []
-        self.detection_engine = DetectionEngine()
+        
+        # Choose detection engine based on type
+        if detection_engine_type == "simple_tim":
+            self.detection_engine = SimpleTIMDetectionEngine()
+            logger.info("Using Simple TIM paper-compliant detection engine")
+        elif detection_engine_type == "advanced_tim":
+            self.detection_engine = AdvancedTIMDetectionEngine()
+            logger.info("Using Advanced TIM detection engine with domain knowledge")
+        else:  # legacy
+            self.detection_engine = LegacyDetectionEngine()
+            logger.info("Using legacy simple detection engine")
+            
         from src.actions.json_conditions import action_executor
         
         action_executor.set_simulator(self)
@@ -114,13 +132,25 @@ class Simulator:
             self.history.append((self.current_time, "action_capacity_exceeded", event_data))
             return
         
+        # Initial precondition check - action must be valid to start
+        current_access = target.access.get(actor.id, "NONE")
+        if not action.precondition(target, current_access, actor.id):
+            self.history.append((self.current_time, "action_aborted_start", {
+                "actor": actor,
+                "action": action,
+                "target": target,
+                "reason": "precondition_false_at_start"
+            }))
+            return
+        
         # Add to ongoing actions
         ongoing_action = {
             "action": action,
             "actor": actor,
             "target": target,
             "start_time": self.current_time,
-            "end_time": self.current_time + action.duration
+            "end_time": self.current_time + action.duration,
+            "actor_access": current_access
         }
         self.ongoing_actions.append(ongoing_action)
         
@@ -130,6 +160,10 @@ class Simulator:
             "action_finished",
             event_data
         )
+        
+        # Schedule continuous precondition monitoring as per TIM paper
+        # "if at any time in the interval [t_start, t_start + d_a) the precondition becomes false, the action is aborted"
+        self._schedule_continuous_precondition_monitoring(ongoing_action)
         
         # Schedule detection check for attack actions
         if hasattr(actor, 'is_attacker') and actor.is_attacker:
@@ -179,31 +213,56 @@ class Simulator:
             self.ongoing_actions.remove(ongoing)
 
     def _schedule_detection_check(self, action_data):
-        """Schedule detection check for attack actions"""
+        """
+        Schedule detection check for attack actions.
+        Supports legacy, simple TIM, and advanced TIM detection engines.
+        """
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
         actor_access = action_data.get("actor_access", "NONE")
         
-        # Calculate detection probability
-        detection_prob = self.detection_engine.calculate_detection_probability(action, target, actor_access, actor)
-        
-        # Roll for detection
-        import random
-        if random.random() < detection_prob:
-            # Schedule detection event during action execution
-            detection_delay = self.detection_engine.sample_detection_time(action.name, action.duration)
-            self.schedule_event(
-                self.current_time + detection_delay,
-                "attack_detected",
-                {
-                    "detected_action": action,
-                    "detected_actor": actor,
-                    "detected_target": target,
-                    "detection_time": self.current_time + detection_delay,
-                    "detection_probability": detection_prob
-                }
-            )
+        # Check detection engine type and use appropriate method
+        if isinstance(self.detection_engine, (AdvancedTIMDetectionEngine, SimpleTIMDetectionEngine)):
+            # TIM-compliant detection (both simple and advanced)
+            detection_prob = self.detection_engine.calculate_detection_probability(action, target, actor_access, actor)
+            
+            # Sample detection time using TIM CDF approach
+            detection_time = self.detection_engine.sample_detection_time(action, action.duration, detection_prob)
+            
+            if detection_time is not None:
+                # Schedule detection event at the sampled time
+                engine_type = "simple_TIM" if isinstance(self.detection_engine, SimpleTIMDetectionEngine) else "advanced_TIM"
+                self.schedule_event(
+                    self.current_time + detection_time,
+                    "attack_detected",
+                    {
+                        "detected_action": action,
+                        "detected_actor": actor,
+                        "detected_target": target,
+                        "detection_time": self.current_time + detection_time,
+                        "detection_probability": detection_prob,
+                        "detection_method": engine_type
+                    }
+                )
+        else:
+            # Legacy detection approach
+            detection_prob = self.detection_engine.calculate_detection_probability(action, target, actor_access, actor)
+            
+            if random.random() < detection_prob:
+                detection_delay = self.detection_engine.sample_detection_time(action.name, action.duration)
+                self.schedule_event(
+                    self.current_time + detection_delay,
+                    "attack_detected",
+                    {
+                        "detected_action": action,
+                        "detected_actor": actor,
+                        "detected_target": target,
+                        "detection_time": self.current_time + detection_delay,
+                        "detection_probability": detection_prob,
+                        "detection_method": "legacy"
+                    }
+                )
 
     def handle_attack_detected(self, time, data):
         self.history.append((self.current_time, "attack_detected", data))
@@ -288,6 +347,31 @@ class Simulator:
             "reason": reason,
             "interrupted_at": self.current_time
         }))
+
+    def _schedule_continuous_precondition_monitoring(self, ongoing_action):
+        """
+        Schedule continuous precondition monitoring as per TIM paper:
+        'if at any time in the interval [t_start, t_start + d_a) the precondition becomes false, the action is aborted'
+        """
+        action = ongoing_action["action"]
+        start_time = ongoing_action["start_time"]
+        duration = action.duration
+        
+        # Monitor precondition at regular intervals (every 0.1 time units)
+        # This ensures we catch precondition violations quickly
+        monitoring_interval = min(0.1, duration / 10)  # At least 10 checks per action
+        
+        check_time = start_time + monitoring_interval
+        while check_time < start_time + duration:
+            self.schedule_event(
+                check_time,
+                "precondition_check",
+                {
+                    "action_data": ongoing_action.copy(),
+                    "check_time": check_time
+                }
+            )
+            check_time += monitoring_interval
 
     def _calculate_economic_impact(self, action_data):
         action = action_data["action"]
