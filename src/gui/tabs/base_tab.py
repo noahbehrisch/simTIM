@@ -6,6 +6,7 @@ Provides common functionality for all GUI tabs.
 
 import tkinter as tk
 from tkinter import ttk
+from ..theme import Theme
 
 class BaseTab:
     """
@@ -22,14 +23,15 @@ class BaseTab:
         """
         self.parent = parent
         self.theme_colors = theme_colors
+        self.theme = Theme()
         
-        # Extract theme colors
-        self.bg_color = theme_colors.get('bg_color', '#f8f9fa')
-        self.tab_color = theme_colors.get('tab_color', '#ffffff')
-        self.sidebar_color = theme_colors.get('sidebar_color', '#e3eaf2')
-        self.highlight_color = theme_colors.get('highlight_color', '#b5d6fc')
-        self.button_color = theme_colors.get('button_color', '#d0e6fa')
-        self.button_fg = theme_colors.get('button_fg', '#22223b')
+        # Extract theme colors (maintaining backward compatibility)
+        self.bg_color = theme_colors.get('bg_color', self.theme.COLORS['bg_primary'])
+        self.tab_color = theme_colors.get('tab_color', self.theme.COLORS['bg_secondary'])
+        self.sidebar_color = theme_colors.get('sidebar_color', self.theme.COLORS['bg_sidebar'])
+        self.highlight_color = theme_colors.get('highlight_color', self.theme.COLORS['accent_primary'])
+        self.button_color = theme_colors.get('button_color', self.theme.COLORS['accent_secondary'])
+        self.button_fg = theme_colors.get('button_fg', self.theme.COLORS['text_primary'])
         
         # Create the main frame
         self.frame = tk.Frame(parent, bg=self.tab_color)
@@ -37,8 +39,13 @@ class BaseTab:
         self.frame.grid_remove()  # Initially hidden
         self.frame.grid_propagate(False)
         
-        # Create padded inner frame
-        self.pad_frame = tk.Frame(self.frame, padx=50, pady=50, bg=self.tab_color)
+        # Create padded inner frame with theme system spacing
+        self.pad_frame = tk.Frame(
+            self.frame, 
+            padx=self.theme.SPACING['xl'], 
+            pady=self.theme.SPACING['xl'], 
+            bg=self.tab_color
+        )
         self.pad_frame.pack(expand=True, fill="both")
         
         # Initialize tab content (to be overridden by subclasses)
@@ -59,29 +66,45 @@ class BaseTab:
         """Hide this tab."""
         self.frame.grid_remove()
     
-    def create_section_header(self, parent, text, bg_color=None):
+    def create_section_header(self, parent, text, section_type=None, bg_color=None):
         """
         Create a styled section header.
         
         Args:
             parent: Parent widget
             text: Header text
-            bg_color: Background color (defaults to light blue)
+            section_type: Type of section (simulation, network, etc.) for automatic coloring
+            bg_color: Background color (overrides section_type)
             
         Returns:
             Header frame widget
         """
-        bg = bg_color or "#f0f8ff"
-        header_frame = tk.Frame(parent, bg=bg, relief="ridge", bd=1)
-        header_frame.pack(fill="x", padx=10, pady=5)
+        if bg_color:
+            bg = bg_color
+        elif section_type:
+            bg = self.theme.get_section_color(section_type)
+        else:
+            bg = self.theme.COLORS['section_network']
+            
+        header_frame = tk.Frame(
+            parent, 
+            bg=bg, 
+            **self.theme.BORDERS['light']
+        )
+        header_frame.pack(
+            fill="x", 
+            padx=self.theme.SPACING['md'], 
+            pady=self.theme.SPACING['sm']
+        )
+        
+        label_style = self.theme.get_label_style('subheading')
+        label_style['bg'] = bg
         
         tk.Label(
             header_frame, 
-            text=text, 
-            bg=bg, 
-            fg=self.button_fg, 
-            font=("Arial", 10, "bold")
-        ).pack(anchor="w", padx=5)
+            text=text,
+            **label_style
+        ).pack(anchor="w", padx=self.theme.SPACING['sm'])
         
         return header_frame
     
@@ -97,16 +120,17 @@ class BaseTab:
         Returns:
             Label widget
         """
-        bg = bg_color or "#f0f8ff"
+        bg = bg_color or self.theme.COLORS['section_network']
+        label_style = self.theme.get_label_style('secondary')
+        label_style['bg'] = bg
+        
         return tk.Label(
             parent,
             text=text,
-            bg=bg,
-            fg=self.button_fg,
-            font=("Arial", 9)
+            **label_style
         )
     
-    def create_styled_button(self, parent, text, command, **kwargs):
+    def create_styled_button(self, parent, text, command, style_type='default', **kwargs):
         """
         Create a button with consistent styling.
         
@@ -114,42 +138,56 @@ class BaseTab:
             parent: Parent widget
             text: Button text
             command: Button command
+            style_type: Button style ('default', 'primary', 'success', 'danger', 'warning')
             **kwargs: Additional button options
             
         Returns:
             Button widget
         """
-        default_options = {
-            'bg': self.button_color,
-            'fg': self.button_fg,
-            'activebackground': self.highlight_color
-        }
-        default_options.update(kwargs)
+        button_style = self.theme.get_button_style(style_type)
+        button_style.update(kwargs)
         
-        return tk.Button(parent, text=text, command=command, **default_options)
+        return tk.Button(parent, text=text, command=command, **button_style)
     
-    def create_styled_entry(self, parent, textvariable, width=10, **kwargs):
+    def create_styled_entry(self, parent, textvariable, width=None, **kwargs):
         """
         Create an entry widget with consistent styling.
         
         Args:
             parent: Parent widget
             textvariable: Tkinter variable
-            width: Entry width
+            width: Entry width (defaults to design system standard)
             **kwargs: Additional entry options
             
         Returns:
             Entry widget
         """
-        default_options = {
-            'width': width,
-            'bg': '#eaf1fb',
-            'fg': self.button_fg,
-            'insertbackground': self.button_fg
-        }
-        default_options.update(kwargs)
+        entry_style = self.theme.get_entry_style()
+        if width:
+            entry_style['width'] = width
+        else:
+            entry_style['width'] = self.theme.SIZES['entry_width']
+        entry_style.update(kwargs)
         
-        return tk.Entry(parent, textvariable=textvariable, **default_options)
+        return tk.Entry(parent, textvariable=textvariable, **entry_style)
+    
+    def create_styled_label(self, parent, text, style_type='default', **kwargs):
+        """
+        Create a label with consistent styling.
+        
+        Args:
+            parent: Parent widget
+            text: Label text
+            style_type: Label style ('default', 'heading', 'subheading', 'secondary')
+            **kwargs: Additional label options
+            
+        Returns:
+            Label widget
+        """
+        label_style = self.theme.get_label_style(style_type)
+        label_style.update(kwargs)
+        
+        return tk.Label(parent, text=text, **label_style)
     
     def create_table_header(self, parent, columns):
         """
@@ -163,16 +201,24 @@ class BaseTab:
             Header frame widget
         """
         header_frame = tk.Frame(parent, bg=self.tab_color)
-        header_frame.pack(fill="x", padx=10, pady=5)
+        header_frame.pack(
+            fill="x", 
+            padx=self.theme.SPACING['md'], 
+            pady=self.theme.SPACING['sm']
+        )
         
         for i, (text, width) in enumerate(columns):
+            label_style = self.theme.get_label_style('subheading')
+            label_style.update({
+                'bg': self.sidebar_color,
+                'width': width,
+                **self.theme.BORDERS['light']
+            })
+            
             tk.Label(
                 header_frame,
                 text=text,
-                bg=self.sidebar_color,
-                fg=self.button_fg,
-                width=width,
-                relief="ridge"
+                **label_style
             ).grid(row=0, column=i, padx=1)
         
         return header_frame

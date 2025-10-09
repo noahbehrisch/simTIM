@@ -10,41 +10,45 @@ from src.core.simulation_main import simtim_main
 from src.gui.results_window import ResultsWindow
 from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab
 from src.gui.sidebar import Sidebar
+from src.gui.theme import Theme
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.theme = Theme()
+        
+        # Window configuration (making it narrower)
         self.title("simTIM GUI")
-        self.geometry("1700x800")
-        self.minsize(2000, 1200)
-        self.bg_color = "#f8f9fa"
-        self.sidebar_color = "#e3eaf2"
-        self.tab_color = "#ffffff"
-        self.highlight_color = "#b5d6fc"
-        self.button_color = "#d0e6fa"
-        self.button_fg = "#22223b"
+        self.geometry("1400x800")
+        self.minsize(1600, 1000)
+        
+        # Use theme colors
+        self.bg_color = self.theme.COLORS['bg_primary']
+        self.sidebar_color = self.theme.COLORS['bg_sidebar']
+        self.tab_color = self.theme.COLORS['bg_secondary']
+        self.highlight_color = self.theme.COLORS['accent_primary']
+        self.button_color = self.theme.COLORS['accent_secondary']
+        self.button_fg = self.theme.COLORS['text_primary']
+        
         self.configure(bg=self.bg_color)
         self.fullscreen_state = False
         self.bind("<Escape>", self.exit_fullscreen)
         self.bind("<F11>", self.toggle_fullscreen)
+        
+        # Grid configuration
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_rowconfigure(2, weight=0)
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
+        
+        # Tab management
         self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Overview"]
         self.tabs = {}
         self.current_tab = None
         
-        # Create theme colors dictionary for tabs
-        self.theme_colors = {
-            'bg_color': self.bg_color,
-            'tab_color': self.tab_color,
-            'sidebar_color': self.sidebar_color,
-            'highlight_color': self.highlight_color,
-            'button_color': self.button_color,
-            'button_fg': self.button_fg
-        }
+        # Create theme colors dictionary for backward compatibility
+        self.theme_colors = self.theme.get_theme_colors()
         
         self.create_tabs()
         self.sidebar = Sidebar(
@@ -57,19 +61,37 @@ class App(tk.Tk):
         self.bottom_frame.grid_columnconfigure(0, weight=1)
         self.bottom_frame.grid_columnconfigure(1, weight=1)
         self.bottom_frame.grid_columnconfigure(2, weight=1)
-        self.help_button = tk.Button(self.bottom_frame, text="Help", command=self.open_help_window, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
-        self.help_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+        self.help_button = tk.Button(
+            self.bottom_frame, 
+            text="Help", 
+            command=self.open_help_window, 
+            **self.theme.get_button_style('default')
+        )
+        self.help_button.grid(row=0, column=0, padx=self.theme.SPACING['md'], pady=self.theme.SPACING['sm'], sticky="ew")
+        
+        results_style = self.theme.get_button_style('default')
         self.results_button = tk.Button(
             self.bottom_frame,
             text="Results",
             state=tk.DISABLED,
-            bg=self.button_color,
-            fg=self.button_fg,
-            activebackground=self.highlight_color
+            **results_style
         )
-        self.results_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-        self.start_button = tk.Button(self.bottom_frame, text="Start Simulation", command=self.run_simulation_from_gui, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
-        self.next_button = tk.Button(self.bottom_frame, text="Next", command=self.next_tab, bg=self.button_color, fg=self.button_fg, activebackground=self.highlight_color)
+        self.results_button.grid(row=0, column=1, padx=self.theme.SPACING['md'], pady=self.theme.SPACING['sm'], sticky="ew")
+        
+        self.start_button = tk.Button(
+            self.bottom_frame, 
+            text="Start Simulation", 
+            command=self.run_simulation_from_gui, 
+            **self.theme.get_button_style('primary')
+        )
+        self.start_button.grid(row=0, column=2, padx=self.theme.SPACING['md'], pady=self.theme.SPACING['sm'], sticky="ew")
+        
+        self.next_button = tk.Button(
+            self.bottom_frame, 
+            text="Next", 
+            command=self.next_tab, 
+            **self.theme.get_button_style('default')
+        )
         self.after(0, lambda: self.show_tab("Simulation"))
 
     def create_tabs(self):

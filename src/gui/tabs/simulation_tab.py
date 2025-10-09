@@ -28,7 +28,7 @@ class SimulationTab(BaseTab):
         self.create_section_header(
             self.pad_frame, 
             "Simulation Parameters:", 
-            bg_color="#f0fff0"
+            section_type="simulation"
         )
         
         params_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
@@ -66,29 +66,33 @@ class SimulationTab(BaseTab):
         self.create_section_header(
             self.pad_frame, 
             "Detection Engine:", 
-            bg_color="#f0f8ff"
+            section_type="network"
         )
         
         # Detection engine descriptions
-        engine_info_frame = tk.Frame(self.pad_frame, bg="#f0f8ff", relief="ridge", bd=1)
-        engine_info_frame.pack(fill="x", padx=10, pady=5)
+        engine_info_frame = tk.Frame(
+            self.pad_frame, 
+            bg=self.theme.COLORS['section_network'], 
+            **self.theme.BORDERS['light']
+        )
+        engine_info_frame.pack(fill="x", padx=self.theme.SPACING['md'], pady=self.theme.SPACING['sm'])
         
         self.create_info_label(
             engine_info_frame, 
             "• Legacy: Original simple detection (random-based, backward compatible)",
-            bg_color="#f0f8ff"
+            bg_color=self.theme.COLORS['section_network']
         ).pack(anchor="w", padx=15)
         
         self.create_info_label(
             engine_info_frame, 
             "• Simple TIM: Minimal TIM paper compliance (mathematical framework)",
-            bg_color="#f0f8ff"
+            bg_color=self.theme.COLORS['section_network']
         ).pack(anchor="w", padx=15)
         
         self.create_info_label(
             engine_info_frame, 
             "• Advanced TIM: Full TIM compliance + cybersecurity domain knowledge",
-            bg_color="#f0f8ff"
+            bg_color=self.theme.COLORS['section_network']
         ).pack(anchor="w", padx=15)
         
         # Detection engine selection
