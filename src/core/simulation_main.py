@@ -1,9 +1,3 @@
-"""
-Simulation Main Function
-
-Contains the main simulation logic extracted from main.py for use by the GUI.
-"""
-
 from src.core.simulator import Simulator
 from src.actions.action_manager import get_attack_actions, get_defense_actions
 from src.networks.network_loader import load_network_config, create_network_from_config
@@ -17,22 +11,9 @@ def simtim_main(
     sim_time=None,
     attackers=None,
     defenders=None,
-    detection_engine_type="legacy",
+    detection_engine_type=None,
 ):
-    """
-    Run the main simulation with the given parameters.
-    
-    Args:
-        path_to_network_config (str): Path to the network configuration file
-        sim_runs (int): Number of simulation runs
-        sim_time (float): Simulation end time
-        attackers (list): List of attacker configurations
-        defenders (list): List of defender configurations
-        detection_engine_type (str): Type of detection engine to use
-        
-    Returns:
-        list: All simulation histories from all runs
-    """
+
     if not path_to_network_config:
         print("Error: No network configuration file provided.")
         return

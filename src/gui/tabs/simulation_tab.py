@@ -18,7 +18,7 @@ class SimulationTab(BaseTab):
         # Variables for simulation parameters
         self.sim_runs_var = tk.IntVar(value=5)
         self.sim_time_var = tk.DoubleVar(value=20.0)
-        self.detection_engine_var = tk.StringVar(value="legacy")
+        self.detection_engine_var = tk.StringVar(value="simple_tim")
         
         super().__init__(parent, theme_colors)
     
