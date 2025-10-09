@@ -6,9 +6,10 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from main import simtim_main
+from src.core.simulation_main import simtim_main
 from src.gui.results_window import ResultsWindow
 from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab
+from src.gui.sidebar import Sidebar
 
 class App(tk.Tk):
     def __init__(self):
@@ -48,7 +49,7 @@ class App(tk.Tk):
         self.create_tabs()
         self.sidebar = Sidebar(
             self, self.toggle_fullscreen, self.fullscreen_state, lambda name: self.show_tab(name),
-            sidebar_color=self.sidebar_color, highlight_color=self.highlight_color, button_color=self.button_color, button_fg=self.button_fg
+            self.theme_colors
         )
         self.sidebar.grid(row=0, column=0, rowspan=3, sticky="nsw")
         self.bottom_frame = tk.Frame(self, bg=self.sidebar_color)
@@ -195,22 +196,53 @@ class App(tk.Tk):
             self.next_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
 
     def update_overview(self):
-        overview = (
-            f"Simulation Runs: {self.sim_runs_var.get()}\n"
-            f"Simulation Time: {self.sim_time_var.get()}\n"
-            f"Network File: {self.network_file_var.get()}\n"
-        )
-        overview += "Attackers:\n"
-        for idx, entry in enumerate(self.attacker_entries):
-            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, _ = entry
-            capacity_text = "∞" if infinite_var.get() else capacity_var.get()
-            overview += f"  Attacker #{idx+1}: Strategy={strategy_var.get()}, Capacity={capacity_text}, Budget=${budget_var.get()}\n"
+        """Update overview tab with current configuration from all tabs."""
+        # Get configuration from all tabs
+        sim_config = self.simulation_tab.get_simulation_config()
+        network_config = self.network_tab.get_network_config()
+        attackers = self.attacker_tab.get_attacker_config()
+        defenders = self.defender_tab.get_defender_config()
         
-        overview += "Defenders:\n"
-        for idx, entry in enumerate(self.defender_entries):
-            defender_id, strategy_var, capacity_var, budget_var, _ = entry
-            overview += f"  Defender #{idx+1}: Strategy={strategy_var.get()}, Capacity={capacity_var.get()}, Budget=${budget_var.get()}\n"
+        # Build overview text
+        overview = "SIMULATION CONFIGURATION\n"
+        overview += "=" * 50 + "\n\n"
         
+        # Simulation parameters
+        overview += "Simulation Parameters:\n"
+        overview += f"   • Runs: {sim_config['runs']}\n"
+        overview += f"   • Time: {sim_config['time']} seconds\n"
+        overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
+        
+        # Network configuration
+        overview += "Network Configuration:\n"
+        network_file = network_config['file_path']
+        network_name = network_file.split('/')[-1] if '/' in network_file else network_file
+        overview += f"   • File: {network_name}\n"
+        overview += f"   • Path: {network_file}\n\n"
+        
+        # Attackers
+        overview += f"Attackers ({len(attackers)}):\n"
+        for idx, attacker in enumerate(attackers, 1):
+            capacity_text = "∞" if attacker['capacity'] == float('inf') else str(attacker['capacity'])
+            overview += f"   {idx}. {attacker['id']}\n"
+            overview += f"      Strategy: {attacker['strategy']}\n"
+            overview += f"      Capacity: {capacity_text}\n"
+            overview += f"      Budget: ${attacker['budget']}\n"
+        
+        overview += "\n"
+        
+        # Defenders
+        overview += f"Defenders ({len(defenders)}):\n"
+        for idx, defender in enumerate(defenders, 1):
+            overview += f"   {idx}. {defender['id']}\n"
+            overview += f"      Strategy: {defender['strategy']}\n"
+            overview += f"      Capacity: {defender['capacity']}\n"
+            overview += f"      Budget: ${defender['budget']}\n"
+        
+        overview += "\n" + "=" * 50 + "\n"
+        overview += "Ready to run simulation!"
+        
+        # Update the overview text widget
         self.overview_text.config(state=tk.NORMAL)
         self.overview_text.delete(1.0, tk.END)
         self.overview_text.insert(tk.END, overview)
@@ -300,7 +332,7 @@ class App(tk.Tk):
             import traceback
             error_msg = f"Failed to run simulation:\n{str(e)}"
             print(f"\n🚨 SIMULATION ERROR: {error_msg}")
-            print("🔍 Full traceback:")
+            print("Full traceback:")
             traceback.print_exc()
             tk.messagebox.showerror("Simulation Error", error_msg)
 
@@ -308,36 +340,7 @@ class App(tk.Tk):
         """Delegate to network tab."""
         self.network_tab.launch_visualizer()
 
-class Sidebar(tk.Frame):
-    def __init__(self, master, toggle_fullscreen, fullscreen_state, switch_tab_callback, sidebar_color, highlight_color, button_color, button_fg):
-        super().__init__(master, bd=2, relief=tk.RIDGE, bg=sidebar_color)
-        self.grid_rowconfigure(6, weight=1)
-        self.buttons = {}
-        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Overview"]
-        self.sidebar_color = sidebar_color
-        self.highlight_color = highlight_color
-        self.button_fg = button_fg
-        for i, name in enumerate(self.tab_names):
-            btn = tk.Button(self, text=name, command=lambda n=name: switch_tab_callback(n), bg=sidebar_color, fg=button_fg, activebackground=highlight_color, activeforeground=button_fg, relief=tk.FLAT)
-            btn.grid(row=i, column=0, pady=20, padx=20, sticky="ew")
-            self.buttons[name] = btn
-        self.spacer = tk.Label(self, bg=sidebar_color)
-        self.spacer.grid(row=6, column=0, sticky="nswe")
-        self.grid_rowconfigure(6, weight=1)
-        self.fullscreen_var = tk.BooleanVar(value=fullscreen_state)
-        self.fullscreen_switch = tk.Checkbutton(self, text="Fullscreen", variable=self.fullscreen_var, command=toggle_fullscreen, bg=sidebar_color, fg=button_fg, selectcolor=highlight_color, activebackground=highlight_color)
-        self.fullscreen_switch.grid(row=7, column=0, pady=(0, 10), padx=20, sticky="s")
-        self.highlight_tab("Simulation")
 
-    def highlight_tab(self, tab_name):
-        for name, btn in self.buttons.items():
-            if name == tab_name:
-                btn.config(bg=self.highlight_color, fg=self.button_fg, relief=tk.SUNKEN)
-            else:
-                btn.config(bg=self.sidebar_color, fg=self.button_fg, relief=tk.FLAT)
-
-    def update_fullscreen_switch(self):
-        self.fullscreen_var.set(self.master.fullscreen_state)
 if __name__ == "__main__":
     app = App()
     app.mainloop()

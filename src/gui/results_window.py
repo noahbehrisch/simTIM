@@ -124,7 +124,7 @@ class ResultsWindow:
         """Create comprehensive analysis of simulation results with detailed attacker insights"""
         
         # Title
-        title_label = tk.Label(parent_frame, text="🔍 Comprehensive Simulation Analysis", 
+        title_label = tk.Label(parent_frame, text="Comprehensive Simulation Analysis", 
                               bg=self.bg_color, fg=self.button_fg, font=("Arial", 16, "bold"))
         title_label.pack(pady=(0, 20))
         
@@ -134,7 +134,7 @@ class ResultsWindow:
             run_frame.pack(fill="x", padx=10, pady=5)
             
             # Run header
-            run_header = tk.Label(run_frame, text=f"📊 Simulation Run {run_idx}", 
+            run_header = tk.Label(run_frame, text=f"Simulation Run {run_idx}", 
                                  bg="#f0f8ff", fg=self.button_fg, font=("Arial", 14, "bold"))
             run_header.pack(pady=5)
             
@@ -270,14 +270,14 @@ class ResultsWindow:
                     
                     attacker_text.insert(tk.END, f"👤 Attacker: {attacker_id}\n")
                     attacker_text.insert(tk.END, f"═══════════════════════════════════════\n")
-                    attacker_text.insert(tk.END, f"📈 Actions Attempted: {stats['actions_attempted']}\n")
+                    attacker_text.insert(tk.END, f"Actions Attempted: {stats['actions_attempted']}\n")
                     attacker_text.insert(tk.END, f"✅ Actions Succeeded: {stats['actions_succeeded']}\n")
                     attacker_text.insert(tk.END, f"❌ Actions Failed: {stats['actions_failed']}\n")
                     attacker_text.insert(tk.END, f"🎯 Success Rate: {success_rate:.1f}%\n")
                     attacker_text.insert(tk.END, f"🏢 Unique Targets: {len(stats['targets_attacked'])}\n")
                     attacker_text.insert(tk.END, f"💰 Total Gain: ${stats['total_gain']:,.2f}\n")
                     attacker_text.insert(tk.END, f"💸 Total Cost: ${stats['total_cost']:,.2f}\n")
-                    attacker_text.insert(tk.END, f"📊 Net Profit: ${net_profit:,.2f}\n\n")
+                    attacker_text.insert(tk.END, f"Net Profit: ${net_profit:,.2f}\n\n")
                     
                     # Attack timeline for this attacker
                     attacker_text.insert(tk.END, f"🕒 Attack Timeline:\n")
@@ -301,16 +301,16 @@ class ResultsWindow:
                     defender_text = tk.Text(defender_frame, height=6, bg="#f5fff5", fg=self.button_fg, wrap=tk.WORD)
                     defender_text.pack(fill="x", padx=10, pady=5)
                     
-                    defender_text.insert(tk.END, f"🛡️ Defender: {defender_id}\n")
+                    defender_text.insert(tk.END, f"Defender: {defender_id}\n")
                     defender_text.insert(tk.END, f"═══════════════════════════════════════\n")
-                    defender_text.insert(tk.END, f"📈 Actions Attempted: {stats['actions_attempted']}\n")
+                    defender_text.insert(tk.END, f"Actions Attempted: {stats['actions_attempted']}\n")
                     defender_text.insert(tk.END, f"✅ Actions Succeeded: {stats['actions_succeeded']}\n")
                     defender_text.insert(tk.END, f"🎯 Success Rate: {success_rate:.1f}%\n\n")
                     
                     # Defense timeline
                     defender_text.insert(tk.END, f"🕒 Defense Timeline:\n")
                     for detail in sorted(stats['defensive_actions'], key=lambda x: x['time']):
-                        defender_text.insert(tk.END, f"  [{detail['time']:6.2f}] 🛡️ {detail['action']} → {detail['target']}\n")
+                        defender_text.insert(tk.END, f"  [{detail['time']:6.2f}] {detail['action']} → {detail['target']}\n")
                     
                     defender_text.config(state=tk.DISABLED)
             
@@ -319,7 +319,7 @@ class ResultsWindow:
                 node_frame = tk.Frame(run_frame, bg="#e6f3ff", relief="groove", bd=1)
                 node_frame.pack(fill="x", padx=10, pady=5)
                 
-                tk.Label(node_frame, text="🖥️ Node Compromise Analysis", 
+                tk.Label(node_frame, text="Node Compromise Analysis", 
                         bg="#e6f3ff", fg=self.button_fg, font=("Arial", 12, "bold")).pack(pady=5)
                 
                 node_text = tk.Text(node_frame, height=6, bg="#f5faff", fg=self.button_fg, wrap=tk.WORD)
@@ -329,7 +329,7 @@ class ResultsWindow:
                 node_text.insert(tk.END, f"═══════════════════════════════════════\n")
                 
                 for node_id, compromise_info in sorted(node_compromises.items(), key=lambda x: x[1]['first_compromise_time']):
-                    node_text.insert(tk.END, f"🖥️ {node_id}:\n")
+                    node_text.insert(tk.END, f"{node_id}:\n")
                     node_text.insert(tk.END, f"  ⏰ First Compromise: {compromise_info['first_compromise_time']:.2f}s\n")
                     node_text.insert(tk.END, f"  🔢 Total Compromises: {compromise_info['compromise_count']}\n")
                     node_text.insert(tk.END, f"  👥 Attackers: {', '.join(compromise_info['compromising_attackers'])}\n\n")
@@ -340,7 +340,7 @@ class ResultsWindow:
             summary_frame = tk.Frame(run_frame, bg="#fff9e6", relief="groove", bd=1)
             summary_frame.pack(fill="x", padx=10, pady=5)
             
-            tk.Label(summary_frame, text="📈 Run Summary", 
+            tk.Label(summary_frame, text="Run Summary", 
                     bg="#fff9e6", fg=self.button_fg, font=("Arial", 12, "bold")).pack(pady=5)
             
             summary_text = tk.Text(summary_frame, height=4, bg="#fffef5", fg=self.button_fg, wrap=tk.WORD)
@@ -351,8 +351,8 @@ class ResultsWindow:
             total_profit = sum(stats['total_gain'] - stats['total_cost'] for stats in attacker_stats.values())
             
             summary_text.insert(tk.END, f"🎯 Total Successful Attacks: {total_attacks}\n")
-            summary_text.insert(tk.END, f"🛡️ Total Successful Defenses: {total_defenses}\n")
-            summary_text.insert(tk.END, f"🖥️ Nodes Compromised: {len(node_compromises)}\n")
+            summary_text.insert(tk.END, f"Total Successful Defenses: {total_defenses}\n")
+            summary_text.insert(tk.END, f"Nodes Compromised: {len(node_compromises)}\n")
             summary_text.insert(tk.END, f"💰 Total Attacker Profit: ${total_profit:,.2f}")
             
             summary_text.config(state=tk.DISABLED)
