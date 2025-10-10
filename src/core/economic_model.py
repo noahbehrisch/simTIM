@@ -1,13 +1,33 @@
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 from src.core.graph import Node
 
 class SimpleEconomicModel:
+    """
+    Economic model implementing TIM paper Section 4.7 "Optimization Objectives"
+    
+    Tracks both:
+    - One-off damage/gain: D(a, π̂) and G(a, π̂) from successful attacks
+    - Time-proportional damage/gain: δ(ω, π̂) and γ(ω, π̂) accumulated over time
+    
+    Reference: TIM paper equations for D[0,T]^total and G[0,T](x)
+    """
     
     def __init__(self):
         self.total_damage = 0.0
         self.actor_costs = {}
         self.actor_gains = {}
         self.action_history = []
+        
+        # Time-proportional tracking (TIM paper Section 4.7)
+        self.time_proportional_damage = 0.0
+        self.time_proportional_gains = {}  # Per attacker
+        
+        # Track access state changes for time-interval calculations
+        self.access_state_changes = []  # List of (time, node_id, actor_id, old_access, new_access)
+        self.property_state_changes = []  # List of (time, node_id, property, old_value, new_value)
+        
+        # Last time we accumulated time-proportional impact
+        self.last_accumulation_time = 0.0
     
     def record_action_cost(self, actor_id: str, cost: float):
         if actor_id not in self.actor_costs:
@@ -32,12 +52,93 @@ class SimpleEconomicModel:
         
         self.action_history.append((time, actor_id, action_name, cost, damage, gain))
     
+    def record_access_change(self, time: float, node_id: str, actor_id: str, 
+                            old_access: str, new_access: str):
+        """
+        Record when an actor's access to a node changes.
+        Critical for calculating time-proportional damage/gain per TIM paper.
+        
+        Reference: TIM paper Section 4.7 - tracks ti (state change times)
+        """
+        self.access_state_changes.append((time, node_id, actor_id, old_access, new_access))
+    
+    def record_property_change(self, time: float, node_id: str, property_name: str,
+                              old_value: Any, new_value: Any):
+        """
+        Record when a node property changes.
+        Critical for calculating time-proportional damage/gain per TIM paper.
+        
+        Reference: TIM paper Section 4.7 - tracks ti (state change times)
+        """
+        self.property_state_changes.append((time, node_id, property_name, old_value, new_value))
+    
+    def accumulate_time_proportional_impact(self, current_time: float, 
+                                           all_nodes: List[Node],
+                                           attacker_actors: List[Any]):
+        """
+        Accumulate time-proportional damage and gain since last accumulation.
+        
+        Implements TIM paper Section 4.7 formula:
+        D[0,T]^total = Σ(i=0 to k) Σ(n∈N) Σ(x∈X^att) δ(ti·ωx(n), ti·π̂(n)) · (ti+1 - ti)
+        
+        Args:
+            current_time: Current simulation time
+            all_nodes: All nodes in the system
+            attacker_actors: List of attacker actors
+        """
+        if current_time <= self.last_accumulation_time:
+            return
+        
+        delta_t = current_time - self.last_accumulation_time
+        
+        # For each attacker
+        for attacker in attacker_actors:
+            attacker_id = attacker.id
+            
+            # For each node
+            for node in all_nodes:
+                # Get attacker's current access to this node
+                access = node.access.get(attacker_id, "NONE")
+                
+                # Calculate δ(ω, π̂) - damage rate for this access/property combination
+                damage_rate = calculate_delta(access, node)
+                
+                # Calculate γ(ω, π̂) - gain rate for this access/property combination
+                gain_rate = calculate_gamma(access, node)
+                
+                # Accumulate over time interval [last_time, current_time)
+                if damage_rate > 0:
+                    self.time_proportional_damage += damage_rate * delta_t
+                    self.total_damage += damage_rate * delta_t
+                
+                if gain_rate > 0:
+                    if attacker_id not in self.time_proportional_gains:
+                        self.time_proportional_gains[attacker_id] = 0.0
+                    self.time_proportional_gains[attacker_id] += gain_rate * delta_t
+                    
+                    # Also add to total gains
+                    if attacker_id not in self.actor_gains:
+                        self.actor_gains[attacker_id] = 0.0
+                    self.actor_gains[attacker_id] += gain_rate * delta_t
+        
+        self.last_accumulation_time = current_time
+    
     def get_attacker_objective(self, actor_id: str) -> float:
+        """
+        Calculate attacker objective: G[0,T](x) - Cx,[0,T]
+        
+        Reference: TIM paper Section 4.7
+        """
         gains = self.actor_gains.get(actor_id, 0.0)
         costs = self.actor_costs.get(actor_id, 0.0)
         return gains - costs
     
     def get_defender_objective(self, actor_id: str) -> float:
+        """
+        Calculate defender objective: -(D[0,T]^total + Cdefender,[0,T])
+        
+        Reference: TIM paper Section 4.7
+        """
         costs = self.actor_costs.get(actor_id, 0.0)
         return -(self.total_damage + costs)
     
@@ -54,14 +155,112 @@ class SimpleEconomicModel:
     def get_summary(self) -> Dict[str, Any]:
         return {
             'total_damage': self.total_damage,
+            'time_proportional_damage': self.time_proportional_damage,
+            'one_off_damage': self.total_damage - self.time_proportional_damage,
             'total_costs': self.get_total_costs(),
             'total_gains': self.get_total_gains(),
+            'time_proportional_gains': dict(self.time_proportional_gains),
             'actor_costs': dict(self.actor_costs),
             'actor_gains': dict(self.actor_gains),
-            'num_actions': len(self.action_history)
+            'num_actions': len(self.action_history),
+            'num_access_changes': len(self.access_state_changes),
+            'num_property_changes': len(self.property_state_changes)
         }
 
+
+def calculate_delta(access: str, node: Node) -> float:
+    """
+    Calculate time-proportional damage rate δ(ω, π̂(n)).
+    
+    Per TIM paper Section 4.7:
+    "δ(ωx(n), π̂(n)) is the amount of damage that x generates via node n per unit time"
+    
+    Args:
+        access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
+        node: The node being accessed
+        
+    Returns:
+        Damage rate per time unit (e.g., USD per day)
+    """
+    # No damage if no access
+    if access in ["NONE", "VISIBLE"]:
+        return 0.0
+    
+    # Base damage rate depends on access level
+    if access == "ADMIN":
+        base_rate = 50.0  # USD per time unit
+    elif access == "USER":
+        base_rate = 10.0  # USD per time unit
+    else:
+        return 0.0
+    
+    # Multiply by node value factors
+    asset_count = len(getattr(node, 'assets', []))
+    if asset_count > 0:
+        base_rate *= (1 + asset_count * 0.5)
+    
+    # High-value properties increase damage rate
+    properties = getattr(node, 'properties', {})
+    
+    if properties.get('data_sensitivity') == 'high':
+        base_rate *= 3.0
+    elif properties.get('data_sensitivity') == 'medium':
+        base_rate *= 1.5
+    
+    if properties.get('criticality') == 'high':
+        base_rate *= 2.0
+    elif properties.get('criticality') == 'medium':
+        base_rate *= 1.3
+    
+    # Data amount affects ongoing damage (e.g., ongoing data exfiltration)
+    data_amount = properties.get('data_amount', 0)
+    if data_amount > 0:
+        # Scale with log to avoid excessive values
+        import math
+        base_rate *= (1 + math.log10(data_amount + 1) * 0.1)
+    
+    return base_rate
+
+
+def calculate_gamma(access: str, node: Node) -> float:
+    """
+    Calculate time-proportional gain rate γ(ω, π̂(n)).
+    
+    Per TIM paper Section 4.7:
+    "γ(ωx(n), π̂(n)) is the gain of x from n per unit time"
+    
+    Args:
+        access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
+        node: The node being accessed
+        
+    Returns:
+        Gain rate per time unit (e.g., USD per day)
+    """
+    # Attacker gain is typically a fraction of defender damage
+    damage_rate = calculate_delta(access, node)
+    
+    # Attacker gains about 30-40% of the damage they cause
+    # (e.g., ransom is less than total damage, stolen data sells for less than its value)
+    gain_multiplier = 0.35
+    
+    return damage_rate * gain_multiplier
+
+
 def calculate_action_damage(action_name: str, node: Node) -> float:
+    """
+    Calculate one-off damage D(a, π̂(n)) from successful attack action.
+    
+    Per TIM paper Section 4.7:
+    "D(a, π̂(n)) is the amount of one-off damage that x generates by 
+    successfully performing attack a on node n"
+    
+    Args:
+        action_name: Name of the attack action
+        node: The target node
+        
+    Returns:
+        One-off damage amount (e.g., USD)
+    """
     base_damage = 1000.0
     
     asset_multiplier = len(getattr(node, 'assets', [])) * 500.0
@@ -71,7 +270,23 @@ def calculate_action_damage(action_name: str, node: Node) -> float:
     
     return base_damage + asset_multiplier
 
+
 def calculate_action_gain(action_name: str, node: Node) -> float:
+    """
+    Calculate one-off gain G(a, π̂(n)) from successful attack action.
+    
+    Per TIM paper Section 4.7:
+    "G(a, π̂(n)) is the one-off gain of x from successfully performing attack a on node n"
+    
+    Args:
+        action_name: Name of the attack action
+        node: The target node
+        
+    Returns:
+        One-off gain amount (e.g., USD)
+    """
     damage = calculate_action_damage(action_name, node)
     return damage * 0.3
+
+
 economic_model = SimpleEconomicModel()

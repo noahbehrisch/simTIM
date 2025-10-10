@@ -60,10 +60,48 @@ class Simulator:
                                node.properties.get('exposed_to_internet', False)]
                 actor.visible_nodes = exposed_nodes
             actor.run(self.network)
+        
+        # Schedule periodic time-proportional impact accumulation
+        # Per TIM paper Section 4.7: accumulate δ and γ over time intervals
+        self._schedule_periodic_accumulation(until)
+        
         while self.event_queue and self.current_time <= until: 
             event = heapq.heappop(self.event_queue)
             self.current_time = event.time
             self.process_event((event.time, event.event_type, event.data))
+        
+        # Final accumulation at end of simulation
+        self._accumulate_time_proportional_impact()
+    
+    def _schedule_periodic_accumulation(self, until: float):
+        """
+        Schedule periodic accumulation of time-proportional damage/gain.
+        
+        Per TIM paper Section 4.7, we need to accumulate δ(ω, π̂) and γ(ω, π̂)
+        over time intervals.
+        """
+        accumulation_interval = 0.5  # Accumulate every 0.5 time units
+        time = accumulation_interval
+        while time <= until:
+            self.schedule_event(time, "accumulate_time_proportional", {})
+            time += accumulation_interval
+    
+    def handle_accumulate_time_proportional(self, time, data):
+        """Handle periodic accumulation of time-proportional impact"""
+        self._accumulate_time_proportional_impact()
+    
+    def _accumulate_time_proportional_impact(self):
+        """
+        Accumulate time-proportional damage and gain.
+        Implements TIM paper Section 4.7 formula for δ and γ.
+        """
+        all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
+        attackers = [actor for actor in self.get_all_actors() 
+                    if hasattr(actor, 'is_attacker') and actor.is_attacker]
+        
+        economic_model.accumulate_time_proportional_impact(
+            self.current_time, all_nodes, attackers
+        )
 
     def schedule_event(self, time: float, event_type: str, data: Dict[str, Any]):
         if event_type == "action":
@@ -394,10 +432,26 @@ class Simulator:
         actor.record_action_cost(action, self.current_time)
 
     def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
-        pass
+        """
+        Record access level change for time-proportional damage/gain calculation.
+        Per TIM paper Section 4.7: track ti (state change times)
+        """
+        node_id = node.id if hasattr(node, 'id') else str(node)
+        economic_model.record_access_change(
+            self.current_time, node_id, actor_id, old_access, new_access
+        )
+        logger.debug(f"Access change recorded: {actor_id} on {node_id}: {old_access} -> {new_access}")
 
     def record_property_change(self, node, property_name: str, old_value, new_value):
-        pass
+        """
+        Record property change for time-proportional damage/gain calculation.
+        Per TIM paper Section 4.7: track ti (state change times)
+        """
+        node_id = node.id if hasattr(node, 'id') else str(node)
+        economic_model.record_property_change(
+            self.current_time, node_id, property_name, old_value, new_value
+        )
+        logger.debug(f"Property change recorded: {node_id}.{property_name}: {old_value} -> {new_value}")
 
     def get_tim_economic_summary(self, time_interval=None):
         if time_interval is None:

@@ -96,6 +96,7 @@ class Link:
         self.node2 = node2
         self.bidirectional = bidirectional
         self.latency = latency
+        self.access: dict[str, str] = {}  # Track actor access to this link (TIM paper Section 4.2)
         node1.add_link(self)
         if bidirectional:
             node2.add_link(self)
