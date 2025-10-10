@@ -161,7 +161,3 @@ def simtim_main(
         for n in network.values():
             print(n)
     return all_histories
-
-
-# Backward compatibility alias for code that still uses the old name
-run_simulation = simtim_main
