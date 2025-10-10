@@ -7,7 +7,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from src.core.simulation_main import simtim_main
-from src.gui.results_window import ResultsWindow
+from src.gui.enhanced_results_window import EnhancedResultsWindow
 from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab
 from src.gui.sidebar import Sidebar
 from src.gui.theme import Theme
@@ -301,7 +301,7 @@ class App(tk.Tk):
             'bg_color': self.bg_color,
             'button_fg': self.button_fg
         }
-        results_window = ResultsWindow(self, all_histories, theme_colors)
+        results_window = EnhancedResultsWindow(self, all_histories, theme_colors)
 
     def open_help_window(self):
         win = tk.Toplevel(self)
