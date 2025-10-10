@@ -2,7 +2,7 @@ import heapq
 import random
 import logging
 from typing import Any, Dict, List
-from src.detection import LegacyDetectionEngine, SimpleTIMDetectionEngine, AdvancedTIMDetectionEngine
+from src.detection import SimpleTIMDetectionEngine, AdvancedTIMDetectionEngine
 from .economic_model import economic_model, calculate_action_damage, calculate_action_gain
 logger = logging.getLogger(__name__)
 infinity = float('inf') 
@@ -20,13 +20,13 @@ class Event:
         return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
 
 class Simulator:
-    def __init__(self, network=None, detection_engine_type="legacy"):
+    def __init__(self, network=None, detection_engine_type="advanced_tim"):
         """
         Initialize simulator with configurable detection engine.
         
         Args:
             network: Network configuration
-            detection_engine_type: "legacy", "simple_tim", or "advanced_tim"
+            detection_engine_type: "simple_tim" or "advanced_tim" (default: "advanced_tim")
         """
         self.current_time = 0.0
         self.event_queue: List[Event] = []
@@ -37,13 +37,14 @@ class Simulator:
         # Choose detection engine based on type
         if detection_engine_type == "simple_tim":
             self.detection_engine = SimpleTIMDetectionEngine()
-            logger.info("Using Simple TIM paper-compliant detection engine")
+            logger.info("Using SimpleTIM: Pure TIM paper Section 4.5 implementation")
         elif detection_engine_type == "advanced_tim":
             self.detection_engine = AdvancedTIMDetectionEngine()
-            logger.info("Using Advanced TIM detection engine with domain knowledge")
-        else:  # legacy
-            self.detection_engine = LegacyDetectionEngine()
-            logger.info("Using legacy simple detection engine")
+            logger.info("Using AdvancedTIM: TIM paper + domain knowledge")
+        else:
+            # Default to advanced
+            self.detection_engine = AdvancedTIMDetectionEngine()
+            logger.warning(f"Unknown detection engine type '{detection_engine_type}', using advanced_tim")
             
         from src.actions.json_conditions import action_executor
         

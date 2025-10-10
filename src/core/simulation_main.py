@@ -18,12 +18,11 @@ from src.core.access_levels import NodeAccessLevel, LinkAccessLevel
 
 
 def simtim_main(
-    path_to_network_config=None,
-    sim_runs=None,
-    sim_time=None,
-    attackers=None,
-    defenders=None,
-    detection_engine_type="legacy",
+    path_to_network_config: str,
+    attackers: list = None,
+    defenders: list = None,
+    sim_time: int = 10,
+    detection_engine_type="advanced_tim",
 ):
     """
     Run a complete simulation with the given parameters.
@@ -76,12 +75,8 @@ def simtim_main(
         link_actions = get_link_action_library()
         all_attack_actions = attack_actions + list(link_actions.values())
         
-        # Create simulator and load detection rates
+        # Create simulator with detection engine
         simulator = Simulator(network, detection_engine_type=detection_engine_type)
-        
-        # Only load action detection rates for legacy detection engine
-        if detection_engine_type == "legacy":
-            simulator.load_action_detection_rates(attack_actions, defense_actions)
         
         # Create attacker objects
         attacker_objs = []
@@ -89,8 +84,7 @@ def simtim_main(
             attacker = Attacker(
                 id=attacker_config.get('id', f'attacker_{i}'),
                 strategy=attacker_config.get('strategy', 'random'),
-                capacity=attacker_config.get('capacity', float('inf')),
-                budget=attacker_config.get('budget', 10000)
+                capacity=attacker_config.get('capacity', 3)
             )
             # Provide both node actions and link actions
             attacker.available_actions = all_attack_actions
@@ -101,9 +95,8 @@ def simtim_main(
         for i, defender_config in enumerate(defenders):
             defender = Defender(
                 id=defender_config.get('id', f'defender_{i}'),
-                strategy=defender_config.get('strategy', 'random'),
-                capacity=defender_config.get('capacity', 1),
-                budget=defender_config.get('budget', 10000)
+                strategy=defender_config.get('strategy', 'reactive'),
+                capacity=defender_config.get('capacity', 1)
             )
             defender.available_actions = defense_actions
             defender_objs.append(defender)

@@ -1,357 +1,391 @@
 """
-TIM Paper-Compliant Detection Engine
+Advanced TIM Detection Engine - Domain-Enhanced Implementation
 
-This module implements the detection mechanism exactly as specified in the TIM paper:
-- Detection probability function ϱ(a, π̂(n)) for each action-node combination
-- Cumulative distribution function Fa(t) for detection timing
-- Proper temporal detection modeling
+This engine extends the TIM paper Section 4.5 model with cybersecurity domain knowledge.
+It implements the same formal model as SimpleTIM but with pre-configured, realistic
+detection probabilities and patterns based on real-world cybersecurity practices.
 
-Reference: Section 4.5 "Detection of malicious activities" in TIM paper
+Base TIM paper model (Section 4.5):
+1. ϱ(a, π̂(n)) - detection probability function: A(attack) × Π̂ → [0, 1]
+2. Fa(t) - cumulative distribution function with Fa(0) = 0 and Fa(1) = 1
+3. Detection timing: P(detected by time t) = Fa(t/da) · ϱ(a, π̂(n))
+
+Enhancements:
+- Pre-configured detection probabilities based on action types
+- Node property factors (endpoint protection, monitoring, criticality)
+- Action-specific CDF patterns based on detection characteristics
+- Ready-to-use for realistic simulations
+
+Reference: "Time is money: A temporal model of cybersecurity" by Zoltán Ádám Mann
 """
 
-import random
 import math
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable, Set
 import logging
+from .base_detection import BaseDetectionEngine
 
 logger = logging.getLogger(__name__)
 
-class TIMDetectionEngine:
+
+class AdvancedTIMDetectionEngine(BaseDetectionEngine):
     """
-    Detection engine implementing the TIM paper specification:
+    Advanced TIM detection engine with cybersecurity domain knowledge.
     
-    For an attacker action a applied to node n:
-    - ϱ(a, π̂(n)) = probability that defender detects the action during execution
-    - If detected, detection time follows CDF Fa(t) where t ∈ [0, da]
-    - Detection probability at time t: Fa(t/da) · ϱ(a, π̂(n))
+    Implements the same TIM paper model as SimpleTIM but with pre-configured,
+    realistic detection probabilities and patterns.
     """
+    
+    # Define action categories for detection
+    ACTION_CATEGORIES = {
+        'reconnaissance': ['scan', 'probe', 'discover', 'enum', 'reconnaissance'],
+        'exploitation': ['exploit', 'overflow', 'injection', 'cve'],
+        'privilege_escalation': ['escalate', 'privilege', 'sudo', 'root'],
+        'lateral_movement': ['lateral', 'ssh', 'rdp', 'psexec', 'wmi'],
+        'persistence': ['backdoor', 'persistence', 'implant', 'rootkit'],
+        'data_exfiltration': ['exfiltrate', 'download', 'steal', 'dump'],
+        'defense_evasion': ['evasion', 'obfuscate', 'hide', 'disable'],
+        'credential_access': ['credential', 'password', 'hash', 'mimikatz']
+    }
     
     def __init__(self):
-        self.base_detection_probabilities = {}  # ϱ(a, π̂(n)) values
-        self.cumulative_distribution_functions = {}  # Fa functions per action
-        self.actions_loaded = False
+        """Initialize Advanced TIM detection engine with domain knowledge."""
+        super().__init__()
         
-        # Initialize default detection probabilities based on node properties
-        self._initialize_default_detection_probabilities()
-        self._initialize_cumulative_distribution_functions()
+        # Initialize detection probability mappings
+        self._initialize_detection_probabilities()
+        
+        # Initialize CDF functions
+        self._initialize_cdf_functions()
+        
+        # Initialize node property factors
+        self._initialize_property_factors()
+        
+        logger.info("Initialized AdvancedTIM detection engine with domain knowledge")
     
-    def _initialize_default_detection_probabilities(self):
+    def _initialize_detection_probabilities(self):
         """
-        Initialize detection probability function ϱ(a, π̂(n))
-        Based on node properties (endpoint protection, monitoring, etc.)
+        Initialize base detection probabilities by action category.
+        
+        These are realistic values based on cybersecurity research and practice.
         """
-        # Detection probabilities depend on both action type and node properties
-        self.detection_factors = {
-            # Endpoint protection software increases detection
+        self.base_detection_probabilities = {
+            'reconnaissance': 0.15,      # Often goes unnoticed
+            'exploitation': 0.40,         # Moderate detection
+            'privilege_escalation': 0.55, # High detection (suspicious privilege changes)
+            'lateral_movement': 0.45,     # Moderate-high (unusual network activity)
+            'persistence': 0.35,          # Moderate (can be subtle)
+            'data_exfiltration': 0.70,    # High detection (large data transfers)
+            'defense_evasion': 0.20,      # Low (designed to avoid detection)
+            'credential_access': 0.50,    # Moderate-high (sensitive operations)
+            'unknown': 0.30               # Default for uncategorized actions
+        }
+    
+    def _initialize_cdf_functions(self):
+        """
+        Initialize CDF functions for different action categories.
+        
+        Different attack types have different detection time patterns.
+        """
+        # Reconnaissance: Often detected early (automated tools trigger alerts)
+        self.cdf_early = lambda t: min(1.0, 1.5 * t * (1 - 0.3 * math.exp(-3 * t)))
+        
+        # Exploitation: Uniform detection throughout execution
+        self.cdf_uniform = lambda t: t
+        
+        # Privilege escalation: Late detection (after suspicious activity accumulates)
+        self.cdf_late = lambda t: t ** 2
+        
+        # Data exfiltration: Immediate detection (distinctive signature)
+        self.cdf_immediate = lambda t: min(1.0, 1.5 * t)
+        
+        # Defense evasion: Very late detection (stealthy)
+        self.cdf_very_late = lambda t: t ** 3
+        
+        # Exponential: For actions with increasing detection over time
+        self.cdf_exponential = lambda t: min(1.0, t * (2 - 0.3 * math.exp(-2 * t)))
+        
+        # Map categories to CDF functions
+        self.category_cdf_map = {
+            'reconnaissance': self.cdf_early,
+            'exploitation': self.cdf_uniform,
+            'privilege_escalation': self.cdf_late,
+            'lateral_movement': self.cdf_exponential,
+            'persistence': self.cdf_late,
+            'data_exfiltration': self.cdf_immediate,
+            'defense_evasion': self.cdf_very_late,
+            'credential_access': self.cdf_exponential,
+            'unknown': self.cdf_uniform
+        }
+    
+    def _initialize_property_factors(self):
+        """
+        Initialize detection probability modifiers based on node properties.
+        
+        These factors modify the base detection probability based on defensive measures.
+        """
+        self.property_factors = {
+            # Endpoint protection software
             'endpoint_protection': {
-                'Sophos': 0.4,
-                'McAfee': 0.35,
-                'Symantec': 0.3,
-                'Windows Defender': 0.25,
-                'CrowdStrike': 0.5,
+                'CrowdStrike': 0.30,
+                'Carbon Black': 0.28,
+                'Sophos': 0.25,
+                'McAfee': 0.20,
+                'Symantec': 0.18,
+                'Windows Defender': 0.15,
                 'none': 0.0
             },
             
-            # Network monitoring affects detection
+            # Network monitoring and IDS/IPS
             'network_monitoring': {
-                'IDS': 0.3,
-                'IPS': 0.4,
-                'SIEM': 0.45,
-                'basic_logging': 0.15,
+                'SIEM': 0.25,
+                'IPS': 0.22,
+                'IDS': 0.18,
+                'NetFlow': 0.12,
+                'basic_logging': 0.08,
                 'none': 0.0
             },
             
-            # System criticality affects monitoring intensity
+            # System criticality (more monitoring on critical systems)
             'criticality': {
-                'high': 0.2,
-                'medium': 0.1,
-                'low': 0.05
+                'critical': 0.15,
+                'high': 0.12,
+                'medium': 0.08,
+                'low': 0.03
             },
             
-            # Internet exposure increases detection likelihood
+            # Logging level
+            'logging_level': {
+                'verbose': 0.10,
+                'normal': 0.05,
+                'minimal': 0.02,
+                'none': 0.0
+            },
+            
+            # Security team presence
+            'security_monitoring': {
+                '24/7_SOC': 0.20,
+                'business_hours': 0.10,
+                'automated_only': 0.05,
+                'none': 0.0
+            },
+            
+            # Internet exposure (external attacks more monitored)
             'exposure': {
-                'internet_exposed': 0.15,
-                'internal_only': -0.05
+                'internet_facing': 0.10,
+                'dmz': 0.08,
+                'internal': 0.0,
+                'isolated': -0.05  # Negative because less monitoring
             }
         }
-        
-        # Base detection probabilities per action type
-        self.base_action_detection = {
-            'reconnaissance': 0.1,
-            'network_scan': 0.2,
-            'vulnerability_scan': 0.25,
-            'exploit': 0.4,
-            'privilege_escalation': 0.5,
-            'lateral_movement': 0.35,
-            'data_exfiltration': 0.6,
-            'persistence': 0.3,
-            'defense_evasion': 0.15
-        }
     
-    def _initialize_cumulative_distribution_functions(self):
+    def _categorize_action(self, action_name: str) -> str:
         """
-        Initialize cumulative distribution functions Fa(t) for different action types
+        Categorize action based on its name.
         
-        From TIM paper: "detection time follows a random distribution with cumulative 
-        distribution function Fa with Fa(0) = 0 and Fa(1) = 1"
+        Args:
+            action_name: Name of the action
+            
+        Returns:
+            Action category string
         """
+        action_name_lower = action_name.lower()
         
-        # Different detection timing patterns for different action types
-        self.cdf_functions = {
-            # Quick actions detected early or not at all
-            'reconnaissance': self._early_detection_cdf,
-            'network_scan': self._early_detection_cdf,
-            
-            # Exploitation often detected during execution
-            'exploit': self._uniform_detection_cdf,
-            'vulnerability_scan': self._uniform_detection_cdf,
-            
-            # Privilege escalation detected later in process
-            'privilege_escalation': self._late_detection_cdf,
-            'persistence': self._late_detection_cdf,
-            
-            # Data exfiltration has distinctive signature - often detected
-            'data_exfiltration': self._immediate_detection_cdf,
-            
-            # Lateral movement detected throughout
-            'lateral_movement': self._uniform_detection_cdf,
-            
-            # Defense evasion specifically designed to avoid detection
-            'defense_evasion': self._very_late_detection_cdf
-        }
-    
-    def _early_detection_cdf(self, t_normalized: float) -> float:
-        """CDF for actions likely to be detected early (e.g., scans)"""
-        # Exponential growth: most detection happens early
-        return 1 - math.exp(-3 * t_normalized)
-    
-    def _uniform_detection_cdf(self, t_normalized: float) -> float:
-        """CDF for uniform detection probability throughout execution"""
-        # Linear growth: uniform detection probability
-        return t_normalized
-    
-    def _late_detection_cdf(self, t_normalized: float) -> float:
-        """CDF for actions detected late in execution"""
-        # Power function: detection probability increases toward end
-        return t_normalized ** 2
-    
-    def _immediate_detection_cdf(self, t_normalized: float) -> float:
-        """CDF for actions with high immediate detection (e.g., data exfiltration)"""
-        # Very early detection for obvious malicious activity
-        return min(1.0, 2 * t_normalized)
-    
-    def _very_late_detection_cdf(self, t_normalized: float) -> float:
-        """CDF for evasive actions"""
-        # Cubic function: very low detection until very end
-        return t_normalized ** 3
+        for category, keywords in self.ACTION_CATEGORIES.items():
+            for keyword in keywords:
+                if keyword in action_name_lower:
+                    return category
+        
+        return 'unknown'
     
     def calculate_detection_probability(self, action, target, actor_access: str, actor) -> float:
         """
-        Calculate ϱ(a, π̂(n)) - the probability that action a on node n is detected
+        Calculate ϱ(a, π̂(n)) with domain knowledge enhancements.
+        
+        Implementation of TIM paper Section 4.5 plus realistic factors:
+        - Base probability from action category
+        - Modifiers from node properties (endpoint protection, monitoring, etc.)
         
         Args:
-            action: The action being performed
-            target: The target node
-            actor_access: Actor's access level to the target
-            actor: The actor performing the action
+            action: The action 'a'
+            target: The target node with properties π̂(n)
+            actor_access: Actor's access level
+            actor: The actor
             
         Returns:
             Detection probability ϱ(a, π̂(n)) ∈ [0, 1]
         """
-        # Get base detection probability for this action type
-        action_name = action.name.lower()
-        base_prob = 0.2  # Default
+        # Get base detection probability from action category
+        category = self._categorize_action(action.name)
+        base_prob = self.base_detection_probabilities.get(category, 0.30)
         
-        for action_type, prob in self.base_action_detection.items():
-            if action_type in action_name:
-                base_prob = prob
-                break
+        logger.debug(f"Action '{action.name}' categorized as '{category}' with base ϱ={base_prob}")
         
-        # Modify based on node properties π̂(n)
+        # Get node properties π̂(n)
         node_properties = getattr(target, 'properties', {})
-        detection_modifier = 0.0
         
-        # Check endpoint protection
-        endpoint_protection = node_properties.get('endpoint_protection', 'none')
-        if isinstance(endpoint_protection, str):
-            detection_modifier += self.detection_factors['endpoint_protection'].get(endpoint_protection, 0.0)
+        # Calculate modifiers from node properties
+        total_modifier = 0.0
         
-        # Check network monitoring
+        # Endpoint protection modifier
+        endpoint = node_properties.get('endpoint_protection', 'none')
+        if isinstance(endpoint, str):
+            modifier = self.property_factors['endpoint_protection'].get(endpoint, 0.0)
+            total_modifier += modifier
+            if modifier > 0:
+                logger.debug(f"  + Endpoint protection '{endpoint}': +{modifier:.3f}")
+        
+        # Network monitoring modifier
         monitoring = node_properties.get('network_monitoring', 'none')
         if isinstance(monitoring, str):
-            detection_modifier += self.detection_factors['network_monitoring'].get(monitoring, 0.0)
+            modifier = self.property_factors['network_monitoring'].get(monitoring, 0.0)
+            total_modifier += modifier
+            if modifier > 0:
+                logger.debug(f"  + Network monitoring '{monitoring}': +{modifier:.3f}")
         
-        # Check system criticality
-        criticality = node_properties.get('critical', False)
-        if criticality:
-            detection_modifier += self.detection_factors['criticality']['high']
-        else:
-            detection_modifier += self.detection_factors['criticality']['low']
+        # Criticality modifier
+        if node_properties.get('critical', False) or node_properties.get('criticality') == 'critical':
+            modifier = self.property_factors['criticality']['critical']
+            total_modifier += modifier
+            logger.debug(f"  + Critical system: +{modifier:.3f}")
+        elif 'criticality' in node_properties:
+            criticality = node_properties['criticality']
+            modifier = self.property_factors['criticality'].get(criticality, 0.0)
+            total_modifier += modifier
+            if modifier > 0:
+                logger.debug(f"  + Criticality '{criticality}': +{modifier:.3f}")
         
-        # Check internet exposure
+        # Logging level modifier
+        logging_level = node_properties.get('logging_level', 'normal')
+        if isinstance(logging_level, str):
+            modifier = self.property_factors['logging_level'].get(logging_level, 0.0)
+            total_modifier += modifier
+            if modifier > 0:
+                logger.debug(f"  + Logging '{logging_level}': +{modifier:.3f}")
+        
+        # Security monitoring modifier
+        sec_monitoring = node_properties.get('security_monitoring', 'none')
+        if isinstance(sec_monitoring, str):
+            modifier = self.property_factors['security_monitoring'].get(sec_monitoring, 0.0)
+            total_modifier += modifier
+            if modifier > 0:
+                logger.debug(f"  + Security monitoring '{sec_monitoring}': +{modifier:.3f}")
+        
+        # Exposure modifier
         if node_properties.get('exposed_to_internet', False):
-            detection_modifier += self.detection_factors['exposure']['internet_exposed']
-        else:
-            detection_modifier += self.detection_factors['exposure']['internal_only']
+            modifier = self.property_factors['exposure']['internet_facing']
+            total_modifier += modifier
+            logger.debug(f"  + Internet exposed: +{modifier:.3f}")
+        elif 'exposure' in node_properties:
+            exposure = node_properties['exposure']
+            modifier = self.property_factors['exposure'].get(exposure, 0.0)
+            total_modifier += modifier
+            if modifier != 0:
+                logger.debug(f"  + Exposure '{exposure}': {modifier:+.3f}")
         
-        # Final detection probability ϱ(a, π̂(n))
-        detection_probability = max(0.0, min(1.0, base_prob + detection_modifier))
+        # Calculate final detection probability
+        detection_probability = max(0.0, min(1.0, base_prob + total_modifier))
         
-        logger.debug(f"Detection probability for {action.name} on {target.id}: {detection_probability:.3f}")
+        logger.debug(f"Final ϱ({action.name}, π̂) = {detection_probability:.3f}")
+        
         return detection_probability
     
-    def sample_detection_time(self, action, duration: float, detection_probability: float) -> Optional[float]:
+    def get_cdf_function(self, action) -> Callable[[float], float]:
         """
-        Sample detection time using the TIM paper's CDF approach
+        Get Fa(t) based on action category.
+        
+        Implementation of TIM paper Section 4.5:
+        Different action categories have different detection time patterns.
         
         Args:
-            action: The action being performed
-            duration: Action duration da
-            detection_probability: ϱ(a, π̂(n))
+            action: The action 'a'
             
         Returns:
-            Detection time relative to action start, or None if not detected
+            CDF function Fa: [0, 1] → [0, 1]
         """
-        # First, determine if detection occurs at all
-        if random.random() >= detection_probability:
-            return None
+        category = self._categorize_action(action.name)
+        cdf_func = self.category_cdf_map.get(category, self.cdf_uniform)
         
-        # If detection occurs, sample the timing using CDF
-        action_name = action.name.lower()
+        logger.debug(f"Action '{action.name}' (category '{category}') using CDF pattern")
         
-        # Select appropriate CDF function
-        cdf_func = self.cdf_functions.get('uniform_detection_cdf', self._uniform_detection_cdf)
-        for action_type, func in self.cdf_functions.items():
-            if action_type in action_name:
-                cdf_func = func
-                break
-        
-        # Sample from the CDF using inverse transform sampling
-        # Generate random value and find corresponding time
-        random_value = random.random()
-        
-        # Binary search to find t such that Fa(t) ≈ random_value
-        t_normalized = self._inverse_cdf_sampling(cdf_func, random_value)
-        
-        # Convert to actual time
-        detection_time = t_normalized * duration
-        
-        logger.debug(f"Sampled detection time for {action.name}: {detection_time:.2f} / {duration:.2f}")
-        return detection_time
+        return cdf_func
     
-    def _inverse_cdf_sampling(self, cdf_func: Callable, target_value: float, tolerance: float = 0.001) -> float:
-        """
-        Use binary search to find t such that CDF(t) ≈ target_value
-        """
-        low, high = 0.0, 1.0
-        
-        while high - low > tolerance:
-            mid = (low + high) / 2
-            cdf_value = cdf_func(mid)
-            
-            if cdf_value < target_value:
-                low = mid
-            else:
-                high = mid
-        
-        return (low + high) / 2
-    
-    def calculate_cumulative_detection_probability(self, action, target, actor_access: str, 
-                                                 time_elapsed: float, total_duration: float) -> float:
-        """
-        Calculate the cumulative detection probability at time t during action execution
-        
-        From TIM paper: "the probability that the execution of the action is detected 
-        by tstart + t is Fa(t/da) · ϱ(a, π̂(n))"
-        
-        Args:
-            action: The action being performed
-            target: The target node
-            actor_access: Actor's access level
-            time_elapsed: Time elapsed since action start
-            total_duration: Total action duration da
-            
-        Returns:
-            Cumulative detection probability at time t
-        """
-        # Get base detection probability ϱ(a, π̂(n))
-        base_detection_prob = self.calculate_detection_probability(action, target, actor_access, None)
-        
-        # Get normalized time t/da
-        t_normalized = min(1.0, time_elapsed / total_duration)
-        
-        # Get appropriate CDF function Fa
-        action_name = action.name.lower()
-        cdf_func = self.cdf_functions.get('uniform_detection_cdf', self._uniform_detection_cdf)
-        for action_type, func in self.cdf_functions.items():
-            if action_type in action_name:
-                cdf_func = func
-                break
-        
-        # Calculate Fa(t/da) · ϱ(a, π̂(n))
-        cdf_value = cdf_func(t_normalized)
-        cumulative_prob = cdf_value * base_detection_prob
-        
-        return cumulative_prob
-    
-    def should_detect_action_at_time(self, action, target, actor_access: str, 
-                                   time_elapsed: float, total_duration: float) -> bool:
-        """
-        Determine if action should be detected at specific time during execution
-        
-        This implements the TIM paper's detection model where detection can occur
-        at any time during the interval [tstart, tstart + da)
-        """
-        cumulative_prob = self.calculate_cumulative_detection_probability(
-            action, target, actor_access, time_elapsed, total_duration
-        )
-        
-        # Sample whether detection occurs at this specific moment
-        # This is an approximation of the continuous detection process
-        return random.random() < cumulative_prob
-    
-    def get_detection_summary(self) -> Dict[str, Any]:
-        """Get summary of detection configuration"""
+    def get_configuration_summary(self) -> Dict[str, Any]:
+        """Get summary of current configuration."""
         return {
-            'detection_engine': 'TIM Paper Compliant',
-            'base_action_types': len(self.base_action_detection),
-            'cdf_functions': len(self.cdf_functions),
-            'detection_factors': {
-                'endpoint_protection': len(self.detection_factors['endpoint_protection']),
-                'network_monitoring': len(self.detection_factors['network_monitoring']),
-                'criticality_levels': len(self.detection_factors['criticality']),
-                'exposure_types': len(self.detection_factors['exposure'])
-            }
+            'engine_type': 'AdvancedTIM',
+            'paper_section': '4.5 + Domain Knowledge',
+            'compliance': 'TIM paper + cybersecurity domain knowledge',
+            'action_categories': len(self.ACTION_CATEGORIES),
+            'base_detection_probabilities': self.base_detection_probabilities,
+            'property_factors': {
+                factor_name: len(values)
+                for factor_name, values in self.property_factors.items()
+            },
+            'cdf_patterns': len(self.category_cdf_map),
+            'features': [
+                'ϱ(a, π̂(n)) detection probability function',
+                'Fa(t) cumulative distribution function',
+                'Fa(t/da) · ϱ(a, π̂(n)) temporal detection',
+                'Action categorization',
+                'Endpoint protection awareness',
+                'Network monitoring awareness',
+                'System criticality factors',
+                'Logging and SOC awareness',
+                'Pre-configured realistic values',
+                'Category-specific CDF patterns'
+            ]
         }
-
-# Example usage for testing
-if __name__ == "__main__":
-    # Test the detection engine
-    engine = TIMDetectionEngine()
     
-    # Mock objects for testing
-    class MockAction:
-        def __init__(self, name):
-            self.name = name
-            self.duration = 2.0
+    def get_action_category_info(self, action_name: str) -> Dict[str, Any]:
+        """
+        Get detailed information about how an action would be detected.
+        
+        Useful for understanding and debugging detection behavior.
+        
+        Args:
+            action_name: Name of the action
+            
+        Returns:
+            Dictionary with category, base probability, and CDF type
+        """
+        category = self._categorize_action(action_name)
+        base_prob = self.base_detection_probabilities.get(category, 0.30)
+        
+        # Identify CDF type
+        cdf_func = self.category_cdf_map.get(category, self.cdf_uniform)
+        cdf_name = 'unknown'
+        if cdf_func == self.cdf_early:
+            cdf_name = 'early'
+        elif cdf_func == self.cdf_uniform:
+            cdf_name = 'uniform'
+        elif cdf_func == self.cdf_late:
+            cdf_name = 'late'
+        elif cdf_func == self.cdf_immediate:
+            cdf_name = 'immediate'
+        elif cdf_func == self.cdf_very_late:
+            cdf_name = 'very_late'
+        elif cdf_func == self.cdf_exponential:
+            cdf_name = 'exponential'
+        
+        return {
+            'action_name': action_name,
+            'category': category,
+            'base_detection_probability': base_prob,
+            'cdf_pattern': cdf_name,
+            'description': self._get_category_description(category)
+        }
     
-    class MockTarget:
-        def __init__(self):
-            self.id = "test_node"
-            self.properties = {
-                'endpoint_protection': 'Sophos',
-                'network_monitoring': 'SIEM',
-                'critical': True,
-                'exposed_to_internet': True
-            }
-    
-    action = MockAction("vulnerability_scan")
-    target = MockTarget()
-    
-    detection_prob = engine.calculate_detection_probability(action, target, "VISIBLE", None)
-    print(f"Detection probability: {detection_prob:.3f}")
-    
-    detection_time = engine.sample_detection_time(action, action.duration, detection_prob)
-    print(f"Detection time: {detection_time}")
-    
-    print("Detection summary:", engine.get_detection_summary())
+    def _get_category_description(self, category: str) -> str:
+        """Get human-readable description of category detection characteristics."""
+        descriptions = {
+            'reconnaissance': 'Low base detection, early CDF (automated scanners often trigger alerts)',
+            'exploitation': 'Moderate detection, uniform CDF (depends on exploit sophistication)',
+            'privilege_escalation': 'High detection, late CDF (suspicious privilege changes accumulate)',
+            'lateral_movement': 'Moderate-high detection, exponential CDF (unusual network patterns)',
+            'persistence': 'Moderate detection, late CDF (changes may go unnoticed initially)',
+            'data_exfiltration': 'High detection, immediate CDF (large transfers are distinctive)',
+            'defense_evasion': 'Low detection, very late CDF (designed to be stealthy)',
+            'credential_access': 'Moderate-high detection, exponential CDF (sensitive operations)',
+            'unknown': 'Default detection behavior'
+        }
+        return descriptions.get(category, 'No description available')
