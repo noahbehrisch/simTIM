@@ -5,6 +5,7 @@ import logging
 from typing import Dict, List, Callable, Any
 from src.actions.action import Action
 from src.actions.json_conditions import condition_evaluator, action_executor
+from src.actions.link_actions import get_link_action_library
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +159,13 @@ class ActionManager:
 
     def get_attack_actions(self) -> List[Action]:
         actions = self.load_all_actions()
-        return actions.get('attack_actions', [])
+        attack_actions = actions.get('attack_actions', [])
+        
+        # Add link actions to attack actions
+        link_actions = get_link_action_library()
+        attack_actions.extend(link_actions.values())
+        
+        return attack_actions
 
     def get_defense_actions(self) -> List[Action]:
         actions = self.load_all_actions()

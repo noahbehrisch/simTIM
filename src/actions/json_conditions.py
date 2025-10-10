@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Union, Callable
 from src.actions.version import Version
 from src.core.graph import Node, Link
+from src.core.access_levels import get_access_level_value, compare_access_levels
 
 class ConditionEvaluator:
     def __init__(self):
@@ -237,14 +238,12 @@ class ConditionEvaluator:
         elif operator == 'in':
             return actor_access in condition['values']
         elif operator == 'greater_than':
-            access_levels = {'NONE': 0, 'VISIBLE': 1, 'USER': 2, 'ADMIN': 3}
-            current_level = access_levels.get(actor_access, 0)
-            required_level = access_levels.get(condition['value'], 0)
+            current_level = get_access_level_value(actor_access)
+            required_level = get_access_level_value(condition['value'])
             return current_level > required_level
         elif operator == 'greater_equal':
-            access_levels = {'NONE': 0, 'VISIBLE': 1, 'USER': 2, 'ADMIN': 3}
-            current_level = access_levels.get(actor_access, 0)
-            required_level = access_levels.get(condition['value'], 0)
+            current_level = get_access_level_value(actor_access)
+            required_level = get_access_level_value(condition['value'])
             return current_level >= required_level
         else:
             raise ValueError(f"Unknown access check operator: {operator}")

@@ -1,8 +1,20 @@
+"""
+Simulation Main Module
+
+Contains the main simulation logic that can be used by both CLI and GUI.
+Implements TIM paper-compliant initialization with proper access levels.
+
+This module replaces the old simulation_runner.py with better integration
+of TIM paper compliance improvements (v0.5.0).
+"""
+
 from src.core.simulator import Simulator
 from src.actions.action_manager import get_attack_actions, get_defense_actions
+from src.actions.link_actions import get_link_action_library
 from src.networks.network_loader import load_network_config, create_network_from_config
 from src.actors.attacker import Attacker
 from src.actors.defender import Defender
+from src.core.access_levels import NodeAccessLevel, LinkAccessLevel
 
 
 def simtim_main(
@@ -11,9 +23,22 @@ def simtim_main(
     sim_time=None,
     attackers=None,
     defenders=None,
-    detection_engine_type=None,
+    detection_engine_type="legacy",
 ):
-
+    """
+    Run a complete simulation with the given parameters.
+    
+    Args:
+        path_to_network_config (str): Path to the network configuration file
+        sim_runs (int): Number of simulation runs
+        sim_time (float): Simulation end time
+        attackers (list): List of attacker configurations
+        defenders (list): List of defender configurations
+        detection_engine_type (str): Type of detection engine to use
+        
+    Returns:
+        list: All simulation histories from all runs
+    """
     if not path_to_network_config:
         print("Error: No network configuration file provided.")
         return
@@ -28,6 +53,7 @@ def simtim_main(
         return
     if not sim_runs or not isinstance(sim_runs, int) or sim_runs < 1:
         sim_runs = 1
+        
     all_histories = []
     for run in range(sim_runs):
         config = load_network_config(path_to_network_config)
@@ -46,45 +72,77 @@ def simtim_main(
         attack_actions = get_attack_actions()
         defense_actions = get_defense_actions()
         
+        # Add link actions (TIM paper Section 4.3)
+        link_actions = get_link_action_library()
+        all_attack_actions = attack_actions + list(link_actions.values())
+        
         # Create simulator and load detection rates
         simulator = Simulator(network, detection_engine_type=detection_engine_type)
         
         # Only load action detection rates for legacy detection engine
-        if hasattr(simulator.detection_engine, 'load_action_detection_rates'):
-            simulator.detection_engine.load_action_detection_rates()
+        if detection_engine_type == "legacy":
+            simulator.load_action_detection_rates(attack_actions, defense_actions)
         
+        # Create attacker objects
         attacker_objs = []
-        for attacker_config in attackers:
+        for i, attacker_config in enumerate(attackers):
             attacker = Attacker(
-                id=attacker_config['id'], 
-                strategy=attacker_config.get('strategy', 'none'),
-                capacity=attacker_config.get('capacity', 3)
+                id=attacker_config.get('id', f'attacker_{i}'),
+                strategy=attacker_config.get('strategy', 'random'),
+                capacity=attacker_config.get('capacity', float('inf')),
+                budget=attacker_config.get('budget', 10000)
             )
-            attacker.available_actions = attack_actions
+            # Provide both node actions and link actions
+            attacker.available_actions = all_attack_actions
             attacker_objs.append(attacker)
+        
+        # Create defender objects
         defender_objs = []
-        for defender_config in defenders:
+        for i, defender_config in enumerate(defenders):
             defender = Defender(
-                id=defender_config['id'], 
-                strategy=defender_config.get('strategy', 'none'),
-                capacity=defender_config.get('capacity', 2)
+                id=defender_config.get('id', f'defender_{i}'),
+                strategy=defender_config.get('strategy', 'random'),
+                capacity=defender_config.get('capacity', 1),
+                budget=defender_config.get('budget', 10000)
             )
             defender.available_actions = defense_actions
             defender_objs.append(defender)
+        
+        # Add actors to network
         network['actors'] = attacker_objs + defender_objs
         
-        # Initialize access: attackers start with no access, defenders see everything
+        # Initialize access levels per TIM paper Section 4.2
+        # Attackers start with NONE access (progressive discovery per R5)
+        # Defenders start with ADMIN access to all nodes
+        # Initialize access levels per TIM paper Section 4.2
+        # Attackers start with NONE access (progressive discovery per R5)
+        # Defenders start with ADMIN access to all nodes
         for attacker in attacker_objs:
             for node in network['nodes_list']:
                 if not hasattr(node, 'access'):
                     node.access = {}
-                node.access[attacker.id] = 'NONE'  # Progressive discovery: start with no access
+                # Use enum but store as string for backward compatibility
+                node.access[attacker.id] = NodeAccessLevel.NONE.to_string()
+            
+            # Initialize link access ωx(l) per TIM paper Section 4.2
+            for link in network.get('links_list', []):
+                if not hasattr(link, 'access'):
+                    link.access = {}
+                link.access[attacker.id] = LinkAccessLevel.NONE.to_string()
                 
         for defender in defender_objs:
             for node in network['nodes_list']:
                 if not hasattr(node, 'access'):
                     node.access = {}
-                node.access[defender.id] = 'ADMIN'
+                # Defenders have ADMIN access to all nodes
+                node.access[defender.id] = NodeAccessLevel.ADMIN.to_string()
+            
+            # Initialize link access - defenders see all links (VISIBLE per TIM paper)
+            for link in network.get('links_list', []):
+                if not hasattr(link, 'access'):
+                    link.access = {}
+                # Per TIM paper: Ω(link) = {none, visible}
+                link.access[defender.id] = LinkAccessLevel.VISIBLE.to_string()
         
         # Update the simulator network with actors  
         simulator.network = network
@@ -103,3 +161,7 @@ def simtim_main(
         for n in network.values():
             print(n)
     return all_histories
+
+
+# Backward compatibility alias for code that still uses the old name
+run_simulation = simtim_main
