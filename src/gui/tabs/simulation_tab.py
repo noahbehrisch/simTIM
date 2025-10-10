@@ -6,6 +6,9 @@ Handles simulation run configuration and parameters.
 
 import tkinter as tk
 from tkinter import ttk
+import importlib
+import inspect
+from pathlib import Path
 from .base_tab import BaseTab
 
 class SimulationTab(BaseTab):
@@ -15,12 +18,72 @@ class SimulationTab(BaseTab):
     
     def __init__(self, parent, theme_colors):
         """Initialize simulation tab."""
+        # Get available detection engines
+        self.available_engines = self._get_available_detection_engines()
+        
         # Variables for simulation parameters
         self.sim_runs_var = tk.IntVar(value=5)
         self.sim_time_var = tk.DoubleVar(value=20.0)
-        self.detection_engine_var = tk.StringVar(value="simple_tim")
+        self.detection_engine_var = tk.StringVar(value=self._get_default_engine())
         
         super().__init__(parent, theme_colors)
+    
+    def _get_available_detection_engines(self):
+        """
+        Dynamically scan the detection folder for available engines.
+        
+        Returns:
+            dict: Mapping of engine names to their display info
+        """
+        engines = {}
+        
+        try:
+            # Import the detection package to get available engines
+            from src.detection import SimpleTIMDetectionEngine, AdvancedTIMDetectionEngine
+            
+            # Map engine classes to their identifiers and descriptions
+            engine_mapping = {
+                'simple_tim': {
+                    'class': SimpleTIMDetectionEngine,
+                    'name': 'Simple TIM',
+                    'description': 'Pure TIM paper Section 4.5 implementation (mathematical framework only)'
+                },
+                'advanced_tim': {
+                    'class': AdvancedTIMDetectionEngine, 
+                    'name': 'Advanced TIM',
+                    'description': 'Full TIM compliance + cybersecurity domain knowledge (recommended)'
+                }
+            }
+            
+            # Verify each engine can be instantiated
+            for engine_id, info in engine_mapping.items():
+                try:
+                    # Test instantiation
+                    engine_instance = info['class']()
+                    engines[engine_id] = info
+                except Exception as e:
+                    print(f"Warning: Detection engine {engine_id} not available: {e}")
+            
+        except ImportError as e:
+            print(f"Warning: Could not import detection engines: {e}")
+            # Fallback to basic set
+            engines = {
+                'advanced_tim': {
+                    'name': 'Advanced TIM',
+                    'description': 'Default detection engine'
+                }
+            }
+        
+        return engines
+    
+    def _get_default_engine(self):
+        """Get the default detection engine."""
+        if 'simple_tim' in self.available_engines:
+            return 'simple_tim'
+        elif 'advanced_tim' in self.available_engines:
+            return 'advanced_tim'
+        else:
+            return list(self.available_engines.keys())[0] if self.available_engines else 'simple_tim'
     
     def create_widgets(self):
         """Create simulation configuration widgets."""
@@ -77,23 +140,14 @@ class SimulationTab(BaseTab):
         )
         engine_info_frame.pack(fill="x", padx=self.theme.SPACING['md'], pady=self.theme.SPACING['sm'])
         
-        self.create_info_label(
-            engine_info_frame, 
-            "• Legacy: Original simple detection (random-based, backward compatible)",
-            bg_color=self.theme.COLORS['section_network']
-        ).pack(anchor="w", padx=15)
-        
-        self.create_info_label(
-            engine_info_frame, 
-            "• Simple TIM: Minimal TIM paper compliance (mathematical framework)",
-            bg_color=self.theme.COLORS['section_network']
-        ).pack(anchor="w", padx=15)
-        
-        self.create_info_label(
-            engine_info_frame, 
-            "• Advanced TIM: Full TIM compliance + cybersecurity domain knowledge",
-            bg_color=self.theme.COLORS['section_network']
-        ).pack(anchor="w", padx=15)
+        # Dynamically create engine descriptions
+        for engine_key, engine_info in self.available_engines.items():
+            description = engine_info.get('description', f'{engine_key.replace("_", " ").title()}: No description available')
+            self.create_info_label(
+                engine_info_frame, 
+                f"• {description}",
+                bg_color=self.theme.COLORS['section_network']
+            ).pack(anchor="w", padx=15)
         
         # Detection engine selection
         engine_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
@@ -110,7 +164,7 @@ class SimulationTab(BaseTab):
         detection_dropdown = ttk.Combobox(
             engine_frame, 
             textvariable=self.detection_engine_var, 
-            values=["legacy", "simple_tim", "advanced_tim"], 
+            values=list(self.available_engines.keys()), 
             state="readonly", 
             width=15
         )

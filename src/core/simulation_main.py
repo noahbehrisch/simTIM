@@ -22,6 +22,7 @@ def simtim_main(
     attackers: list = None,
     defenders: list = None,
     sim_time: int = 10,
+    sim_runs: int = 1,
     detection_engine_type="advanced_tim",
 ):
     """
@@ -54,7 +55,10 @@ def simtim_main(
         sim_runs = 1
         
     all_histories = []
+    
     for run in range(sim_runs):
+        print(f"\n=== Running simulation {run + 1}/{sim_runs} ===")
+        
         config = load_network_config(path_to_network_config)
         network = create_network_from_config(config)
         network['nodes_list'] = list(network.values())
@@ -150,7 +154,13 @@ def simtim_main(
                 history_tuples.append(event)
         
         all_histories.append(history_tuples)
-        print("\nFinal network state:")
-        for n in network.values():
-            print(n)
+        print(f"Simulation run {run + 1} completed with {len(history_tuples)} events")
+        if run + 1 < sim_runs:
+            print("Preparing next simulation run...")
+        else:
+            print("\nFinal network state:")
+            for n in network.values():
+                print(n)
+    
+    print(f"\n=== All {sim_runs} simulation runs completed ===")
     return all_histories
