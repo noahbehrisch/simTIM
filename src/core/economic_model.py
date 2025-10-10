@@ -1,6 +1,60 @@
 from typing import Dict, Any, List, Tuple
 from src.core.graph import Node
 
+class EconomicParameters:
+    """Configuration parameters for economic calculations."""
+    def __init__(self):
+        # Time-proportional damage rates (per time unit)
+        self.admin_access_damage_rate = 50.0
+        self.user_access_damage_rate = 10.0
+        
+        # Property multipliers
+        self.data_sensitivity_multipliers = {
+            'high': 3.0,
+            'medium': 1.5,
+            'low': 1.0
+        }
+        
+        self.criticality_multipliers = {
+            'critical': 2.0,
+            'high': 1.5,
+            'medium': 1.3,
+            'low': 1.0
+        }
+        
+        # Asset value scaling
+        self.asset_value_factor = 0.5  # Additional multiplier per asset
+        
+        # Attacker gain as fraction of defender damage
+        self.attacker_gain_ratio = 0.35
+        
+        # Base damage for critical system compromise
+        self.critical_system_base_damage = 1000.0
+        self.critical_system_multiplier = 5.0
+    
+    def to_dict(self) -> dict:
+        """Export parameters as dictionary for easy customization."""
+        return {
+            'admin_access_damage_rate': self.admin_access_damage_rate,
+            'user_access_damage_rate': self.user_access_damage_rate,
+            'data_sensitivity_multipliers': self.data_sensitivity_multipliers.copy(),
+            'criticality_multipliers': self.criticality_multipliers.copy(),
+            'asset_value_factor': self.asset_value_factor,
+            'attacker_gain_ratio': self.attacker_gain_ratio,
+            'critical_system_base_damage': self.critical_system_base_damage,
+            'critical_system_multiplier': self.critical_system_multiplier
+        }
+    
+    @classmethod
+    def from_dict(cls, config: dict):
+        """Create parameters from dictionary configuration."""
+        params = cls()
+        for key, value in config.items():
+            if hasattr(params, key):
+                setattr(params, key, value)
+        return params
+
+
 class SimpleEconomicModel:
     """
     Economic model implementing TIM paper Section 4.7 "Optimization Objectives"
@@ -12,7 +66,10 @@ class SimpleEconomicModel:
     Reference: TIM paper equations for D[0,T]^total and G[0,T](x)
     """
     
-    def __init__(self):
+    def __init__(self, parameters: EconomicParameters = None):
+        """Initialize economic model with configurable parameters."""
+        self.parameters = parameters or EconomicParameters()
+        
         self.total_damage = 0.0
         self.actor_costs = {}
         self.actor_gains = {}
@@ -101,10 +158,10 @@ class SimpleEconomicModel:
                 access = node.access.get(attacker_id, "NONE")
                 
                 # Calculate δ(ω, π̂) - damage rate for this access/property combination
-                damage_rate = calculate_delta(access, node)
+                damage_rate = calculate_delta(access, node, self.parameters)
                 
                 # Calculate γ(ω, π̂) - gain rate for this access/property combination
-                gain_rate = calculate_gamma(access, node)
+                gain_rate = calculate_gamma(access, node, self.parameters)
                 
                 # Accumulate over time interval [last_time, current_time)
                 if damage_rate > 0:
@@ -168,7 +225,7 @@ class SimpleEconomicModel:
         }
 
 
-def calculate_delta(access: str, node: Node) -> float:
+def calculate_delta(access: str, node: Node, parameters: EconomicParameters = None) -> float:
     """
     Calculate time-proportional damage rate δ(ω, π̂(n)).
     
@@ -178,39 +235,41 @@ def calculate_delta(access: str, node: Node) -> float:
     Args:
         access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
         node: The node being accessed
+        parameters: Economic parameters (uses defaults if None)
         
     Returns:
         Damage rate per time unit (e.g., USD per day)
     """
+    if parameters is None:
+        parameters = EconomicParameters()
+        
     # No damage if no access
     if access in ["NONE", "VISIBLE"]:
         return 0.0
     
     # Base damage rate depends on access level
     if access == "ADMIN":
-        base_rate = 50.0  # USD per time unit
+        base_rate = parameters.admin_access_damage_rate
     elif access == "USER":
-        base_rate = 10.0  # USD per time unit
+        base_rate = parameters.user_access_damage_rate
     else:
         return 0.0
     
     # Multiply by node value factors
     asset_count = len(getattr(node, 'assets', []))
     if asset_count > 0:
-        base_rate *= (1 + asset_count * 0.5)
+        base_rate *= (1 + asset_count * parameters.asset_value_factor)
     
     # High-value properties increase damage rate
     properties = getattr(node, 'properties', {})
     
-    if properties.get('data_sensitivity') == 'high':
-        base_rate *= 3.0
-    elif properties.get('data_sensitivity') == 'medium':
-        base_rate *= 1.5
+    # Data sensitivity multiplier
+    data_sensitivity = properties.get('data_sensitivity', 'low')
+    base_rate *= parameters.data_sensitivity_multipliers.get(data_sensitivity, 1.0)
     
-    if properties.get('criticality') == 'high':
-        base_rate *= 2.0
-    elif properties.get('criticality') == 'medium':
-        base_rate *= 1.3
+    # Criticality multiplier
+    criticality = properties.get('criticality', 'low')
+    base_rate *= parameters.criticality_multipliers.get(criticality, 1.0)
     
     # Data amount affects ongoing damage (e.g., ongoing data exfiltration)
     data_amount = properties.get('data_amount', 0)
@@ -222,7 +281,7 @@ def calculate_delta(access: str, node: Node) -> float:
     return base_rate
 
 
-def calculate_gamma(access: str, node: Node) -> float:
+def calculate_gamma(access: str, node: Node, parameters: EconomicParameters = None) -> float:
     """
     Calculate time-proportional gain rate γ(ω, π̂(n)).
     
@@ -232,21 +291,22 @@ def calculate_gamma(access: str, node: Node) -> float:
     Args:
         access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
         node: The node being accessed
+        parameters: Economic parameters (uses defaults if None)
         
     Returns:
         Gain rate per time unit (e.g., USD per day)
     """
+    if parameters is None:
+        parameters = EconomicParameters()
+        
     # Attacker gain is typically a fraction of defender damage
-    damage_rate = calculate_delta(access, node)
+    damage_rate = calculate_delta(access, node, parameters)
     
-    # Attacker gains about 30-40% of the damage they cause
-    # (e.g., ransom is less than total damage, stolen data sells for less than its value)
-    gain_multiplier = 0.35
-    
-    return damage_rate * gain_multiplier
+    # Use configurable gain ratio
+    return damage_rate * parameters.attacker_gain_ratio
 
 
-def calculate_action_damage(action_name: str, node: Node) -> float:
+def calculate_action_damage(action_name: str, node: Node, parameters: EconomicParameters = None) -> float:
     """
     Calculate one-off damage D(a, π̂(n)) from successful attack action.
     
@@ -257,21 +317,25 @@ def calculate_action_damage(action_name: str, node: Node) -> float:
     Args:
         action_name: Name of the attack action
         node: The target node
+        parameters: Economic parameters (uses defaults if None)
         
     Returns:
         One-off damage amount (e.g., USD)
     """
-    base_damage = 1000.0
+    if parameters is None:
+        parameters = EconomicParameters()
+        
+    base_damage = parameters.critical_system_base_damage
     
     asset_multiplier = len(getattr(node, 'assets', [])) * 500.0
     
     if 'exfiltration' in action_name.lower() or 'tapestry' in action_name.lower():
-        base_damage *= 5.0
+        base_damage *= parameters.critical_system_multiplier
     
     return base_damage + asset_multiplier
 
 
-def calculate_action_gain(action_name: str, node: Node) -> float:
+def calculate_action_gain(action_name: str, node: Node, parameters: EconomicParameters = None) -> float:
     """
     Calculate one-off gain G(a, π̂(n)) from successful attack action.
     

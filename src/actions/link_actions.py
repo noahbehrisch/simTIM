@@ -4,8 +4,17 @@ Link Actions Implementation for TIM Paper Compliance
 This module provides utilities and examples for implementing link actions as specified
 in the TIM paper Section 4.3.
 
-Link actions differ from node actions in that they:
-1. Apply to a directed link n1 → n2
+Link actions differ from node actions in that    return create_link_action(
+        name="SSH Lateral Movement",
+        precondition_link=ssh_precondition,
+        postcondition_link=ssh_postcondition,
+        cost=400.0,
+        duration=2.0,
+        success_probability=0.7,
+        detection_probability=detection_prob,
+        one_off_damage=damage_calc,
+        one_off_gain=gain_calc
+    ) Apply to a directed link n1 → n2
 2. Have preconditions that check properties and access of BOTH n1 and n2
 3. Have postconditions that can modify properties of n2 and actor's access to n2
 4. Model lateral movement and network propagation attacks
@@ -58,16 +67,16 @@ def create_link_action(
     def node_postcondition(node: Node, actor_access: str, actor_id: str) -> None:
         postcondition_link(node, actor_access, actor_id)
     
-    # Default detection probability
+    # Validate required parameters
     if detection_probability is None:
-        detection_probability = lambda link, access, actor: 0.3
+        raise ValueError(f"Link action '{name}' must provide detection_probability function")
     
-    # Default damage/gain functions
+    # Validate damage/gain functions
     if one_off_damage is None:
-        one_off_damage = lambda link, access, actor: 500.0
+        raise ValueError(f"Link action '{name}' must provide one_off_damage function")
     
     if one_off_gain is None:
-        one_off_gain = lambda link, access, actor: 150.0
+        raise ValueError(f"Link action '{name}' must provide one_off_gain function")
     
     # Wrap these for node interface
     def wrapped_detection(node, access, actor):
@@ -102,7 +111,6 @@ def create_link_action(
     )
 
 
-# Example: SSH Lateral Movement Attack (Link Action)
 def create_ssh_lateral_movement_action() -> Action:
     """
     Create a link action for SSH-based lateral movement.
@@ -120,7 +128,7 @@ def create_ssh_lateral_movement_action() -> Action:
     - Link n1→n2 becomes VISIBLE to actor
     """
     
-    def precondition(target_node: Node, actor_access: str, actor_id: str) -> bool:
+    def ssh_precondition(target_node: Node, actor_access: str, actor_id: str) -> bool:
         # Check if target has SSH service
         if not hasattr(target_node, 'services'):
             return False
@@ -137,33 +145,98 @@ def create_ssh_lateral_movement_action() -> Action:
         # For now, this is a simplified version
         return True
     
-    def postcondition(target_node: Node, actor_access: str, actor_id: str) -> None:
+    def ssh_postcondition(target_node: Node, actor_access: str, actor_id: str) -> None:
         # Grant USER access to target node
         if not hasattr(target_node, 'access'):
             target_node.access = {}
         target_node.access[actor_id] = "USER"
         target_node.compromised = True
     
-    def detection_prob(target_node: Node, actor_access: str, actor_id: str) -> float:
-        # Detection depends on target's monitoring
-        base_prob = 0.4
+    def detection_prob(link, actor_access: str, actor_id: str) -> float:
+        # SSH lateral movement detection depends on network monitoring and logging
+        base_prob = 0.25  # SSH is somewhat stealthy but leaves network traces
         
-        if hasattr(target_node, 'properties'):
-            if target_node.properties.get('network_monitoring'):
-                base_prob += 0.3
-            if target_node.properties.get('endpoint_protection'):
-                base_prob += 0.2
+        if hasattr(link, 'properties'):
+            # Network monitoring significantly increases detection
+            monitoring = link.properties.get('network_monitoring', 'none')
+            if monitoring == 'SIEM':
+                base_prob += 0.35
+            elif monitoring == 'IPS':
+                base_prob += 0.30
+            elif monitoring == 'IDS':
+                base_prob += 0.25
+            elif monitoring == 'basic_logging':
+                base_prob += 0.15
+            
+            # Endpoint protection can detect unusual SSH connections
+            endpoint = link.properties.get('endpoint_protection', 'none')
+            if endpoint in ['CrowdStrike', 'Carbon Black']:
+                base_prob += 0.20
+            elif endpoint in ['Sophos', 'McAfee']:
+                base_prob += 0.15
+            elif endpoint == 'Windows Defender':
+                base_prob += 0.10
+            
+            # SSH monitoring specifically
+            if link.properties.get('ssh_monitoring', False):
+                base_prob += 0.25
         
-        return min(base_prob, 1.0)
+        return min(base_prob, 0.95)  # Cap at 95% detection
+    
+    def damage_calc(link, actor_access: str, actor_id: str) -> float:
+        # Lateral movement damage depends on target value and compromise level
+        base_damage = 200.0  # Base cost of lateral movement incident
+        
+        if hasattr(link, 'properties'):
+            # Critical systems cause more damage when compromised
+            criticality = link.properties.get('criticality', 'low')
+            if criticality == 'critical':
+                base_damage *= 3.0
+            elif criticality == 'high':
+                base_damage *= 2.0
+            elif criticality == 'medium':
+                base_damage *= 1.5
+            
+            # Data sensitivity increases damage
+            data_sensitivity = link.properties.get('data_sensitivity', 'low')
+            if data_sensitivity == 'high':
+                base_damage *= 2.5
+            elif data_sensitivity == 'medium':
+                base_damage *= 1.5
+        
+        return base_damage
+    
+    def gain_calc(link, actor_access: str, actor_id: str) -> float:
+        # Attacker gain from lateral movement (information, access value)
+        base_gain = 100.0  # Base value of gaining access to another system
+        
+        if hasattr(link, 'properties'):
+            # More valuable targets provide more gain
+            criticality = link.properties.get('criticality', 'low')
+            if criticality == 'critical':
+                base_gain *= 4.0
+            elif criticality == 'high':
+                base_gain *= 2.5
+            elif criticality == 'medium':
+                base_gain *= 1.5
+            
+            # Assets on the target system
+            assets = getattr(link, 'assets', [])
+            if assets:
+                base_gain += len(assets) * 50.0  # Each asset adds value
+        
+        return base_gain
     
     return create_link_action(
         name="SSH Lateral Movement",
-        precondition_link=precondition,
-        postcondition_link=postcondition,
+        precondition_link=ssh_precondition,
+        postcondition_link=ssh_postcondition,
         cost=400.0,
         duration=2.0,
         success_probability=0.7,
-        detection_probability=detection_prob
+        detection_probability=detection_prob,
+        one_off_damage=damage_calc,
+        one_off_gain=gain_calc
     )
 
 
@@ -189,6 +262,81 @@ def create_rdp_lateral_movement_action() -> Action:
         target_node.access[actor_id] = "ADMIN"  # RDP often gives admin access
         target_node.compromised = True
     
+    def detection_prob(link, actor_access: str, actor_id: str) -> float:
+        # RDP lateral movement is more detectable than SSH due to GUI nature
+        base_prob = 0.40  # RDP connections are more obvious
+        
+        if hasattr(link, 'properties'):
+            # Network monitoring catches RDP traffic
+            monitoring = link.properties.get('network_monitoring', 'none')
+            if monitoring == 'SIEM':
+                base_prob += 0.30
+            elif monitoring == 'IPS':
+                base_prob += 0.25
+            elif monitoring == 'IDS':
+                base_prob += 0.20
+            elif monitoring == 'basic_logging':
+                base_prob += 0.10
+            
+            # Endpoint protection detects RDP activity
+            endpoint = link.properties.get('endpoint_protection', 'none')
+            if endpoint in ['CrowdStrike', 'Carbon Black']:
+                base_prob += 0.25
+            elif endpoint in ['Sophos', 'McAfee']:
+                base_prob += 0.20
+            elif endpoint == 'Windows Defender':
+                base_prob += 0.15
+            
+            # RDP monitoring specifically (Windows event logs)
+            if link.properties.get('rdp_monitoring', False):
+                base_prob += 0.20
+                
+            # Critical systems have better monitoring
+            if link.properties.get('criticality') in ['critical', 'high']:
+                base_prob += 0.10
+        
+        return min(base_prob, 0.95)
+    
+    def damage_calc(link, actor_access: str, actor_id: str) -> float:
+        # RDP gives admin access, so higher base damage
+        base_damage = 400.0
+        
+        if hasattr(link, 'properties'):
+            criticality = link.properties.get('criticality', 'low')
+            if criticality == 'critical':
+                base_damage *= 3.5
+            elif criticality == 'high':
+                base_damage *= 2.5
+            elif criticality == 'medium':
+                base_damage *= 1.8
+            
+            data_sensitivity = link.properties.get('data_sensitivity', 'low')
+            if data_sensitivity == 'high':
+                base_damage *= 3.0
+            elif data_sensitivity == 'medium':
+                base_damage *= 2.0
+        
+        return base_damage
+    
+    def gain_calc(link, actor_access: str, actor_id: str) -> float:
+        # Higher gain since RDP gives admin access
+        base_gain = 200.0
+        
+        if hasattr(link, 'properties'):
+            criticality = link.properties.get('criticality', 'low')
+            if criticality == 'critical':
+                base_gain *= 5.0
+            elif criticality == 'high':
+                base_gain *= 3.0
+            elif criticality == 'medium':
+                base_gain *= 2.0
+            
+            assets = getattr(link, 'assets', [])
+            if assets:
+                base_gain += len(assets) * 75.0  # Higher value per asset for admin access
+        
+        return base_gain
+    
     return create_link_action(
         name="RDP Lateral Movement",
         precondition_link=precondition,
@@ -196,6 +344,9 @@ def create_rdp_lateral_movement_action() -> Action:
         cost=350.0,
         duration=1.5,
         success_probability=0.65,
+        detection_probability=detection_prob,
+        one_off_damage=damage_calc,
+        one_off_gain=gain_calc
     )
 
 
@@ -221,9 +372,44 @@ def create_network_scan_action() -> Action:
         if current_access == "NONE":
             target_node.access[actor_id] = "VISIBLE"
     
-    def detection_prob(target_node: Node, actor_access: str, actor_id: str) -> float:
-        # Network scans are relatively easy to detect
-        return 0.6
+    def detection_prob(link, actor_access: str, actor_id: str) -> float:
+        # Network scans are relatively easy to detect with proper monitoring
+        base_prob = 0.45  # Base detection for network scans
+        
+        if hasattr(link, 'properties'):
+            monitoring = link.properties.get('network_monitoring', 'none')
+            if monitoring == 'SIEM':
+                base_prob += 0.40
+            elif monitoring == 'IPS':
+                base_prob += 0.35
+            elif monitoring == 'IDS':
+                base_prob += 0.30
+            elif monitoring == 'basic_logging':
+                base_prob += 0.15
+                
+            # Network scans trigger firewall alerts
+            if link.properties.get('firewall_enabled', False):
+                base_prob += 0.20
+        
+        return min(base_prob, 0.95)
+    
+    def damage_calc(link, actor_access: str, actor_id: str) -> float:
+        # Network scans cause minimal direct damage but reveal information
+        return 25.0  # Small cost for scanning activity
+    
+    def gain_calc(link, actor_access: str, actor_id: str) -> float:
+        # Moderate gain from network reconnaissance
+        base_gain = 50.0  # Value of network topology information
+        
+        if hasattr(link, 'properties'):
+            # More valuable targets provide more reconnaissance value
+            criticality = link.properties.get('criticality', 'low')
+            if criticality == 'critical':
+                base_gain *= 2.0
+            elif criticality == 'high':
+                base_gain *= 1.5
+        
+        return base_gain
     
     return create_link_action(
         name="Network Scan",
@@ -232,7 +418,9 @@ def create_network_scan_action() -> Action:
         cost=50.0,
         duration=0.5,
         success_probability=0.95,
-        detection_probability=detection_prob
+        detection_probability=detection_prob,
+        one_off_damage=damage_calc,
+        one_off_gain=gain_calc
     )
 
 

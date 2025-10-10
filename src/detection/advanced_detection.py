@@ -201,9 +201,9 @@ class AdvancedTIMDetectionEngine(BaseDetectionEngine):
         """
         Calculate ϱ(a, π̂(n)) with domain knowledge enhancements.
         
-        Implementation of TIM paper Section 4.5 plus realistic factors:
-        - Base probability from action category
-        - Modifiers from node properties (endpoint protection, monitoring, etc.)
+        Implementation of TIM paper Section 4.5:
+        Uses action's built-in detection probability as base, then applies
+        domain knowledge modifiers based on node properties.
         
         Args:
             action: The action 'a'
@@ -214,16 +214,21 @@ class AdvancedTIMDetectionEngine(BaseDetectionEngine):
         Returns:
             Detection probability ϱ(a, π̂(n)) ∈ [0, 1]
         """
-        # Get base detection probability from action category
-        category = self._categorize_action(action.name)
-        base_prob = self.base_detection_probabilities.get(category, 0.30)
-        
-        logger.debug(f"Action '{action.name}' categorized as '{category}' with base ϱ={base_prob}")
+        # Get base detection probability from action itself (proper TIM compliance)
+        try:
+            base_prob = action.get_detection_probability(target, actor_access, actor or "unknown")
+            logger.debug(f"Action '{action.name}' provided base ϱ = {base_prob}")
+        except Exception as e:
+            logger.warning(f"Action '{action.name}' detection function failed: {e}")
+            # Fallback to category-based detection (deprecated)
+            category = self._categorize_action(action.name)
+            base_prob = self.base_detection_probabilities.get(category, 0.30)
+            logger.debug(f"Using fallback category '{category}' with base ϱ = {base_prob}")
         
         # Get node properties π̂(n)
         node_properties = getattr(target, 'properties', {})
         
-        # Calculate modifiers from node properties
+        # Apply domain knowledge modifiers to enhance the base probability
         total_modifier = 0.0
         
         # Endpoint protection modifier

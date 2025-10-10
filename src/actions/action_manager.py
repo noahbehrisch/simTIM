@@ -45,14 +45,26 @@ class ActionManager:
                 modifier_sum = 0.0
                 for modifier in spec.get("property_modifiers", []):
                     prop_name = modifier["property"]
+                    
+                    # Get the property value (supports nested properties)
+                    prop_value = None
                     if hasattr(node, prop_name):
                         prop_value = getattr(node, prop_name)
+                        
+                        # Handle nested property access (e.g., properties.endpoint_protection)
+                        if "nested_property" in modifier and isinstance(prop_value, dict):
+                            nested_prop = modifier["nested_property"]
+                            prop_value = prop_value.get(nested_prop)
+                    
+                    # Check if the property value matches the modifier criteria
+                    if prop_value is not None:
                         if "value" in modifier:
                             if prop_value == modifier["value"]:
                                 modifier_sum += modifier.get("probability_modifier", 0.0)
                         elif "values" in modifier:
                             if prop_value in modifier["values"]:
                                 modifier_sum += modifier.get("probability_modifier", 0.0)
+                                
                 return min(1.0, base_prob + modifier_sum)
             return detection_function
         else:

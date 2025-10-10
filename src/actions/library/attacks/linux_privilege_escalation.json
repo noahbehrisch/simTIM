@@ -44,8 +44,52 @@
     ]
   },
   "detection_probability": {
-    "type": "constant",
-    "value": 0.4
+    "type": "node_property_based",
+    "base_probability": 0.35,
+    "property_modifiers": [
+      {
+        "property": "properties",
+        "nested_property": "endpoint_protection",
+        "values": ["CrowdStrike", "Carbon Black"],
+        "probability_modifier": 0.30
+      },
+      {
+        "property": "properties", 
+        "nested_property": "endpoint_protection",
+        "values": ["Sophos", "McAfee", "Symantec"],
+        "probability_modifier": 0.20
+      },
+      {
+        "property": "properties",
+        "nested_property": "endpoint_protection", 
+        "values": ["Windows Defender", "basic"],
+        "probability_modifier": 0.15
+      },
+      {
+        "property": "properties",
+        "nested_property": "logging_level",
+        "values": ["verbose", "audit"],
+        "probability_modifier": 0.15
+      },
+      {
+        "property": "properties",
+        "nested_property": "security_monitoring",
+        "values": ["24/7_SOC"],
+        "probability_modifier": 0.20
+      },
+      {
+        "property": "properties",
+        "nested_property": "security_monitoring", 
+        "values": ["business_hours"],
+        "probability_modifier": 0.10
+      },
+      {
+        "property": "properties",
+        "nested_property": "criticality",
+        "values": ["critical", "high"],
+        "probability_modifier": 0.10
+      }
+    ]
   },
   "damage_gain": {
     "one_off_damage": 40.0,
