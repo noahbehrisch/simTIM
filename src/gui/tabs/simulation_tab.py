@@ -1,9 +1,3 @@
-"""
-Simulation Tab
-
-Handles simulation run configuration and parameters.
-"""
-
 import tkinter as tk
 from tkinter import ttk
 import importlib
