@@ -10,10 +10,6 @@ import os
 from .base_tab import BaseTab
 
 class NetworkTab(BaseTab):
-    """
-    Tab for network management and configuration.
-    """
-    
     def __init__(self, parent, theme_colors):
         """Initialize network tab."""
         # Default network path (updated to demo network)

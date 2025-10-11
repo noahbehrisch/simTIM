@@ -12,10 +12,6 @@ from pathlib import Path
 from .base_tab import BaseTab
 
 class SimulationTab(BaseTab):
-    """
-    Tab for configuring simulation parameters.
-    """
-    
     def __init__(self, parent, theme_colors):
         """Initialize simulation tab."""
         # Get available detection engines

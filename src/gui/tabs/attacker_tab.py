@@ -9,10 +9,6 @@ from tkinter import ttk
 from .base_tab import BaseTab
 
 class AttackerTab(BaseTab):
-    """
-    Tab for configuring attackers and their strategies.
-    """
-    
     def __init__(self, parent, theme_colors):
         """Initialize attacker tab."""
         # Lists to track attacker entries

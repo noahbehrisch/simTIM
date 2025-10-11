@@ -9,10 +9,6 @@ from tkinter import ttk
 from .base_tab import BaseTab
 
 class DefenderTab(BaseTab):
-    """
-    Tab for configuring defenders and their strategies.
-    """
-    
     def __init__(self, parent, theme_colors):
         """Initialize defender tab."""
         # Lists to track defender entries

@@ -6,11 +6,7 @@ Navigation sidebar for the main GUI application.
 
 import tkinter as tk
 
-class Sidebar(tk.Frame):
-    """
-    Navigation sidebar with tab buttons and fullscreen toggle.
-    """
-    
+class Sidebar(tk.Frame):    
     def __init__(self, master, toggle_fullscreen, fullscreen_state, switch_tab_callback, theme_colors):
         """
         Initialize sidebar.

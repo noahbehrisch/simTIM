@@ -10,7 +10,6 @@ import sys
 
 
 def main():
-    """Launch the simTIM GUI application."""
     try:
         app = App()
         app.mainloop()

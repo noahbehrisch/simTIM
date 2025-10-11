@@ -8,8 +8,6 @@ from src.visualization import ViolinPlotEngine, analyze_simulation_results
 
 
 class EnhancedResultsWindow:
-    """Enhanced results window with per-run tabs, per-actor tabs, and statistical analysis"""
-    
     def __init__(self, parent, all_histories, theme_colors):
         self.parent = parent
         self.all_histories = all_histories

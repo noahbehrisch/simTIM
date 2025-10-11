@@ -6,10 +6,6 @@ All components should follow these guidelines for a cohesive user experience.
 """
 
 class Theme:
-    """
-    Centralized theme system for consistent GUI styling.
-    """
-    
     # Color Palette
     COLORS = {
         # Background colors
