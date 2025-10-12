@@ -1,8 +1,3 @@
-"""
-Random Attacker Strategy
-
-Selects valid actions randomly for unpredictable behavior.
-"""
 import random
 from typing import Any, Tuple, Optional
 

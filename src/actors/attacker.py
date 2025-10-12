@@ -1,6 +1,5 @@
 from .actor import Actor
 from src.core.graph import Node, Link
-from src.actions.action import Action
 from .strategies import get_attacker_strategy
 
 class Attacker(Actor):
@@ -13,13 +12,10 @@ class Attacker(Actor):
         self.compromised_links = set()
         self.available_actions = []
         self.time_proportional_gain_rate = 0.0
-        # Initialize strategy component
         self._strategy_component = get_attacker_strategy(strategy)
 
     def run(self, network_state):
         super().run(network_state)
-        # visible_nodes are now set by the simulator based on initial exposure
-        # Don't override the simulator's initialization
 
     def make_decision(self, network_state):
         if not self.can_schedule_action():
@@ -54,18 +50,31 @@ class Attacker(Actor):
         self.strategy = new_strategy
         self._strategy_component = get_attacker_strategy(new_strategy)
 
+    # Legacy methods - kept for potential future use but marked for cleanup
     def exploit(self, node: Node):
+        """DEPRECATED: Use action system instead"""
+        import warnings
+        warnings.warn("exploit() method is deprecated, use action system instead", DeprecationWarning)
         node.compromised = True
         if hasattr(node, 'id'):
             self.compromised_nodes.add(node.id)
 
     def gain_visibility(self, node: Node):
+        """DEPRECATED: Visibility is now handled through action postconditions"""
+        import warnings
+        warnings.warn("gain_visibility() method is deprecated", DeprecationWarning)
         self.visible_nodes.add(node)
 
     def gain_link_visibility(self, link: Link):
+        """DEPRECATED: Link visibility is now handled through action postconditions"""
+        import warnings
+        warnings.warn("gain_link_visibility() method is deprecated", DeprecationWarning)
         self.visible_links.add(link)
 
     def compromise_link(self, link: Link):
+        """DEPRECATED: Use action system instead"""
+        import warnings
+        warnings.warn("compromise_link() method is deprecated", DeprecationWarning)
         self.compromised_links.add(link)
 
     def on_action_finished(self, action, status, target=None):

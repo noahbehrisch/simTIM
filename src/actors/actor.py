@@ -11,14 +11,11 @@ class Actor:
         self.capacity=capacity if capacity is not None else 1
         self.strategy=strategy
         self.incurredCost=0
-        self.nodeAccess={}
-        self.linkAccess={}
         self.ongoing_actions = set()
         self.simulator = None
         self.running = False
         self.decision_interval = 1.0
         self.total_gain = 0.0
-        self.total_damage_caused = 0.0
         self.action_history = []
         self.economic_events = []
 
@@ -29,6 +26,8 @@ class Actor:
         self.simulator = simulator
 
     def can_schedule_action(self) -> bool:
+        if self.capacity == float('inf'):
+            return True
         return len(self.ongoing_actions) < self.capacity
 
     def schedule_action(self, action):
@@ -77,9 +76,6 @@ class Actor:
             'cost': cost,
             'type': 'cost'
         })
-
-    def can_schedule_action(self):
-        return len(self.ongoing_actions) < self.capacity
 
     def get_concurrent_actions_count(self):
         return len(self.ongoing_actions)

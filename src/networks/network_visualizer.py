@@ -1,6 +1,5 @@
 import math
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 
 class NetworkVisualizer:
     def __init__(self, network):

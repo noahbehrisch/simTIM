@@ -1,6 +1,5 @@
 from .actor import Actor
 from src.core.graph import Node
-from src.actions.action import Action
 from .strategies import get_defender_strategy
 
 class Defender(Actor):
@@ -15,7 +14,6 @@ class Defender(Actor):
         self.available_actions = []
         self.system_damage_prevented = 0.0
         self.detected_attacks = []
-        # Initialize strategy component
         self._strategy_component = get_defender_strategy(strategy)
 
     def run(self, network_state):
@@ -55,6 +53,9 @@ class Defender(Actor):
         self._strategy_component = get_defender_strategy(new_strategy)
 
     def repair(self, node: Node):
+        """DEPRECATED: Use action system instead"""
+        import warnings
+        warnings.warn("repair() method is deprecated, use action system instead", DeprecationWarning)
         node.compromised = False
         node.repaired = True
 
@@ -63,16 +64,71 @@ class Defender(Actor):
             self.ongoing_actions.remove(action)
 
     def on_attack_detected(self, detection_data):
+        """
+        Handle attack detection event.
+        
+        Args:
+            detection_data: Dict containing:
+                - detected_action: The action that was detected
+                - detected_target: The target of the detected action
+                - detected_actor: The actor performing the detected action
+                - detection_time: When the detection occurred
+                - detection_probability: Probability that led to detection
+                - detection_method: Method used for detection
+        """
         detected_action = detection_data.get("detected_action")
         detected_target = detection_data.get("detected_target")
         detected_actor = detection_data.get("detected_actor")
+        
+        if not all([detected_action, detected_target, detected_actor]):
+            print(f"⚠️  Defender {self.id}: Invalid detection data received")
+            return
+            
+        timestamp = getattr(self.simulator, 'current_time', 0.0)
+        
         print(f"🚨 Defender {self.id}: Detected {detected_action.name} by {detected_actor.id} on {getattr(detected_target, 'id', str(detected_target))}")
+        
+        # Record the detection for economic tracking
+        self.detected_attacks.append({
+            'timestamp': timestamp,
+            'detected_action': detected_action.name,
+            'detected_actor': detected_actor.id,
+            'detected_target': getattr(detected_target, 'id', str(detected_target)),
+            'detection_method': detection_data.get('detection_method', 'unknown')
+        })
+        
+        # Try to respond with defensive actions
         if hasattr(self, 'available_actions'):
             defensive_actions = [action for action in self.available_actions 
                                if 'patch' in action.name.lower() or 'firewall' in action.name.lower()]
             if defensive_actions and self.can_schedule_action():
                 response_action = defensive_actions[0]
                 self._execute_defensive_action(response_action, detected_target)
+
+    def record_detection_economics(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
+        """
+        Record economic impact from detection activities.
+        Separate method for when economic tracking is needed independently of detection events.
+        
+        Args:
+            attack_source: ID of the attacker
+            damage_prevented: Economic damage prevented by the detection
+            detection_cost: Cost incurred for the detection
+        """
+        timestamp = getattr(self.simulator, 'current_time', 0.0)
+        
+        if detection_cost > 0:
+            self.incurredCost += detection_cost
+            self.record_economic_event(timestamp, 'cost', detection_cost, {
+                'attacker': attack_source,
+                'type': 'detection_cost'
+            })
+        
+        if damage_prevented > 0:
+            self.record_economic_event(timestamp, 'damage_prevented', -damage_prevented, {
+                'attacker': attack_source,
+                'type': 'mitigation'
+            })
 
     def _execute_defensive_action(self, action, target):
         if self.simulator and self.can_schedule_action():
@@ -121,25 +177,6 @@ class Defender(Actor):
                     else:
                         estimated_damage += damage_rate * getattr(self.simulator, 'current_time', 1.0)
         return estimated_damage
-
-    def on_attack_detected(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
-        timestamp = getattr(self.simulator, 'current_time', 0.0)
-        self.incurredCost += detection_cost
-        self.record_economic_event(timestamp, 'cost', detection_cost, {
-            'attacker': attack_source,
-            'type': 'detection_cost'
-        })
-        if damage_prevented > 0:
-            self.record_economic_event(timestamp, 'damage_prevented', -damage_prevented, {
-                'attacker': attack_source,
-                'type': 'mitigation'
-            })
-        self.detected_attacks.append({
-            'timestamp': timestamp,
-            'attacker': attack_source,
-            'damage_prevented': damage_prevented,
-            'detection_cost': detection_cost
-        })
 
     def record_system_damage(self, damage_amount, timestamp=None, metadata=None):
         if timestamp is None:

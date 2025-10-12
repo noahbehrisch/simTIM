@@ -1,9 +1,3 @@
-"""
-Greedy Attacker Strategy
-
-Chooses actions with the highest expected gain.
-"""
-import random
 from typing import Any, Tuple, Optional
 
 
