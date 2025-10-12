@@ -7,7 +7,7 @@
   "success_probability": 0.95,
   "precondition": {
     "type": "access_check",
-    "operator": "equals",
+    "operator": "greater_equal",
     "value": "VISIBLE"
   },
   "postcondition": {

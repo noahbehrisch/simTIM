@@ -75,7 +75,7 @@ class ActionManager:
             return self.get_function(spec["function"])
         elif spec["type"] == "compound":
             return lambda node, access, actor: action_executor.execute_postcondition(spec, node, access, actor)
-        elif spec.get("type") in ["set_access", "set_property", "set_software", "add_vulnerability", "remove_vulnerability", "increment_counter", "set_links_access", "clear_assets"]:
+        elif spec.get("type") in ["set_access", "set_property", "set_software", "add_vulnerability", "remove_vulnerability", "increment_counter", "set_links_access", "set_access_neighbors", "clear_assets"]:
             return lambda node, access, actor: action_executor.execute_postcondition(spec, node, access, actor)
         else:
             return self.create_function_from_spec(spec)
