@@ -1,7 +1,6 @@
 """
 Greedy Attacker Strategy
 
-Extracted from the existing attacker.py implementation.
 Chooses actions with the highest expected gain.
 """
 import random
@@ -9,13 +8,11 @@ from typing import Any, Tuple, Optional
 
 
 class GreedyAttackerStrategy:
-    """Greedy strategy - chooses action with highest expected gain"""
-    
+
     def __init__(self):
         self.name = "greedy"
     
     def choose_action(self, attacker, network_state) -> Optional[Tuple[Any, Any]]:
-        """Choose action with highest gain (extracted from choose_best_action)"""
         visible_nodes = list(attacker.visible_nodes)
         visible_links = list(attacker.visible_links)
         best = None
