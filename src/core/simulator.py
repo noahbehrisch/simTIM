@@ -488,16 +488,7 @@ class Simulator:
                 # Add newly discovered nodes to the actor's visible nodes
                 for node in discovered_nodes:
                     if node not in actor.visible_nodes:
-                        actor.visible_nodes.add(node)
-
-    def notify_links_discovered(self, actor_id: str, discovered_links: list):
-        """Notify when an actor discovers new links through network scanning"""
-        for actor in self.get_all_actors():
-            if actor.id == actor_id and hasattr(actor, 'visible_links'):
-                # Add newly discovered links to the actor's visible links
-                for link in discovered_links:
-                    if link not in actor.visible_links:
-                        actor.visible_links.add(link)
+                        actor.visible_nodes.append(node)
 
     def print_history(self):
         for entry in self.history:

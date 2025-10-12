@@ -382,8 +382,6 @@ class ActionExecutor:
             self._execute_increment_counter(postcondition, node)
         elif action_type == 'set_links_access':
             self._execute_set_links_access(postcondition, node, actor_id)
-        elif action_type == 'set_access_neighbors':
-            self._execute_set_access_neighbors(postcondition, node, actor_id)
         elif action_type == 'clear_assets':
             self._execute_clear_assets(postcondition, node)
         elif action_type == 'add_capability':
@@ -527,7 +525,6 @@ class ActionExecutor:
             
         access_value = action['access_value']
         discovered_nodes = []
-        discovered_links = []
         
         for link in node.links:
             if not hasattr(link, 'access'):
@@ -535,54 +532,13 @@ class ActionExecutor:
             old_access = link.access.get(actor_id, "NONE")
             link.access[actor_id] = access_value
             
-            # If this is a new discovery (from NONE to VISIBLE), track discovered link and connected node
+            # If this is a new discovery (from NONE to VISIBLE), track the discovered node
             if old_access == "NONE" and access_value == "VISIBLE":
-                discovered_links.append(link)
-                # Discover the connected node through this link
-                other_node = link.get_other_node(node)
-                if other_node and other_node not in discovered_nodes:
-                    discovered_nodes.append(other_node)
+                discovered_nodes.append(link)
         
-        # Notify the simulator about newly discovered nodes and links
+        # Notify the simulator about newly discovered nodes so it can update actor visibility
         if discovered_nodes and hasattr(self, '_simulator') and self._simulator:
             self._simulator.notify_nodes_discovered(actor_id, discovered_nodes)
-        if discovered_links and hasattr(self, '_simulator') and self._simulator:
-            self._simulator.notify_links_discovered(actor_id, discovered_links)
-
-    def _execute_set_access_neighbors(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
-        """Set access level to neighboring nodes for lateral movement"""
-        # Ensure we're working with a Node object that has links
-        if not hasattr(node, 'links'):
-            return  # Skip if not a Node object
-            
-        access_value = action['access_value']
-        compromised_neighbors = []
-        
-        for link in node.links:
-            # Get the connected node through this link
-            other_node = link.get_other_node(node)
-            if other_node and not other_node.compromised:
-                # Grant access to the neighboring node
-                if not hasattr(other_node, 'access'):
-                    other_node.access = {}
-                other_node.access[actor_id] = access_value
-                other_node.compromised = True
-                compromised_neighbors.append(other_node)
-                
-                # Also ensure the link is visible to the actor
-                if not hasattr(link, 'access'):
-                    link.access = {}
-                link.access[actor_id] = "VISIBLE"
-        
-        # Notify the simulator about newly compromised nodes
-        if compromised_neighbors and hasattr(self, '_simulator') and self._simulator:
-            self._simulator.notify_nodes_discovered(actor_id, compromised_neighbors)
-            # Also update the attacker's compromised nodes list
-            for actor in self._simulator.get_all_actors():
-                if actor.id == actor_id and hasattr(actor, 'compromised_nodes'):
-                    for neighbor in compromised_neighbors:
-                        if hasattr(neighbor, 'id'):
-                            actor.compromised_nodes.add(neighbor.id)
 
     def _execute_clear_assets(self, action: Dict[str, Any], node: Node) -> None:
         if hasattr(node, 'assets'):
