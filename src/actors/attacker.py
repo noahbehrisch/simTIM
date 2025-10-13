@@ -48,8 +48,6 @@ class Attacker(Actor):
         self.strategy = new_strategy
         self._strategy_component = get_attacker_strategy(new_strategy)
 
-
-
     def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
@@ -83,40 +81,14 @@ class Attacker(Actor):
         return total_gain - total_costs
 
     def on_successful_attack(self, action, target, timestamp):
+        from src.core.economic_model import calculate_action_gain
+        
         actor_access = target.access.get(self.id, 'NONE')
-        one_off_damage, one_off_gain = self.calculate_damage_functions(action, target, actor_access)
+        one_off_gain = calculate_action_gain(action.name, target)
         self.total_gain += one_off_gain
         self.record_economic_event(timestamp, 'gain', one_off_gain, {
             'action': action.name,
             'target': getattr(target, 'id', str(target)),  # Handle both Node and Link objects
             'type': 'one_off_gain'
         })
-        if actor_access in ['USER', 'ADMIN']:
-            damage_rate, gain_rate = self.calculate_time_proportional_rates(actor_access, target)
-            self.time_proportional_gain_rate += gain_rate
-            self.record_economic_event(timestamp, 'access_gain', gain_rate, {
-                'access_level': actor_access,
-                'target': getattr(target, 'id', str(target)),  # Handle both Node and Link objects
-                'type': 'time_proportional_rate'
-            })
 
-    def _calculate_one_off_gain(self, action_name, node_properties):
-        if 'tapestry' in action_name.lower():
-            return 2500.0
-        if 'data' in action_name.lower() or 'exfiltration' in action_name.lower():
-            assets = node_properties.get('assets', [])
-            sensitive_data = [a for a in assets if 'data' in str(a).lower() or 'sensitive' in str(a).lower()]
-            if len(sensitive_data) >= 3:
-                return 100000.0
-            elif len(sensitive_data) > 0:
-                return 25000.0
-        return super()._calculate_one_off_gain(action_name, node_properties)
-
-    def _calculate_time_gain_rate(self, access_level, node_properties):
-        if access_level == 'ADMIN':
-            assets = node_properties.get('assets', [])
-            critical_assets = [a for a in assets if 'critical' in str(a).lower()]
-            return len(critical_assets) * 50.0
-        elif access_level == 'USER':
-            return len(node_properties.get('assets', [])) * 10.0
-        return 0.0

@@ -140,6 +140,7 @@ class Defender(Actor):
             self.ongoing_actions.add(action)
 
     def get_economic_objective(self, time_interval=None):
+        # Defender objective: minimize total cost (own costs + system damage)
         defender_costs = self.calculate_total_costs(time_interval)
         system_damage = self._calculate_total_system_damage(time_interval)
         damage_from_events = 0.0
@@ -150,7 +151,7 @@ class Defender(Actor):
                     event['type'] == 'damage'):
                     damage_from_events += event['value']
         total_damage = system_damage + damage_from_events
-        return total_damage + defender_costs
+        return -(total_damage + defender_costs)  # Negative because we want to minimize
 
     def _calculate_total_system_damage(self, time_interval=None):
         if hasattr(self.simulator, 'get_total_system_damage'):
@@ -178,14 +179,3 @@ class Defender(Actor):
         self.record_economic_event(timestamp, 'damage', damage_amount, 
                                  metadata or {'type': 'system_damage'})
 
-    def _calculate_one_off_damage(self, action_name, node_properties):
-        if 'data' in action_name.lower() or 'exfiltration' in action_name.lower():
-            assets = node_properties.get('assets', [])
-            sensitive_data = [a for a in assets if 'data' in str(a).lower() or 'sensitive' in str(a).lower()]
-            if len(sensitive_data) >= 3:
-                return 150000.0
-            elif len(sensitive_data) > 0:
-                return 50000.0
-        if 'tapestry' in action_name.lower():
-            return 8000.0
-        return super()._calculate_one_off_damage(action_name, node_properties)
