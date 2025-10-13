@@ -3,8 +3,8 @@ from src.core.graph import Node, Link
 from .strategies import get_attacker_strategy
 
 class Attacker(Actor):
-    def __init__(self, id: str, strategy: str = "random", capacity: int = 3):
-        super().__init__(id, "attacker", capacity=capacity, strategy=strategy)
+    def __init__(self, id: str, strategy: str = "random", capacity: int = 3, budget: float = float('inf')):
+        super().__init__(id, "attacker", capacity=capacity, strategy=strategy, budget=budget)
         self.is_attacker = True
         self.visible_nodes = set()
         self.compromised_nodes = set()
@@ -14,13 +14,10 @@ class Attacker(Actor):
         self.time_proportional_gain_rate = 0.0
         self._strategy_component = get_attacker_strategy(strategy)
 
-    def run(self, network_state):
-        super().run(network_state)
-
     def make_decision(self, network_state):
         if not self.can_schedule_action():
-            self.schedule_next_decision()
-            return
+            return False  # No capacity for more actions
+            
         decision = self.choose_action(network_state)
         if decision:
             action, target = decision
@@ -39,7 +36,8 @@ class Attacker(Actor):
                     "actor_access": actor_access
                 })
                 self.ongoing_actions.add(action)
-        self.schedule_next_decision()
+                return True  # Action was scheduled
+        return False  # No valid action found
 
     def choose_action(self, network_state):
         # Delegate to strategy component
@@ -50,41 +48,21 @@ class Attacker(Actor):
         self.strategy = new_strategy
         self._strategy_component = get_attacker_strategy(new_strategy)
 
-    # Legacy methods - kept for potential future use but marked for cleanup
-    def exploit(self, node: Node):
-        """DEPRECATED: Use action system instead"""
-        import warnings
-        warnings.warn("exploit() method is deprecated, use action system instead", DeprecationWarning)
-        node.compromised = True
-        if hasattr(node, 'id'):
-            self.compromised_nodes.add(node.id)
 
-    def gain_visibility(self, node: Node):
-        """DEPRECATED: Visibility is now handled through action postconditions"""
-        import warnings
-        warnings.warn("gain_visibility() method is deprecated", DeprecationWarning)
-        self.visible_nodes.add(node)
-
-    def gain_link_visibility(self, link: Link):
-        """DEPRECATED: Link visibility is now handled through action postconditions"""
-        import warnings
-        warnings.warn("gain_link_visibility() method is deprecated", DeprecationWarning)
-        self.visible_links.add(link)
-
-    def compromise_link(self, link: Link):
-        """DEPRECATED: Use action system instead"""
-        import warnings
-        warnings.warn("compromise_link() method is deprecated", DeprecationWarning)
-        self.compromised_links.add(link)
 
     def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
         if status == "success" and target is not None:
-            # Only add to compromised_nodes if the target is actually compromised
-            if hasattr(target, 'compromised') and target.compromised:
-                if hasattr(target, 'id'):
+            # Add to compromised_nodes if we have USER or ADMIN access
+            if hasattr(target, 'access') and hasattr(target, 'id'):
+                from src.core.access_levels import NodeAccessLevel
+                access_level = target.access.get(self.id)
+                if access_level in [NodeAccessLevel.USER, NodeAccessLevel.ADMIN]:
                     self.compromised_nodes.add(target.id)
+            # Also check the old compromised flag for backward compatibility
+            elif hasattr(target, 'compromised') and target.compromised and hasattr(target, 'id'):
+                self.compromised_nodes.add(target.id)
             if hasattr(self, 'simulator') and self.simulator:
                 self.on_successful_attack(action, target, self.simulator.current_time)
 

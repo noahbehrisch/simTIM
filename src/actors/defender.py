@@ -3,8 +3,8 @@ from src.core.graph import Node
 from .strategies import get_defender_strategy
 
 class Defender(Actor):
-    def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2):
-        super().__init__(id, "defender", capacity=capacity, strategy=strategy)
+    def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2, budget: float = float('inf')):
+        super().__init__(id, "defender", capacity=capacity, strategy=strategy, budget=budget)
         self.is_defender = True
         self.is_attacker = False
         self.visible_nodes = set()
@@ -16,13 +16,10 @@ class Defender(Actor):
         self.detected_attacks = []
         self._strategy_component = get_defender_strategy(strategy)
 
-    def run(self, network_state):
-        super().run(network_state)
-
     def make_decision(self, network_state):
         if not self.can_schedule_action():
-            self.schedule_next_decision()
-            return
+            return False  # No capacity for more actions
+            
         decision = self.choose_best_action(network_state)
         if decision:
             action, target = decision
@@ -41,7 +38,9 @@ class Defender(Actor):
                     "actor_access": actor_access
                 })
                 self.ongoing_actions.add(action)
-        self.schedule_next_decision()
+                return True  # Action was scheduled
+        return False  # No valid action found
+        # No need to schedule next decision - simulator handles it automatically
 
     def choose_best_action(self, network_state) -> tuple:
         # Delegate to strategy component
@@ -52,12 +51,7 @@ class Defender(Actor):
         self.strategy = new_strategy
         self._strategy_component = get_defender_strategy(new_strategy)
 
-    def repair(self, node: Node):
-        """DEPRECATED: Use action system instead"""
-        import warnings
-        warnings.warn("repair() method is deprecated, use action system instead", DeprecationWarning)
-        node.compromised = False
-        node.repaired = True
+
 
     def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:

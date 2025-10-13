@@ -51,6 +51,7 @@ class Simulator:
         action_executor.set_simulator(self)
     
     def run(self, until: float):
+        # Initialize actors and schedule their first decisions
         for actor in self.get_all_actors():
             actor.set_simulator(self)
             if hasattr(actor, 'is_attacker') and actor.is_attacker:
@@ -60,7 +61,15 @@ class Simulator:
                                if hasattr(node, 'properties') and 
                                node.properties.get('exposed_to_internet', False)]
                 actor.visible_nodes = exposed_nodes
-            actor.run(self.network)
+            
+            # Initialize actor and start its decision loop
+            actor.running = True
+            # Schedule first run cycle
+            self.schedule_event(
+                self.current_time,
+                "actor_run", 
+                {"actor": actor}
+            )
         
         # Schedule periodic time-proportional impact accumulation
         # Per TIM paper Section 4.7: accumulate δ and γ over time intervals
@@ -156,10 +165,10 @@ class Simulator:
         else:
             self.history.append((time, event_type, data))
 
-    def handle_actor_decide(self, time, data):
+    def handle_actor_run(self, time, data):
         actor = data["actor"]
-        if hasattr(actor, 'make_decision'):
-            actor.make_decision(self.network)
+        if hasattr(actor, 'run') and getattr(actor, 'running', True):
+            actor.run()
 
     def handle_start_action(self, time, event_data):
         action = event_data["action"]

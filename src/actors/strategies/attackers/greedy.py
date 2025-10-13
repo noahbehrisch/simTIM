@@ -9,6 +9,33 @@ class GreedyAttackerStrategy:
     def choose_action(self, attacker, network_state) -> Optional[Tuple[Any, Any]]:
         visible_nodes = list(attacker.visible_nodes)
         visible_links = list(attacker.visible_links)
+        
+        # Expand visibility to include nodes connected to compromised nodes
+        # This simulates network discovery from systems with USER or ADMIN access
+        from src.core.access_levels import NodeAccessLevel
+        
+        # Check all visible nodes for USER/ADMIN access (not just compromised_nodes)
+        nodes_with_access = []
+        for node in visible_nodes:
+            if hasattr(node, 'access') and attacker.id in node.access:
+                access_level = node.access[attacker.id]
+                if access_level in [NodeAccessLevel.USER, NodeAccessLevel.ADMIN]:
+                    nodes_with_access.append(node)
+        
+        # Add compromised nodes from the tracking set
+        if network_state and 'nodes' in network_state:
+            for node in network_state['nodes']:
+                if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
+                    if node not in nodes_with_access:
+                        nodes_with_access.append(node)
+        
+        # Discover connected nodes from all nodes we have access to
+        for accessed_node in nodes_with_access:
+            for link in getattr(accessed_node, 'links', []):
+                connected_node = link.node1 if link.node2.id == accessed_node.id else link.node2
+                if connected_node not in visible_nodes:
+                    visible_nodes.append(connected_node)
+        
         best = None
         best_gain = float('-inf')
         

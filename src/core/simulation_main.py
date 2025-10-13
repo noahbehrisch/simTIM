@@ -88,7 +88,8 @@ def simtim_main(
             attacker = Attacker(
                 id=attacker_config.get('id', f'attacker_{i}'),
                 strategy=attacker_config.get('strategy', 'random'),
-                capacity=attacker_config.get('capacity', 3)
+                capacity=attacker_config.get('capacity', 3),
+                budget=float(attacker_config.get('budget', 1000))
             )
             # Provide both node actions and link actions
             attacker.available_actions = all_attack_actions
@@ -100,7 +101,8 @@ def simtim_main(
             defender = Defender(
                 id=defender_config.get('id', f'defender_{i}'),
                 strategy=defender_config.get('strategy', 'reactive'),
-                capacity=defender_config.get('capacity', 1)
+                capacity=defender_config.get('capacity', 1),
+                budget=float(defender_config.get('budget', 1000))
             )
             defender.available_actions = defense_actions
             defender_objs.append(defender)
