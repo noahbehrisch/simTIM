@@ -92,16 +92,3 @@ class Actor:
             'value': value,
             'details': details or {}
         })
-
-    def calculate_total_costs(self, time_interval=None):
-        if time_interval is None:
-            return self.incurredCost
-        start_time, end_time = time_interval
-        return sum(
-            event['cost'] for event in self.action_history 
-            if start_time <= event['timestamp'] <= end_time
-        )
-
-    def get_economic_objective(self, time_interval=None):
-        return -self.calculate_total_costs(time_interval)
-

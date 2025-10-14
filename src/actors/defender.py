@@ -139,19 +139,6 @@ class Defender(Actor):
             )
             self.ongoing_actions.add(action)
 
-    def get_economic_objective(self, time_interval=None):
-        # Defender objective: minimize total cost (own costs + system damage)
-        defender_costs = self.calculate_total_costs(time_interval)
-        system_damage = self._calculate_total_system_damage(time_interval)
-        damage_from_events = 0.0
-        if time_interval:
-            start, end = time_interval
-            for event in self.economic_events:
-                if (start <= event['timestamp'] <= end and 
-                    event['type'] == 'damage'):
-                    damage_from_events += event['value']
-        total_damage = system_damage + damage_from_events
-        return -(total_damage + defender_costs)  # Negative because we want to minimize
 
     def _calculate_total_system_damage(self, time_interval=None):
         if hasattr(self.simulator, 'get_total_system_damage'):

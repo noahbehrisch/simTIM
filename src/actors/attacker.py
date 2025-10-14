@@ -64,22 +64,6 @@ class Attacker(Actor):
             if hasattr(self, 'simulator') and self.simulator:
                 self.on_successful_attack(action, target, self.simulator.current_time)
 
-    def get_economic_objective(self, time_interval=None):
-        if time_interval is None:
-            total_gain = self.total_gain
-            total_costs = self.incurredCost
-        else:
-            start_time, end_time = time_interval
-            total_gain = sum(
-                event['value'] for event in self.economic_events
-                if event['type'] == 'gain' and start_time <= event['timestamp'] <= end_time
-            )
-            total_costs = sum(
-                event['value'] for event in self.economic_events
-                if event['type'] == 'cost' and start_time <= event['timestamp'] <= end_time
-            )
-        return total_gain - total_costs
-
     def on_successful_attack(self, action, target, timestamp):
         from src.core.economic_model import calculate_action_gain
         
