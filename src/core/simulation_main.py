@@ -3,9 +3,6 @@ Simulation Main Module
 
 Contains the main simulation logic that can be used by both CLI and GUI.
 Implements TIM paper-compliant initialization with proper access levels.
-
-This module replaces the old simulation_runner.py with better integration
-of TIM paper compliance improvements (v0.5.0).
 """
 
 from src.core.simulator import Simulator
@@ -72,11 +69,13 @@ def simtim_main(
                 for link in getattr(node, 'links', []):
                     links.add(link)
             network['links_list'] = list(links)
+        
+        
         attack_actions = get_attack_actions()
         defense_actions = get_defense_actions()
-        
-        # Add link actions (TIM paper Section 4.3)
+        # TODO: Incorporate link actions into attack and defense actions
         link_actions = get_link_action_library()
+        
         all_attack_actions = attack_actions + list(link_actions.values())
         
         # Create simulator with detection engine
@@ -110,12 +109,6 @@ def simtim_main(
         # Add actors to network
         network['actors'] = attacker_objs + defender_objs
         
-        # Initialize access levels per TIM paper Section 4.2
-        # Attackers start with NONE access (progressive discovery per R5)
-        # Defenders start with ADMIN access to all nodes
-        # Initialize access levels per TIM paper Section 4.2
-        # Attackers start with NONE access (progressive discovery per R5)
-        # Defenders start with ADMIN access to all nodes
         for attacker in attacker_objs:
             for node in network['nodes_list']:
                 if not hasattr(node, 'access'):

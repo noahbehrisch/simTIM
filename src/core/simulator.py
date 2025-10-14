@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List
 from src.detection import SimpleTIMDetectionEngine, AdvancedTIMDetectionEngine
 from .economic_model import economic_model, calculate_action_damage, calculate_action_gain
+
 logger = logging.getLogger(__name__)
 infinity = float('inf') 
 
