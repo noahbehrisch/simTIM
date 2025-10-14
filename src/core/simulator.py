@@ -53,7 +53,7 @@ class Simulator:
     def run(self, until: float):
         # Initialize actors and schedule their first decisions
         for actor in self.get_all_actors():
-            actor.set_simulator(self)
+            actor.simulator = self
             if hasattr(actor, 'is_attacker') and actor.is_attacker:
                 # Initialize attacker with only internet-exposed nodes
                 all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
