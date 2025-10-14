@@ -268,6 +268,8 @@ def save_action_to_library(action: Action, action_type: str = "attacks"):
 def save_actions(attack_actions: List[Action], defense_actions: List[Action], file_path: str = None):
     return action_manager.save_actions(attack_actions, defense_actions, file_path)
 
+#TODO: evaluate if these helper functions are necessary
+
 def list_available_actions() -> Dict[str, List[str]]:
     base_dir = os.path.join(os.path.dirname(__file__), 'library')
     result = {}
