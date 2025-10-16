@@ -36,12 +36,12 @@ class SimulationTab(BaseTab):
                 'simple_tim': {
                     'class': SimpleTIMDetectionEngine,
                     'name': 'Simple TIM',
-                    'description': 'Pure TIM paper Section 4.5 implementation (mathematical framework only)'
+                    'description': 'Bare Bones Detection Engine'
                 },
                 'advanced_tim': {
                     'class': AdvancedTIMDetectionEngine, 
                     'name': 'Advanced TIM',
-                    'description': 'Full TIM compliance + cybersecurity domain knowledge (recommended)'
+                    'description': 'Advanced Detection Engine (!WIP)'
                 }
             }
             
@@ -60,7 +60,7 @@ class SimulationTab(BaseTab):
             engines = {
                 'advanced_tim': {
                     'name': 'Advanced TIM',
-                    'description': 'Default detection engine'
+                    'description': 'WIP detection engine'
                 }
             }
         
