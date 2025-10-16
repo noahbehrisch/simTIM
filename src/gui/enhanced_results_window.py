@@ -207,7 +207,8 @@ class EnhancedResultsWindow:
             self._create_actors_dropdown_tab()
         
         # Create statistical analysis tab
-        self._create_statistical_tab()
+        #TODO: uncomment stat tab when working ready
+        #self._create_statistical_tab()
         
         # Window close handler
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
