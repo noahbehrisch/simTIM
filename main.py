@@ -32,3 +32,4 @@ if __name__ == "__main__":
 #TODO: Add Dashboard with overview
 #TODO: Fix economic impact display
 #TODO: Action creator
+#TODO: implement help window for every tab using only one help.py file
