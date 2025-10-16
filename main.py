@@ -1,15 +1,14 @@
-"""
-simTIM Main Entry Point
-
-This is the main entry point for the simTIM application.
-It launches the GUI interface for the simulation.
-"""
-
 from src.gui.app import App
 import sys
 
 
 def main():
+    """
+    simTIM Main Entry Point
+
+    This is the main entry point for the simTIM application.
+    It launches the GUI interface for the simulation.
+    """
     try:
         app = App()
         app.mainloop()
