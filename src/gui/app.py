@@ -2,9 +2,6 @@ import sys
 import os
 import json
 import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog
-from tkinter import messagebox
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from src.core.simulation_main import simtim_main
 from src.gui.enhanced_results_window import EnhancedResultsWindow

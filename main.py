@@ -14,7 +14,7 @@ def main():
         app.mainloop()
     except ImportError as e:
         print(f"Error: Could not import GUI components: {e}")
-        print("Make sure all required packages are installed (tkinter, numpy, etc.)")
+        print("Make sure all required packages are installed (requirements.txt)")
         sys.exit(1)
     except Exception as e:
         print(f"Error launching GUI: {e}")
@@ -24,7 +24,10 @@ def main():
 if __name__ == "__main__":
     main()
 
-
+#TODO: Remove unused imports
+#Todo: Remove code artefacts from all files
+#Files already edited:
+#-attacker.py, defender.py
 #TODO: Add new tests
 #TODO: Add Dashboard with overview
 #TODO: Fix economic impact display
