@@ -33,12 +33,12 @@ class SimulationTab(BaseTab):
             
             # Map engine classes to their identifiers and descriptions
             engine_mapping = {
-                'simple_tim': {
+                'simple_detection_engine': {
                     'class': SimpleTIMDetectionEngine,
                     'name': 'Simple Detection',
                     'description': 'Bare Bones Detection Engine'
                 },
-                'advanced_tim': {
+                'advanced_detection_engine': {
                     'class': AdvancedTIMDetectionEngine, 
                     'name': 'Advanced Detection',
                     'description': 'Advanced Detection Engine (!WIP)'
@@ -58,7 +58,7 @@ class SimulationTab(BaseTab):
             print(f"Warning: Could not import detection engines: {e}")
             # Fallback to basic set
             engines = {
-                'advanced_tim': {
+                'advanced_detection_engine': {
                     'name': 'Advanced TIM',
                     'description': 'WIP detection engine'
                 }
@@ -68,12 +68,12 @@ class SimulationTab(BaseTab):
     
     def _get_default_engine(self):
         """Get the default detection engine."""
-        if 'simple_tim' in self.available_engines:
-            return 'simple_tim'
-        elif 'advanced_tim' in self.available_engines:
-            return 'advanced_tim'
+        if 'simple_detection_engine' in self.available_engines:
+            return 'simple_detection_engine'
+        elif 'advanced_detection_engine' in self.available_engines:
+            return 'advanced_detection_engine'
         else:
-            return list(self.available_engines.keys())[0] if self.available_engines else 'simple_tim'
+            return list(self.available_engines.keys())[0] if self.available_engines else 'simple_detection_engine'
     
     def create_widgets(self):
         """Create simulation configuration widgets."""

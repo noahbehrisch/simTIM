@@ -21,13 +21,13 @@ class Event:
         return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
 
 class Simulator:
-    def __init__(self, network=None, detection_engine_type="advanced_tim"):
+    def __init__(self, network=None, detection_engine_type="advanced_detection_engine"):
         """
         Initialize simulator with configurable detection engine.
         
         Args:
             network: Network configuration
-            detection_engine_type: "simple_tim" or "advanced_tim" (default: "advanced_tim")
+            detection_engine_type: "simple_detection_engine" or "advanced_detection_engine" (default: "advanced_detection_engine")
         """
         self.current_time = 0.0
         self.event_queue: List[Event] = []
@@ -36,16 +36,16 @@ class Simulator:
         self.ongoing_actions = []
         
         # Choose detection engine based on type
-        if detection_engine_type == "simple_tim":
+        if detection_engine_type == "simple_detection_engine":
+            from ..detection.simple_detection import SimpleTIMDetectionEngine
             self.detection_engine = SimpleTIMDetectionEngine()
-            logger.info("Using SimpleTIM: Pure TIM paper Section 4.5 implementation")
-        elif detection_engine_type == "advanced_tim":
+        elif detection_engine_type == "advanced_detection_engine":
             self.detection_engine = AdvancedTIMDetectionEngine()
             logger.info("Using AdvancedTIM: TIM paper + domain knowledge")
         else:
             # Default to advanced
             self.detection_engine = AdvancedTIMDetectionEngine()
-            logger.warning(f"Unknown detection engine type '{detection_engine_type}', using advanced_tim")
+            logger.warning(f"Unknown detection engine type '{detection_engine_type}', using advanced_detection_engine")
             
         from src.actions.json_conditions import action_executor
         
@@ -276,7 +276,7 @@ class Simulator:
             
             if detection_time is not None:
                 # Schedule detection event at the sampled time
-                engine_type = "simple_TIM" if isinstance(self.detection_engine, SimpleTIMDetectionEngine) else "advanced_TIM"
+                engine_type = "simple_detection_engine" if isinstance(self.detection_engine, SimpleTIMDetectionEngine) else "advanced_detection_engine"
                 self.schedule_event(
                     self.current_time + detection_time,
                     "attack_detected",

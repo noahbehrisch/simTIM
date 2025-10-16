@@ -20,7 +20,7 @@ def simtim_main(
     defenders: list = None,
     sim_time: int = 10,
     sim_runs: int = 1,
-    detection_engine_type="advanced_tim",
+    detection_engine_type="advanced_detection_engine",
 ):
     """
     Run a complete simulation with the given parameters.

@@ -1,17 +1,3 @@
-"""
-Simple TIM Detection Engine - Pure Paper Implementation
-
-This engine is a 1:1 implementation of Section 4.5 from the TIM paper.
-It implements ONLY what the paper specifies, with no additional domain knowledge.
-
-From TIM paper Section 4.5 "Detection of malicious activities":
-1. ϱ(a, π̂(n)) - detection probability function: A(attack) × Π̂ → [0, 1]
-2. Fa(t) - cumulative distribution function with Fa(0) = 0 and Fa(1) = 1
-3. Detection timing: P(detected by time t) = Fa(t/da) · ϱ(a, π̂(n))
-
-Reference: "Time is money: A temporal model of cybersecurity" by Zoltán Ádám Mann
-"""
-
 import math
 from typing import Dict, Any, Callable
 import logging
@@ -23,34 +9,19 @@ logger = logging.getLogger(__name__)
 class SimpleTIMDetectionEngine(BaseDetectionEngine):
     """
     Pure implementation of TIM paper Section 4.5 detection model.
-    
-    This engine correctly implements ϱ(a, π̂(n)) by using the action's own
-    detection probability function, which knows the action's detectability
-    characteristics and can factor in node properties.
-    
-    This is the proper TIM paper implementation - actions define their own
-    detection behavior rather than relying on generic engine defaults.
     """
     
     def __init__(self, 
                  default_detection_probability: float = 0.3,
                  default_cdf_type: str = "uniform"):
-        """
-        Initialize SimpleTIM detection engine.
-        
-        Args:
-            default_detection_probability: Fallback ϱ if action detection function fails
-            default_cdf_type: Default CDF pattern ("uniform", "early", "late", "exponential")
-        """
+
         super().__init__()
         
         self.default_detection_probability = default_detection_probability
         self.default_cdf_type = default_cdf_type
         
-        # Storage for configured CDF functions
         self.cdf_function_map: Dict[str, Callable[[float], float]] = {}
         
-        # Pre-defined CDF patterns (TIM paper compliant)
         self._initialize_cdf_patterns()
         
         logger.info(
@@ -86,13 +57,7 @@ class SimpleTIMDetectionEngine(BaseDetectionEngine):
     
     def calculate_detection_probability(self, action, target, actor_access: str, actor) -> float:
         """
-        Calculate ϱ(a, π̂(n)) - detection probability function.
-        
-        Implementation of TIM paper Section 4.5:
-        "Let ϱ : A(attack) × Π̂ → [0, 1] denote the detection probability function."
-        
-        Uses the action's built-in detection probability function, which properly
-        implements ϱ(a, π̂(n)) by considering both action characteristics and node properties.
+        Calculate ϱ(a, π̂(n))
         """
         try:
             probability = action.get_detection_probability(target, actor_access, actor or "unknown")
@@ -106,10 +71,6 @@ class SimpleTIMDetectionEngine(BaseDetectionEngine):
     def get_cdf_function(self, action) -> Callable[[float], float]:
         """
         Get Fa(t) cumulative distribution function for action.
-        
-        Implementation of TIM paper Section 4.5:
-        "detection time follows a random distribution with cumulative distribution
-        function Fa with Fa(0) = 0 and Fa(1) = 1"
         """
         action_name = action.name
         
@@ -126,7 +87,6 @@ class SimpleTIMDetectionEngine(BaseDetectionEngine):
         return self.cdf_patterns["uniform"]
     
     def get_configuration_summary(self) -> Dict[str, Any]:
-        """Get summary of current configuration."""
         return {
             'engine_type': 'SimpleTIM',
             'paper_section': '4.5',
@@ -136,12 +96,4 @@ class SimpleTIMDetectionEngine(BaseDetectionEngine):
             'default_cdf_type': self.default_cdf_type,
             'configured_cdf_functions': len(self.cdf_function_map),
             'available_cdf_patterns': list(self.cdf_patterns.keys()),
-            'features': [
-                'ϱ(a, π̂(n)) from action detection functions',
-                'Fa(t) cumulative distribution function',
-                'Fa(t/da) · ϱ(a, π̂(n)) temporal detection',
-                'Action-specific detection probabilities',
-                'Multiple CDF patterns',
-                'No engine-imposed domain knowledge'
-            ]
         }
