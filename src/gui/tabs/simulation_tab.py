@@ -35,12 +35,12 @@ class SimulationTab(BaseTab):
             engine_mapping = {
                 'simple_tim': {
                     'class': SimpleTIMDetectionEngine,
-                    'name': 'Simple TIM',
+                    'name': 'Simple Detection',
                     'description': 'Bare Bones Detection Engine'
                 },
                 'advanced_tim': {
                     'class': AdvancedTIMDetectionEngine, 
-                    'name': 'Advanced TIM',
+                    'name': 'Advanced Detection',
                     'description': 'Advanced Detection Engine (!WIP)'
                 }
             }
