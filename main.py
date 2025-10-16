@@ -27,4 +27,6 @@ if __name__ == "__main__":
 
 
 #TODO: Add new tests
-#TODO: Dashboard
+#TODO: Add Dashboard with overview
+#TODO: Fix economic impact display
+#TODO: Action creator
