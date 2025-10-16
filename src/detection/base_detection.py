@@ -1,15 +1,3 @@
-"""
-Base Detection Engine Interface
-
-Defines the common interface for all TIM paper-compliant detection engines.
-All detection engines must implement Section 4.5 of the TIM paper:
-- Detection probability function ϱ(a, π̂(n))
-- Cumulative distribution function Fa(t) with Fa(0) = 0 and Fa(1) = 1
-- Detection timing formula: Fa(t/da) · ϱ(a, π̂(n))
-
-Reference: TIM paper Section 4.5 "Detection of malicious activities"
-"""
-
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, Callable
 import logging
