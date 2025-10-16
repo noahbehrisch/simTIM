@@ -1,13 +1,3 @@
-"""
-Access Level Enums for TIM Model Compliance
-
-This module implements the formal access level hierarchies as specified in the TIM paper:
-- Ω(node) = {none, visible, user, admin}
-- Ω(link) = {none, visible}
-
-Reference: Section 4.2 "Actors and their access to nodes and links" in TIM paper
-"""
-
 from enum import Enum, auto
 
 

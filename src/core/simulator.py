@@ -104,7 +104,6 @@ class Simulator:
     def _accumulate_time_proportional_impact(self):
         """
         Accumulate time-proportional damage and gain.
-        Implements TIM paper Section 4.7 formula for δ and γ.
         """
         all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
         attackers = [actor for actor in self.get_all_actors() 
