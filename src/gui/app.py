@@ -5,7 +5,7 @@ import tkinter as tk
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from src.core.simulation_main import simtim_main
 from src.gui.enhanced_results_window import EnhancedResultsWindow
-from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab
+from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab, ActionTab
 from src.gui.sidebar import Sidebar
 from src.gui.theme import Theme
 
@@ -40,7 +40,7 @@ class App(tk.Tk):
         self.grid_columnconfigure(1, weight=1)
         
         # Tab management
-        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Overview"]
+        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Actions", "Overview"]
         self.tabs = {}
         self.current_tab = None
         
@@ -98,12 +98,14 @@ class App(tk.Tk):
         self.network_tab = NetworkTab(self, self.theme_colors)
         self.attacker_tab = AttackerTab(self, self.theme_colors)
         self.defender_tab = DefenderTab(self, self.theme_colors)
+        self.action_tab = ActionTab(self, self.theme_colors)
         
         # Store tab objects in tabs dict for easy access
         self.tabs["Simulation"] = self.simulation_tab.frame
         self.tabs["Network"] = self.network_tab.frame
         self.tabs["Attackers"] = self.attacker_tab.frame
         self.tabs["Defenders"] = self.defender_tab.frame
+        self.tabs["Actions"] = self.action_tab.frame
         
         # Create Overview tab (keeping it in main app as it summarizes all tabs)
         overview_frame = tk.Frame(self, bg=self.tab_color)

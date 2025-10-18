@@ -9,11 +9,13 @@ from .simulation_tab import SimulationTab
 from .network_tab import NetworkTab
 from .attacker_tab import AttackerTab  
 from .defender_tab import DefenderTab
+from .action_tab import ActionTab
 
 __all__ = [
     'BaseTab',
     'SimulationTab',
     'NetworkTab', 
     'AttackerTab',
-    'DefenderTab'
+    'DefenderTab',
+    'ActionTab'
 ]

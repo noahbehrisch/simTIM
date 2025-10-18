@@ -25,7 +25,7 @@ class Sidebar(tk.Frame):
         super().__init__(master, bd=2, relief=tk.RIDGE, bg=self.sidebar_color)
         
         self.buttons = {}
-        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Overview"]
+        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Actions", "Overview"]
         
         # Configure grid weights
         self.grid_rowconfigure(6, weight=1)
