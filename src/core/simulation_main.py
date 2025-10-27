@@ -113,8 +113,11 @@ def simtim_main(
             for node in network['nodes_list']:
                 if not hasattr(node, 'access'):
                     node.access = {}
-                # Use enum but store as string for backward compatibility
-                node.access[attacker.id] = NodeAccessLevel.NONE.to_string()
+                # Per TIM paper: attackers start with VISIBLE access to internet-exposed nodes
+                if hasattr(node, 'properties') and node.properties.get('exposed_to_internet', False):
+                    node.access[attacker.id] = NodeAccessLevel.VISIBLE.to_string()
+                else:
+                    node.access[attacker.id] = NodeAccessLevel.NONE.to_string()
             
             # Initialize link access ωx(l) per TIM paper Section 4.2
             for link in network.get('links_list', []):

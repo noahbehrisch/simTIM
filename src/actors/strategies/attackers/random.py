@@ -12,6 +12,8 @@ class RandomAttackerStrategy:
         visible_links = list(attacker.visible_links)
         possible_actions = []
         
+        print(f"[DEBUG] Attacker {attacker.id} has {len(visible_nodes)} visible nodes, {len(attacker.available_actions)} available actions")
+        
         for action in attacker.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
@@ -19,11 +21,13 @@ class RandomAttackerStrategy:
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
                     actor_access = node.access.get(attacker.id, None)
+                    print(f"[DEBUG] Checking action {action.name} on node {getattr(node, 'id', 'unknown')} with access {actor_access}")
                     try:
                         if action.precondition(node, actor_access, attacker.id):
                             possible_actions.append((action, node))
+                            print(f"[DEBUG] Action {action.name} is possible on node {getattr(node, 'id', 'unknown')}")
                     except Exception as e:
-                        # Skip actions that fail precondition check
+                        print(f"[DEBUG] Action {action.name} failed precondition check: {e}")
                         continue
             elif action.is_link_action():
                 for link in visible_links:
@@ -38,4 +42,5 @@ class RandomAttackerStrategy:
                         # Skip actions that fail precondition check
                         continue
         
+        print(f"[DEBUG] Attacker {attacker.id} found {len(possible_actions)} possible actions")
         return random.choice(possible_actions) if possible_actions else None

@@ -31,7 +31,7 @@ class Defender(Actor):
                     "target": target,
                     "actor_access": actor_access 
                 })
-                self.simulator.schedule_event(self.simulator.current_time + action.duration, "complete_action", {
+                self.simulator.schedule_event(self.simulator.current_time + action.duration, "action_finished", {
                     "actor": self,
                     "action": action,
                     "target": target,
