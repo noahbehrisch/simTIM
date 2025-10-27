@@ -1,4 +1,6 @@
 from typing import Any, Tuple, Optional
+from src.core.access_levels import NodeAccessLevel
+from src.actions.action_manager import would_action_improve_access
 
 
 class GreedyAttackerStrategy:
@@ -49,9 +51,12 @@ class GreedyAttackerStrategy:
                     # Skip already compromised nodes
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
+                    
                     actor_access = node.access.get(attacker.id, None)
                     try:
-                        if action.precondition(node, actor_access, attacker.id):
+                        # Check precondition and beneficial action criteria
+                        if (action.precondition(node, actor_access, attacker.id) and 
+                            would_action_improve_access(action, node, actor_access, attacker.id)):
                             gain = action.get_one_off_gain(node, actor_access, attacker.id)
                             if gain > best_gain:
                                 best = (action, node)

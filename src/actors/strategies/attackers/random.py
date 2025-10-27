@@ -1,5 +1,6 @@
 import random
 from typing import Any, Tuple, Optional
+from src.actions.action_manager import would_action_improve_access
 
 
 class RandomAttackerStrategy:
@@ -17,15 +18,22 @@ class RandomAttackerStrategy:
         for action in attacker.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
-                    # Skip already compromised nodes
+                    # Skip already compromised nodes (legacy check)
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
+                    
                     actor_access = node.access.get(attacker.id, None)
                     print(f"[DEBUG] Checking action {action.name} on node {getattr(node, 'id', 'unknown')} with access {actor_access}")
+                    
                     try:
+                        # First check if the action precondition is satisfied
                         if action.precondition(node, actor_access, attacker.id):
-                            possible_actions.append((action, node))
-                            print(f"[DEBUG] Action {action.name} is possible on node {getattr(node, 'id', 'unknown')}")
+                            # Then check if this action would actually be beneficial
+                            if would_action_improve_access(action, node, actor_access, attacker.id):
+                                possible_actions.append((action, node))
+                                print(f"[DEBUG] Action {action.name} is beneficial on node {getattr(node, 'id', 'unknown')}")
+                            else:
+                                print(f"[DEBUG] Action {action.name} would not improve access on node {getattr(node, 'id', 'unknown')} (current: {actor_access})")
                     except Exception as e:
                         print(f"[DEBUG] Action {action.name} failed precondition check: {e}")
                         continue

@@ -6,6 +6,7 @@ from typing import Dict, List, Callable, Optional, Any
 from src.actions.action import Action
 from src.actions.json_conditions import condition_evaluator, action_executor
 from src.actions.link_actions import get_link_action_library
+from src.core.access_levels import NodeAccessLevel
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class ActionManager:
         one_off_gain = lambda node, access, actor: damage_gain["one_off_gain"]
         time_damage = lambda node, access, actor: damage_gain["time_damage"]
         time_gain = lambda node, access, actor: damage_gain["time_gain"]
-        return Action(
+        action = Action(
             name=action_data["name"],
             precondition=precondition,
             postcondition=postcondition,
@@ -103,6 +104,9 @@ class ActionManager:
             time_damage=time_damage,
             time_gain=time_gain
         )
+        # Store original JSON data for analysis
+        action._json_data = action_data
+        return action
 
     def action_to_json(self, action: Action) -> Dict[str, Any]:
         def get_function_spec(func):
@@ -303,6 +307,121 @@ def print_action_summary():
         for file in files:
             action_name = file.replace('.json', '').replace('_', ' ').title()
             print(f"  - {action_name}")
+
+
+def analyze_action_access_impact(action, current_access: str) -> Optional[str]:
+    """
+    Analyze an action to predict what access level it would result in.
+    
+    Args:
+        action: The action to analyze
+        current_access: Current access level as string
+        
+    Returns:
+        The predicted access level after the action, or None if can't determine
+    """
+    try:
+        # Get the action's JSON data if available
+        if hasattr(action, '_json_data'):
+            postcondition = action._json_data.get('postcondition', {})
+        else:
+            # Fallback: try to inspect the postcondition function
+            # This is more complex and not implemented yet
+            return None
+        
+        return _analyze_postcondition_access(postcondition)
+    except Exception:
+        return None
+
+
+def _analyze_postcondition_access(postcondition: Dict[str, Any]) -> Optional[str]:
+    """
+    Analyze a postcondition to determine what access level it sets.
+    
+    Args:
+        postcondition: The postcondition dictionary
+        
+    Returns:
+        The access level that would be set, or None if not determinable
+    """
+    if postcondition.get('type') == 'compound':
+        # Handle compound postconditions
+        actions = postcondition.get('actions', [])
+        for action in actions:
+            if action.get('type') == 'set_access':
+                return action.get('value')
+    elif postcondition.get('type') == 'set_access':
+        # Direct set_access action
+        return postcondition.get('value')
+    
+    return None
+
+
+def would_action_improve_access(action, node, current_access: str, actor_id: str) -> bool:
+    """
+    Check if executing this action would improve the attacker's access level.
+    
+    Args:
+        action: The action to check
+        node: The target node
+        current_access: Current access level as string
+        actor_id: The actor's ID
+        
+    Returns:
+        True if the action would be beneficial, False otherwise
+    """
+    try:
+        # Convert current access to enum for comparison
+        current_level = NodeAccessLevel.from_string(current_access)
+        
+        # First try to analyze the postcondition directly
+        predicted_access = analyze_action_access_impact(action, current_access)
+        if predicted_access:
+            predicted_level = NodeAccessLevel.from_string(predicted_access)
+            return predicted_level > current_level
+        
+        # Fallback to heuristic analysis based on action names
+        action_name_lower = action.name.lower()
+        
+        # Initial access actions (VISIBLE → USER)
+        if any(keyword in action_name_lower for keyword in ['phishing', 'exploitation', 'scan', 'brute']):
+            target_level = NodeAccessLevel.USER
+        # Privilege escalation actions (USER → ADMIN)
+        elif any(keyword in action_name_lower for keyword in ['privilege', 'escalation', 'admin']):
+            target_level = NodeAccessLevel.ADMIN
+        # Data actions might require existing access but don't improve it
+        elif any(keyword in action_name_lower for keyword in ['exfiltration', 'data', 'steal']):
+            # These actions typically require access but don't improve it
+            return current_level >= NodeAccessLevel.USER and not _has_already_exfiltrated(node, actor_id)
+        else:
+            # For unknown actions, assume they target the next level up
+            if current_level == NodeAccessLevel.VISIBLE:
+                target_level = NodeAccessLevel.USER
+            elif current_level == NodeAccessLevel.USER:
+                target_level = NodeAccessLevel.ADMIN
+            else:
+                return False
+        
+        # Only beneficial if it improves our access level
+        return target_level > current_level
+        
+    except Exception:
+        # If we can't determine, err on the side of caution and assume it's beneficial
+        # but only if we don't already have ADMIN access
+        current_level = NodeAccessLevel.from_string(current_access)
+        return current_level < NodeAccessLevel.ADMIN
+    
+    return False
+
+
+def _has_already_exfiltrated(node, actor_id: str) -> bool:
+    """
+    Check if we've already performed data exfiltration on this node.
+    This prevents repeated exfiltration of the same data.
+    """
+    return hasattr(node, 'exfiltrated_by') and actor_id in getattr(node, 'exfiltrated_by', set())
+
+
 if __name__ == "__main__":
     print_action_summary()
 
