@@ -32,7 +32,7 @@
   },
   "damage_gain": {
     "one_off_damage": 20.0,
-    "one_off_gain": 30.0,
+    "one_off_gain": 130.0,
     "time_damage": 5.0,
     "time_gain": 2.0
   }

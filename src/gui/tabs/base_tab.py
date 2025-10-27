@@ -2,6 +2,7 @@
 Base Tab Class
 
 Provides common functionality for all GUI tabs.
+
 """
 
 import tkinter as tk
