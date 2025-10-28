@@ -309,6 +309,7 @@ def print_action_summary():
             print(f"  - {action_name}")
 
 
+#TODO: Lets move the action access methods into the strategies
 def analyze_action_access_impact(action, current_access: str) -> Optional[str]:
     """
     Analyze an action to predict what access level it would result in.
