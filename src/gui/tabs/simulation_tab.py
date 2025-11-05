@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import importlib
 import inspect
+import os
 from pathlib import Path
 from .base_tab import BaseTab
 
@@ -21,6 +22,7 @@ class SimulationTab(BaseTab):
     def _get_available_detection_engines(self):
         """
         Dynamically scan the detection folder for available engines.
+        Similar to how NetworkTab scans for available networks.
         
         Returns:
             dict: Mapping of engine names to their display info
@@ -28,52 +30,125 @@ class SimulationTab(BaseTab):
         engines = {}
         
         try:
-            # Import the detection package to get available engines
-            from src.detection import SimpleTIMDetectionEngine, AdvancedTIMDetectionEngine
+            # Get the detection directory
+            detection_dir = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__), 
+                    '..', '..', 
+                    'detection'
+                )
+            )
             
-            # Map engine classes to their identifiers and descriptions
-            engine_mapping = {
-                'simple_detection_engine': {
-                    'class': SimpleTIMDetectionEngine,
-                    'name': 'Simple Detection',
-                    'description': 'Bare Bones Detection Engine'
-                },
-                'advanced_detection_engine': {
-                    'class': AdvancedTIMDetectionEngine, 
-                    'name': 'Advanced Detection',
-                    'description': 'Advanced Detection Engine (!WIP)'
-                }
-            }
+            if not os.path.exists(detection_dir):
+                print(f"Warning: Detection directory not found at {detection_dir}")
+                return self._get_fallback_engines()
             
-            # Verify each engine can be instantiated
-            for engine_id, info in engine_mapping.items():
+            # Import the base detection engine for type checking
+            from src.detection.base_detection import BaseDetectionEngine
+            
+            # Get all Python files in the detection directory (excluding base and __init__)
+            python_files = [
+                f for f in os.listdir(detection_dir) 
+                if f.endswith('_detection.py') and f != 'base_detection.py'
+            ]
+            
+            # Try to import each detection engine
+            for filename in python_files:
                 try:
-                    # Test instantiation
-                    engine_instance = info['class']()
-                    engines[engine_id] = info
+                    module_name = filename[:-3]  # Remove .py extension
+                    module = importlib.import_module(f'src.detection.{module_name}')
+                    
+                    # Find all classes in the module that inherit from BaseDetectionEngine
+                    for name, obj in inspect.getmembers(module, inspect.isclass):
+                        # Check if it's a detection engine (not the base class itself)
+                        if (issubclass(obj, BaseDetectionEngine) and 
+                            obj != BaseDetectionEngine and
+                            obj.__module__ == f'src.detection.{module_name}'):
+                            
+                            # Try to instantiate to verify it works
+                            try:
+                                engine_instance = obj()
+                                
+                                # Generate engine ID from class name
+                                # UniformDetectionEngine -> uniform
+                                engine_id = name.replace('DetectionEngine', '').lower()
+                                
+                                # Extract description from docstring
+                                docstring = inspect.getdoc(obj) or ""
+                                first_line = docstring.split('\n')[0] if docstring else name
+                                
+                                # Try to get a more detailed description from docstring
+                                description = first_line
+                                if 'Fa(t)' in docstring:
+                                    # Extract the CDF formula line
+                                    for line in docstring.split('\n'):
+                                        if 'Fa(t)' in line and '=' in line:
+                                            description = line.strip()
+                                            break
+                                
+                                engines[engine_id] = {
+                                    'class': obj,
+                                    'name': name.replace('DetectionEngine', ' Detection'),
+                                    'description': description,
+                                    'module': module_name
+                                }
+                                
+                            except Exception as e:
+                                print(f"Warning: Could not instantiate {name}: {e}")
+                                
                 except Exception as e:
-                    print(f"Warning: Detection engine {engine_id} not available: {e}")
+                    print(f"Warning: Could not import {filename}: {e}")
             
-        except ImportError as e:
-            print(f"Warning: Could not import detection engines: {e}")
-            # Fallback to basic set
-            engines = {
-                'advanced_detection_engine': {
-                    'name': 'Advanced TIM',
-                    'description': 'WIP detection engine'
-                }
-            }
+            # If no engines were found, use fallback
+            if not engines:
+                print("No detection engines found, using fallback")
+                return self._get_fallback_engines()
+            
+        except Exception as e:
+            print(f"Error scanning detection folder: {e}")
+            return self._get_fallback_engines()
         
         return engines
     
+    def _get_fallback_engines(self):
+        """Fallback engines if dynamic scanning fails."""
+        try:
+            from src.detection import (UniformDetectionEngine, 
+                                      ExponentialDetectionEngine, 
+                                      PolynomialDetectionEngine)
+            return {
+                'uniform': {
+                    'class': UniformDetectionEngine,
+                    'name': 'Uniform Detection',
+                    'description': 'Fa(t) = t - Constant detection rate'
+                },
+                'exponential': {
+                    'class': ExponentialDetectionEngine, 
+                    'name': 'Exponential Detection',
+                    'description': 'Fa(t) = 1 - e^(-λt) - Early detection bias'
+                },
+                'polynomial': {
+                    'class': PolynomialDetectionEngine,
+                    'name': 'Polynomial Detection',
+                    'description': 'Fa(t) = t^n - Late detection bias'
+                }
+            }
+        except ImportError:
+            return {
+                'exponential': {
+                    'name': 'Exponential Detection',
+                    'description': 'Default detection engine'
+                }
+            }
+    
     def _get_default_engine(self):
-        """Get the default detection engine."""
-        if 'simple_detection_engine' in self.available_engines:
-            return 'simple_detection_engine'
-        elif 'advanced_detection_engine' in self.available_engines:
-            return 'advanced_detection_engine'
+        """Get the default detection engine (exponential)."""
+        if 'exponential' in self.available_engines:
+            return 'exponential'
+        elif 'uniform' in self.available_engines:
+            return 'uniform'
         else:
-            return list(self.available_engines.keys())[0] if self.available_engines else 'simple_detection_engine'
+            return list(self.available_engines.keys())[0] if self.available_engines else 'exponential'
     
     def create_widgets(self):
         """Create simulation configuration widgets."""

@@ -26,11 +26,8 @@ if __name__ == "__main__":
 
 #TODO: Remove unused imports
 #Todo: Remove code artefacts from all files
-#Files already edited:
-#-attacker.py, defender.py
 #TODO: Add new tests
 #TODO: Rework postcondition evaluation (currently redundant functions)
-#TODO: Add Dashboard with overview
 #TODO: Fix economic impact display
 #TODO: Action creator
 #TODO: Network creator
