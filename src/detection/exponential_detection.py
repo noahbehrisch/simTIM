@@ -8,37 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExponentialDetectionEngine(BaseDetectionEngine):
-    """
-    Exponential Detection Engine - Fa(t) = 1 - e^(-λt)
-    
-    Detection Time Strategy: Exponential CDF (Early Detection Bias)
-    ================================================================
-    Implements exponential CDF favoring early detection:
-    - Fa(t) = 1 - e^(-λt) where λ is chosen so Fa(1) = 1
-    - λ ≈ 5 gives good properties: Fa(1) ≈ 0.9933
-    - High detection probability in early phases
-    - Models "signature-based" detection systems
-    
-    From TIM Paper Section 4.5:
-    "If the execution of the action is detected, the detection time follows 
-    a random distribution with cumulative distribution function Fa"
-    
-    With Fa(t) = 1 - e^(-5t):
-    - At t=0: 0% cumulative detection probability
-    - At t=0.2: ~63% cumulative detection probability
-    - At t=0.5: ~92% cumulative detection probability
-    - At t=1: ~99% cumulative detection probability
-    
-    Characteristics:
-    - Strong bias toward early detection
-    - Realistic for known attack patterns
-    - O(log n) computation - binary search for inverse CDF
-    - Models IDS with signature databases
-    
-    Use Case: Environments with good signature-based detection (IDS/IPS),
-             well-known attack patterns, strong monitoring
-    """
-    
+
     def __init__(self, lambda_param: float = 4.605, default_detection_probability: float = 0.4):
         """
         Initialize Exponential Detection Engine.

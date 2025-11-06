@@ -8,42 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class PolynomialDetectionEngine(BaseDetectionEngine):
-    """
-    Polynomial Detection Engine - Fa(t) = t^n
-    
-    Detection Time Strategy: Polynomial CDF (Late Detection Bias)
-    ==============================================================
-    Implements polynomial CDF favoring late detection:
-    - Fa(t) = t^n where n > 1 controls detection timing
-    - n=2: quadratic, moderate late bias
-    - n=3: cubic, strong late bias  
-    - Models behavior-based detection systems that need time to analyze patterns
-    
-    From TIM Paper Section 4.5:
-    "the detection time follows a random distribution with cumulative 
-    distribution function Fa with Fa(0) = 0 and Fa(1) = 1"
-    
-    With Fa(t) = t^2:
-    - At t=0: 0% cumulative detection probability
-    - At t=0.5: 25% cumulative detection probability
-    - At t=0.707: 50% cumulative detection probability
-    - At t=1.0: 100% cumulative detection probability
-    
-    With Fa(t) = t^3:
-    - At t=0.5: 12.5% cumulative detection probability
-    - At t=0.794: 50% cumulative detection probability
-    - Stronger late bias
-    
-    Characteristics:
-    - Low detection probability in early phases
-    - Detection probability increases rapidly toward end
-    - O(1) computation - simple power function
-    - Models behavioral/anomaly detection
-    
-    Use Case: Environments with behavior-based detection (ML/AI), anomaly detection,
-             novel attack patterns that need time to be recognized
-    """
-    
+
     def __init__(self, exponent: float = 2.0, default_detection_probability: float = 0.35):
         """
         Initialize Polynomial Detection Engine.

@@ -7,33 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class UniformDetectionEngine(BaseDetectionEngine):
-    """
-    Uniform Detection Engine - Fa(t) = t
-    
-    Detection Time Strategy: Uniform CDF
-    =====================================
-    Implements the simplest CDF where detection is equally likely at any point:
-    - Fa(t) = t (linear cumulative distribution)
-    - Detection probability increases linearly over action duration
-    - Equal probability density throughout execution
-    
-    From TIM Paper Section 4.5:
-    "the probability that the execution of the action is detected by tstart + t 
-    is Fa(t/da) · ϱ(a, π̂(n))"
-    
-    With Fa(t) = t:
-    - At t=0: 0% cumulative detection probability
-    - At t=0.5da: 50% cumulative detection probability  
-    - At t=da: 100% cumulative detection probability
-    
-    Characteristics:
-    - Constant detection rate throughout action
-    - O(1) computation - direct sampling
-    - Good baseline for comparison
-    
-    Use Case: General-purpose detection, well-monitored environments
-    """
-    
+
     def __init__(self, default_detection_probability: float = 0.3):
         """
         Initialize Uniform Detection Engine.
