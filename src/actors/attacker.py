@@ -58,9 +58,6 @@ class Attacker(Actor):
                 access_level = target.access.get(self.id)
                 if access_level in [NodeAccessLevel.USER, NodeAccessLevel.ADMIN]:
                     self.compromised_nodes.add(target.id)
-            # Also check the old compromised flag for backward compatibility
-            elif hasattr(target, 'compromised') and target.compromised and hasattr(target, 'id'):
-                self.compromised_nodes.add(target.id)
             if hasattr(self, 'simulator') and self.simulator:
                 self.on_successful_attack(action, target, self.simulator.current_time)
 

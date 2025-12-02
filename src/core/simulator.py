@@ -30,8 +30,6 @@ class Simulator:
                 - "uniform": Fa(t) = t (constant detection rate)
                 - "exponential": Fa(t) = 1 - e^(-λt) (early detection bias) [default]
                 - "polynomial": Fa(t) = t^n (late detection bias)
-                - "simple_detection_engine": Alias for "uniform" (backward compatibility)
-                - "advanced_detection_engine": Alias for "exponential" (backward compatibility)
         """
         self.current_time = 0.0
         self.event_queue: List[Event] = []
@@ -47,9 +45,6 @@ class Simulator:
             "uniform": UniformDetectionEngine,
             "exponential": ExponentialDetectionEngine,
             "polynomial": PolynomialDetectionEngine,
-            # Backward compatibility
-            "simple_detection_engine": UniformDetectionEngine,
-            "advanced_detection_engine": ExponentialDetectionEngine,
         }
         
         engine_type_lower = detection_engine_type.lower()
@@ -83,7 +78,7 @@ class Simulator:
                 exposed_nodes = [node for node in all_nodes 
                                if hasattr(node, 'properties') and 
                                node.properties.get('exposed_to_internet', False)]
-                actor.visible_nodes = exposed_nodes
+                actor.visible_nodes = set(exposed_nodes)
             
             # Initialize actor and start its decision loop
             actor.running = True
@@ -498,11 +493,7 @@ class Simulator:
                 # Add newly discovered nodes to the actor's visible nodes
                 for node in discovered_nodes:
                     if node not in actor.visible_nodes:
-                        # Handle both set and list types for backwards compatibility
-                        if isinstance(actor.visible_nodes, set):
-                            actor.visible_nodes.add(node)
-                        else:
-                            actor.visible_nodes.append(node)
+                        actor.visible_nodes.add(node)
 
     def notify_links_discovered(self, actor_id: str, discovered_links: list):
         """Notify when an actor discovers new links through network scanning"""
@@ -511,11 +502,7 @@ class Simulator:
                 # Add newly discovered links to the actor's visible links
                 for link in discovered_links:
                     if link not in actor.visible_links:
-                        # Handle both set and list types for backwards compatibility
-                        if isinstance(actor.visible_links, set):
-                            actor.visible_links.add(link)
-                        else:
-                            actor.visible_links.append(link)
+                        actor.visible_links.add(link)
 
     def print_history(self):
         for entry in self.history:

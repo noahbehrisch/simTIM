@@ -44,7 +44,6 @@ class App(tk.Tk):
         self.tabs = {}
         self.current_tab = None
         
-        # Create theme colors dictionary for backward compatibility
         self.theme_colors = self.theme.get_theme_colors()
         
         self.create_tabs()
@@ -129,13 +128,6 @@ class App(tk.Tk):
         self.overview_text.pack(expand=True, fill="both", padx=10, pady=10)
         
         self.tabs["Overview"] = overview_frame
-        
-        # Set up backward compatibility by linking tab variables
-        self.sim_runs_var = self.simulation_tab.sim_runs_var
-        self.sim_time_var = self.simulation_tab.sim_time_var
-        self.network_file_var = self.network_tab.network_file_var
-        self.attacker_entries = self.attacker_tab.attacker_entries
-        self.defender_entries = self.defender_tab.defender_entries
         
         # Load initial node options from default network
         self._load_default_network_nodes()

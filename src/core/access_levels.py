@@ -40,7 +40,7 @@ class NodeAccessLevel(Enum):
     
     @classmethod
     def from_string(cls, access_str: str):
-        """Convert string representation to enum (backward compatibility)"""
+        """Convert string representation to enum"""
         if access_str is None:
             return cls.NONE
         
@@ -96,7 +96,7 @@ class LinkAccessLevel(Enum):
     
     @classmethod
     def from_string(cls, access_str: str):
-        """Convert string representation to enum (backward compatibility)"""
+        """Convert string representation to enum"""
         if access_str is None:
             return cls.NONE
         
@@ -112,16 +112,6 @@ class LinkAccessLevel(Enum):
     def to_string(self) -> str:
         """Convert enum to string representation"""
         return self.name
-
-
-# Backward compatibility: String constants
-NODE_ACCESS_NONE = "NONE"
-NODE_ACCESS_VISIBLE = "VISIBLE"
-NODE_ACCESS_USER = "USER"
-NODE_ACCESS_ADMIN = "ADMIN"
-
-LINK_ACCESS_NONE = "NONE"
-LINK_ACCESS_VISIBLE = "VISIBLE"
 
 
 def validate_node_access(access) -> NodeAccessLevel:
@@ -162,41 +152,3 @@ def validate_link_access(access) -> LinkAccessLevel:
         return LinkAccessLevel.NONE
     else:
         raise TypeError(f"Invalid link access type: {type(access)}")
-
-
-# For backward compatibility with existing code that uses string comparison
-def get_access_level_value(access) -> int:
-    """
-    Get numeric value for access level (for comparisons).
-    Supports both enum and string inputs.
-    """
-    if isinstance(access, (NodeAccessLevel, LinkAccessLevel)):
-        return access.value
-    elif isinstance(access, str):
-        # Try node access first
-        try:
-            return NodeAccessLevel.from_string(access).value
-        except:
-            # Fall back to link access
-            return LinkAccessLevel.from_string(access).value
-    return 0
-
-
-def compare_access_levels(access1, access2) -> int:
-    """
-    Compare two access levels.
-    
-    Returns:
-        -1 if access1 < access2
-        0 if access1 == access2
-        1 if access1 > access2
-    """
-    val1 = get_access_level_value(access1)
-    val2 = get_access_level_value(access2)
-    
-    if val1 < val2:
-        return -1
-    elif val1 > val2:
-        return 1
-    else:
-        return 0

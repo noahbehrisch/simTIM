@@ -26,7 +26,7 @@ class BaseTab:
         self.theme_colors = theme_colors
         self.theme = Theme()
         
-        # Extract theme colors (maintaining backward compatibility)
+        # Extract theme colors
         self.bg_color = theme_colors.get('bg_color', self.theme.COLORS['bg_primary'])
         self.tab_color = theme_colors.get('tab_color', self.theme.COLORS['bg_secondary'])
         self.sidebar_color = theme_colors.get('sidebar_color', self.theme.COLORS['bg_sidebar'])

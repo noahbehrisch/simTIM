@@ -18,7 +18,7 @@ class RandomAttackerStrategy:
         for action in attacker.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
-                    # Skip already compromised nodes (legacy check)
+                    # Skip already compromised nodes
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
                     
