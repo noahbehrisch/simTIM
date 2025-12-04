@@ -8,9 +8,10 @@ from src.visualization import ViolinPlotEngine, analyze_simulation_results
 
 
 class EnhancedResultsWindow:
-    def __init__(self, parent, all_histories, theme_colors):
+    def __init__(self, parent, all_histories, theme_colors, scenario_results=None):
         self.parent = parent
         self.all_histories = all_histories
+        self.scenario_results = scenario_results  # NEW: Optional scenario comparison data
         self.bg_color = theme_colors['bg_color']
         self.button_fg = theme_colors['button_fg']
         
@@ -207,8 +208,7 @@ class EnhancedResultsWindow:
             self._create_actors_dropdown_tab()
         
         # Create statistical analysis tab
-        #TODO: uncomment stat tab when working ready
-        #self._create_statistical_tab()
+        self._create_statistical_tab()
         
         # Window close handler
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -380,15 +380,23 @@ class EnhancedResultsWindow:
         tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
         self.notebook.add(tab_frame, text="Statistical Analysis")
         
-        # Create matplotlib figure
-        self.stat_fig, ((self.damage_ax, self.cost_ax), 
-                       (self.gain_ax, self.comparison_ax)) = plt.subplots(2, 2, figsize=(12, 8))
-        
-        self.stat_canvas = FigureCanvasTkAgg(self.stat_fig, tab_frame)
-        self.stat_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
-        # Generate statistical plots
-        self._create_statistical_plots()
+        # Check if we have scenario comparison data
+        if self.scenario_results and 'scenarios' in self.scenario_results:
+            # Create single focused plot for scenario comparison
+            self.stat_fig, self.stat_ax = plt.subplots(1, 1, figsize=(12, 8))
+            self.stat_canvas = FigureCanvasTkAgg(self.stat_fig, tab_frame)
+            self.stat_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+            self._create_scenario_comparison_plots()
+        else:
+            # Empty tab when variables are disabled
+            empty_label = tk.Label(
+                tab_frame,
+                text="Enable 'Scenario Comparison' in the Variables tab to see statistical analysis",
+                font=('TkDefaultFont', 12),
+                foreground='gray',
+                bg=self.bg_color
+            )
+            empty_label.pack(expand=True)
     
     def _add_event_to_log(self, text_widget, event):
         """Add an event to the log text widget"""
@@ -537,8 +545,8 @@ class EnhancedResultsWindow:
         # For now, just placeholder - we can enhance this later
         pass
     
-    def _create_statistical_plots(self):
-        """Create violin plots and statistical analysis"""
+    def _create_single_scenario_plots(self):
+        """Create violin plots for single scenario analysis (original functionality)"""
         try:
             # Get simulation results for analysis
             simulation_results = analyze_simulation_results(self.all_histories)
@@ -641,6 +649,132 @@ class EnhancedResultsWindow:
                 ax.text(0.5, 0.5, f'Error creating plots:\n{str(e)}', 
                        transform=ax.transAxes, ha='center', va='center')
             self.stat_canvas.draw()
+    
+    def _create_scenario_comparison_plots(self):
+        """Create focused violin plot comparing damage across action durations"""
+        try:
+            scenarios = self.scenario_results['scenarios']
+            
+            # Extract damage data grouped by scenario duration
+            scenario_damages = []
+            scenario_labels = []
+            durations = []
+            
+            for scenario in scenarios:
+                duration = scenario['duration']
+                histories = scenario['histories']
+                
+                # Analyze this scenario's results
+                results = analyze_simulation_results(histories)
+                
+                # Collect damages from all runs in this scenario
+                damages = []
+                for r in results:
+                    damage = r.get('total_damage', 0)
+                    if damage > 0:
+                        damages.append(damage)
+                
+                # Only include scenarios with damage data
+                if damages:
+                    scenario_damages.append(damages)
+                    scenario_labels.append(f"{duration}h")
+                    durations.append(duration)
+                else:
+                    # If no damage, add zero
+                    scenario_damages.append([0])
+                    scenario_labels.append(f"{duration}h")
+                    durations.append(duration)
+            
+            if not scenario_damages:
+                self.stat_ax.text(0.5, 0.5, 'No damage data available', 
+                                 transform=self.stat_ax.transAxes,
+                                 ha='center', va='center', fontsize=14)
+                self.stat_canvas.draw()
+                return
+            
+            # Create violin plot
+            positions = range(1, len(scenario_damages) + 1)
+            parts = self.stat_ax.violinplot(
+                scenario_damages, 
+                positions=positions,
+                showmeans=True, 
+                showmedians=True,
+                showextrema=True
+            )
+            
+            # Color the violins with a gradient
+            colors = plt.cm.RdYlGn_r(np.linspace(0.2, 0.8, len(scenarios)))
+            for i, pc in enumerate(parts['bodies']):
+                pc.set_facecolor(colors[i])
+                pc.set_alpha(0.8)
+                pc.set_edgecolor('black')
+                pc.set_linewidth(1.5)
+            
+            # Style the median, mean, and extrema lines
+            for partname in ('cbars', 'cmins', 'cmaxes', 'cmedians', 'cmeans'):
+                if partname in parts:
+                    vp = parts[partname]
+                    vp.set_edgecolor('black')
+                    vp.set_linewidth(2)
+            
+            # Add individual data points as scatter
+            for i, (pos, damages) in enumerate(zip(positions, scenario_damages)):
+                # Add jitter to x-position for visibility
+                x_jitter = np.random.normal(pos, 0.04, size=len(damages))
+                self.stat_ax.scatter(x_jitter, damages, alpha=0.4, s=30, color='black', zorder=3)
+            
+            # Formatting
+            self.stat_ax.set_title(
+                'Impact of Action Duration on Total Damage',
+                fontsize=16, 
+                fontweight='bold',
+                pad=20
+            )
+            self.stat_ax.set_xlabel('Action Duration (hours)', fontsize=14, fontweight='bold')
+            self.stat_ax.set_ylabel('Total Damage ($)', fontsize=14, fontweight='bold')
+            
+            # Set x-axis
+            self.stat_ax.set_xticks(positions)
+            self.stat_ax.set_xticklabels(scenario_labels, fontsize=12)
+            
+            # Format y-axis with currency
+            self.stat_ax.yaxis.set_major_formatter(
+                plt.FuncFormatter(lambda x, p: f'${x:,.0f}')
+            )
+            
+            # Add grid for readability
+            self.stat_ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            self.stat_ax.set_axisbelow(True)
+            
+            # Add statistics text box
+            stats_text = "Statistics per scenario:\n"
+            for i, (label, damages) in enumerate(zip(scenario_labels, scenario_damages)):
+                mean_dmg = np.mean(damages)
+                median_dmg = np.median(damages)
+                runs = len(damages)
+                stats_text += f"\n{label}: Mean=${mean_dmg:,.0f}, Median=${median_dmg:,.0f} ({runs} runs)"
+            
+            self.stat_ax.text(
+                0.02, 0.98, stats_text,
+                transform=self.stat_ax.transAxes,
+                fontsize=10,
+                verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8)
+            )
+            
+            plt.tight_layout()
+            self.stat_canvas.draw()
+            
+        except Exception as e:
+            # Error handling
+            self.stat_ax.clear()
+            self.stat_ax.text(0.5, 0.5, f'Error creating scenario comparison plot:\n{str(e)}', 
+                             transform=self.stat_ax.transAxes, ha='center', va='center',
+                             fontsize=12, color='red')
+            self.stat_canvas.draw()
+            print(f"Error in scenario comparison plot: {e}")
+            import traceback
+            traceback.print_exc()
     
     def _on_close(self):
         """Handle window close"""

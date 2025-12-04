@@ -339,29 +339,19 @@ class App(tk.Tk):
             'bg_color': self.bg_color,
             'button_fg': self.button_fg
         }
-        # For now, show results with scenario metadata
-        # Future: Create a specialized ScenarioComparisonWindow with violin plots
         
-        # Flatten all histories for the existing results window
+        # Flatten all histories for backward compatibility
         all_histories = []
         for scenario in scenario_results['scenarios']:
             all_histories.extend(scenario['histories'])
         
-        # TODO: Create ScenarioComparisonWindow that shows:
-        # 1. Violin plots of damage distribution per scenario (like TIM paper Figure 2)
-        # 2. Side-by-side comparison of economic metrics
-        # 3. Statistical significance tests between scenarios
-        
-        results_window = EnhancedResultsWindow(self, all_histories, theme_colors)
-        
-        # Add scenario info label at the top
-        info_text = "Scenario Comparison Results:\n" + "\n".join([
-            f"  • {s['duration']}h duration: {s['runs']} runs"
-            for s in scenario_results['scenarios']
-        ])
-        
-        # Note: This is a temporary solution showing all runs together
-        # A proper implementation would create violin plots grouped by scenario
+        # Pass scenario_results to enable scenario comparison in stats tab
+        results_window = EnhancedResultsWindow(
+            self, 
+            all_histories, 
+            theme_colors,
+            scenario_results=scenario_results  # NEW: Pass scenario data
+        )
 
     def open_help_window(self):
         win = tk.Toplevel(self)
