@@ -1,6 +1,7 @@
 from typing import Any, Tuple, Optional
 from src.core.access_levels import NodeAccessLevel
 from src.actions.action_manager import would_action_improve_access
+from src.core.access_utils import get_node_access
 
 
 class GreedyAttackerStrategy:
@@ -14,15 +15,13 @@ class GreedyAttackerStrategy:
         
         # Expand visibility to include nodes connected to compromised nodes
         # This simulates network discovery from systems with USER or ADMIN access
-        from src.core.access_levels import NodeAccessLevel
         
         # Check all visible nodes for USER/ADMIN access (not just compromised_nodes)
         nodes_with_access = []
         for node in visible_nodes:
-            if hasattr(node, 'access') and attacker.id in node.access:
-                access_level = node.access[attacker.id]
-                if access_level in [NodeAccessLevel.USER, NodeAccessLevel.ADMIN]:
-                    nodes_with_access.append(node)
+            access_level = get_node_access(node, attacker.id)
+            if access_level >= NodeAccessLevel.USER:
+                nodes_with_access.append(node)
         
         # Add compromised nodes from the tracking set
         if network_state and 'nodes' in network_state:
@@ -52,7 +51,7 @@ class GreedyAttackerStrategy:
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
                     
-                    actor_access = node.access.get(attacker.id, None)
+                    actor_access = get_node_access(node, attacker.id)
                     try:
                         # Check precondition and beneficial action criteria
                         if (action.precondition(node, actor_access, attacker.id) and 

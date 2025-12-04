@@ -1,7 +1,8 @@
 from typing import Dict, Any, List, Union, Callable
 from src.actions.version import Version
 from src.core.graph import Node, Link
-from src.core.access_levels import NodeAccessLevel, validate_node_access
+from src.core.access_levels import NodeAccessLevel, LinkAccessLevel, validate_node_access, validate_link_access
+from src.core.access_utils import get_node_access, set_node_access, get_link_access, set_link_access
 
 class ConditionEvaluator:
     def __init__(self):
@@ -227,24 +228,48 @@ class ConditionEvaluator:
         else:
             raise ValueError(f"Unknown version check operator: {operator}")
 
-    def _evaluate_access_check(self, condition: Dict[str, Any], actor_access: str, actor_id: str) -> bool:
+    def _evaluate_access_check(self, condition: Dict[str, Any], actor_access, actor_id: str) -> bool:
+        """
+        Evaluate access checks with type-safe enum comparisons.
+        
+        Args:
+            condition: Condition dict with operator and value
+            actor_access: NodeAccessLevel enum or string (will be converted)
+            actor_id: Actor ID
+            
+        Returns:
+            Boolean result of comparison
+        """
+        # Convert actor_access to enum if it's a string
+        if isinstance(actor_access, str):
+            actor_access = validate_node_access(actor_access)
+        elif not isinstance(actor_access, NodeAccessLevel):
+            actor_access = validate_node_access(actor_access)
+        
         operator = condition['operator']
+        
         if operator == 'equals':
-            expected_access = condition['value']
+            expected_access = validate_node_access(condition['value'])
             return actor_access == expected_access
         elif operator == 'not_equals':
-            expected_access = condition['value']
+            expected_access = validate_node_access(condition['value'])
             return actor_access != expected_access
         elif operator == 'in':
-            return actor_access in condition['values']
+            # Convert all values to enums for comparison
+            expected_levels = [validate_node_access(v) for v in condition['values']]
+            return actor_access in expected_levels
         elif operator == 'greater_than':
-            current_level = validate_node_access(actor_access)
             required_level = validate_node_access(condition['value'])
-            return current_level > required_level
+            return actor_access > required_level
         elif operator == 'greater_equal':
-            current_level = validate_node_access(actor_access)
             required_level = validate_node_access(condition['value'])
-            return current_level >= required_level
+            return actor_access >= required_level
+        elif operator == 'less_than':
+            required_level = validate_node_access(condition['value'])
+            return actor_access < required_level
+        elif operator == 'less_equal':
+            required_level = validate_node_access(condition['value'])
+            return actor_access <= required_level
         else:
             raise ValueError(f"Unknown access check operator: {operator}")
 
@@ -400,13 +425,15 @@ class ActionExecutor:
 
     def _execute_set_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
         access_level = action['value']
-        if not hasattr(node, 'access'):
-            node.access = {}
-        old_access = node.access.get(actor_id, "NONE")
-        node.access[actor_id] = access_level
+        old_access = get_node_access(node, actor_id)
+        set_node_access(node, actor_id, access_level)
+        
+        # Convert access_level to enum for comparison
+        if isinstance(access_level, str):
+            access_level = validate_node_access(access_level)
         
         # Set compromised flag when attacker gains USER or higher access
-        if access_level in ["USER", "ADMIN", "ROOT"] and old_access in ["NONE", "VISIBLE"]:
+        if access_level >= NodeAccessLevel.USER and old_access < NodeAccessLevel.USER:
             node.compromised = True
             # Also update the actor's compromised nodes set if it's an attacker
             if hasattr(self, '_simulator') and self._simulator:
@@ -417,7 +444,7 @@ class ActionExecutor:
                             actor.compromised_nodes.add(node.id)
         
         # Notify about node discovery when going from NONE to VISIBLE
-        if old_access == "NONE" and access_level == "VISIBLE":
+        if old_access == NodeAccessLevel.NONE and access_level == NodeAccessLevel.VISIBLE:
             if hasattr(self, '_simulator') and self._simulator:
                 # Only notify for actual Node objects, not Link objects
                 if hasattr(node, 'id'):
@@ -530,13 +557,11 @@ class ActionExecutor:
         discovered_links = []
         
         for link in node.links:
-            if not hasattr(link, 'access'):
-                link.access = {}
-            old_access = link.access.get(actor_id, "NONE")
-            link.access[actor_id] = access_value
+            old_access = get_link_access(link, actor_id)
+            set_link_access(link, actor_id, access_value)
             
             # If this is a new discovery (from NONE to VISIBLE), track discovered link and connected node
-            if old_access == "NONE" and access_value == "VISIBLE":
+            if old_access == LinkAccessLevel.NONE and validate_link_access(access_value) == LinkAccessLevel.VISIBLE:
                 discovered_links.append(link)
                 # Discover the connected node through this link
                 other_node = link.get_other_node(node)

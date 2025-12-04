@@ -1,5 +1,7 @@
 from typing import Dict, Any, List, Tuple
 from src.core.graph import Node
+from src.core.access_utils import get_node_access
+from src.core.access_levels import NodeAccessLevel
 
 class EconomicParameters:
     """Configuration parameters for economic calculations."""
@@ -155,13 +157,13 @@ class SimpleEconomicModel:
             # For each node
             for node in all_nodes:
                 # Get attacker's current access to this node
-                access = node.access.get(attacker_id, "NONE")
+                access = get_node_access(node, attacker_id)
                 
                 # Calculate δ(ω, π̂) - damage rate for this access/property combination
-                damage_rate = calculate_delta(access, node, self.parameters)
+                damage_rate = self.calculate_delta(access, node)
                 
                 # Calculate γ(ω, π̂) - gain rate for this access/property combination
-                gain_rate = calculate_gamma(access, node, self.parameters)
+                gain_rate = self.calculate_gamma(access, node)
                 
                 # Accumulate over time interval [last_time, current_time)
                 if damage_rate > 0:
@@ -223,134 +225,157 @@ class SimpleEconomicModel:
             'num_access_changes': len(self.access_state_changes),
             'num_property_changes': len(self.property_state_changes)
         }
+    
+    def calculate_delta(self, access: str, node: Node) -> float:
+        """
+        Calculate time-proportional damage rate δ(ω, π̂(n)).
+        
+        Per TIM paper Section 4.7:
+        "δ(ωx(n), π̂(n)) is the amount of damage that x generates via node n per unit time"
+        
+        Args:
+            access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
+            node: The node being accessed
+            
+        Returns:
+            Damage rate per time unit (e.g., USD per day)
+        """
+        # Ensure access is an enum
+        if isinstance(access, str):
+            from src.core.access_levels import validate_node_access
+            access = validate_node_access(access)
+        
+        # No damage if no access
+        if access < NodeAccessLevel.USER:
+            return 0.0
+        
+        # Base damage rate depends on access level
+        if access == NodeAccessLevel.ADMIN:
+            base_rate = self.parameters.admin_access_damage_rate
+        elif access == NodeAccessLevel.USER:
+            base_rate = self.parameters.user_access_damage_rate
+        else:
+            return 0.0
+        
+        # Multiply by node value factors
+        asset_count = len(getattr(node, 'assets', []))
+        if asset_count > 0:
+            base_rate *= (1 + asset_count * self.parameters.asset_value_factor)
+        
+        # High-value properties increase damage rate
+        properties = getattr(node, 'properties', {})
+        
+        # Data sensitivity multiplier
+        data_sensitivity = properties.get('data_sensitivity', 'low')
+        base_rate *= self.parameters.data_sensitivity_multipliers.get(data_sensitivity, 1.0)
+        
+        # Criticality multiplier
+        criticality = properties.get('criticality', 'low')
+        base_rate *= self.parameters.criticality_multipliers.get(criticality, 1.0)
+        
+        # Data amount affects ongoing damage (e.g., ongoing data exfiltration)
+        data_amount = properties.get('data_amount', 0)
+        if data_amount > 0:
+            # Scale with log to avoid excessive values
+            import math
+            base_rate *= (1 + math.log10(data_amount + 1) * 0.1)
+        
+        return base_rate
+    
+    def calculate_gamma(self, access: str, node: Node) -> float:
+        """
+        Calculate time-proportional gain rate γ(ω, π̂(n)).
+        
+        Per TIM paper Section 4.7:
+        "γ(ωx(n), π̂(n)) is the gain of x from n per unit time"
+        
+        Args:
+            access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
+            node: The node being accessed
+            
+        Returns:
+            Gain rate per time unit (e.g., USD per day)
+        """
+        # Attacker gain is typically a fraction of defender damage
+        damage_rate = self.calculate_delta(access, node)
+        
+        # Use configurable gain ratio
+        return damage_rate * self.parameters.attacker_gain_ratio
+    
+    def calculate_action_damage(self, action_name: str, node: Node) -> float:
+        """
+        Calculate one-off damage D(a, π̂(n)) from successful attack action.
+        
+        Per TIM paper Section 4.7:
+        "D(a, π̂(n)) is the amount of one-off damage that x generates by 
+        successfully performing attack a on node n"
+        
+        Args:
+            action_name: Name of the attack action
+            node: The target node
+            
+        Returns:
+            One-off damage amount (e.g., USD)
+        """
+        base_damage = self.parameters.critical_system_base_damage
+        
+        asset_multiplier = len(getattr(node, 'assets', [])) * 500.0
+        
+        if 'exfiltration' in action_name.lower() or 'tapestry' in action_name.lower():
+            base_damage *= self.parameters.critical_system_multiplier
+        
+        return base_damage + asset_multiplier
+    
+    def calculate_action_gain(self, action_name: str, node: Node) -> float:
+        """
+        Calculate one-off gain G(a, π̂(n)) from successful attack action.
+        
+        Per TIM paper Section 4.7:
+        "G(a, π̂(n)) is the one-off gain of x from successfully performing attack a on node n"
+        
+        Args:
+            action_name: Name of the attack action
+            node: The target node
+            
+        Returns:
+            One-off gain amount (e.g., USD)
+        """
+        damage = self.calculate_action_damage(action_name, node)
+        return damage * 0.3
 
 
+# Standalone functions for backward compatibility - delegate to global instance
 def calculate_delta(access: str, node: Node, parameters: EconomicParameters = None) -> float:
-    """
-    Calculate time-proportional damage rate δ(ω, π̂(n)).
-    
-    Per TIM paper Section 4.7:
-    "δ(ωx(n), π̂(n)) is the amount of damage that x generates via node n per unit time"
-    
-    Args:
-        access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
-        node: The node being accessed
-        parameters: Economic parameters (uses defaults if None)
-        
-    Returns:
-        Damage rate per time unit (e.g., USD per day)
-    """
-    if parameters is None:
-        parameters = EconomicParameters()
-        
-    # No damage if no access
-    if access in ["NONE", "VISIBLE"]:
-        return 0.0
-    
-    # Base damage rate depends on access level
-    if access == "ADMIN":
-        base_rate = parameters.admin_access_damage_rate
-    elif access == "USER":
-        base_rate = parameters.user_access_damage_rate
-    else:
-        return 0.0
-    
-    # Multiply by node value factors
-    asset_count = len(getattr(node, 'assets', []))
-    if asset_count > 0:
-        base_rate *= (1 + asset_count * parameters.asset_value_factor)
-    
-    # High-value properties increase damage rate
-    properties = getattr(node, 'properties', {})
-    
-    # Data sensitivity multiplier
-    data_sensitivity = properties.get('data_sensitivity', 'low')
-    base_rate *= parameters.data_sensitivity_multipliers.get(data_sensitivity, 1.0)
-    
-    # Criticality multiplier
-    criticality = properties.get('criticality', 'low')
-    base_rate *= parameters.criticality_multipliers.get(criticality, 1.0)
-    
-    # Data amount affects ongoing damage (e.g., ongoing data exfiltration)
-    data_amount = properties.get('data_amount', 0)
-    if data_amount > 0:
-        # Scale with log to avoid excessive values
-        import math
-        base_rate *= (1 + math.log10(data_amount + 1) * 0.1)
-    
-    return base_rate
+    """Backward compatibility wrapper - delegates to economic_model instance"""
+    if parameters is not None:
+        # Create temporary instance with custom parameters
+        temp_model = SimpleEconomicModel(parameters)
+        return temp_model.calculate_delta(access, node)
+    return economic_model.calculate_delta(access, node)
 
 
 def calculate_gamma(access: str, node: Node, parameters: EconomicParameters = None) -> float:
-    """
-    Calculate time-proportional gain rate γ(ω, π̂(n)).
-    
-    Per TIM paper Section 4.7:
-    "γ(ωx(n), π̂(n)) is the gain of x from n per unit time"
-    
-    Args:
-        access: Actor's access level to the node (NONE, VISIBLE, USER, ADMIN)
-        node: The node being accessed
-        parameters: Economic parameters (uses defaults if None)
-        
-    Returns:
-        Gain rate per time unit (e.g., USD per day)
-    """
-    if parameters is None:
-        parameters = EconomicParameters()
-        
-    # Attacker gain is typically a fraction of defender damage
-    damage_rate = calculate_delta(access, node, parameters)
-    
-    # Use configurable gain ratio
-    return damage_rate * parameters.attacker_gain_ratio
+    """Backward compatibility wrapper - delegates to economic_model instance"""
+    if parameters is not None:
+        temp_model = SimpleEconomicModel(parameters)
+        return temp_model.calculate_gamma(access, node)
+    return economic_model.calculate_gamma(access, node)
 
 
 def calculate_action_damage(action_name: str, node: Node, parameters: EconomicParameters = None) -> float:
-    """
-    Calculate one-off damage D(a, π̂(n)) from successful attack action.
-    
-    Per TIM paper Section 4.7:
-    "D(a, π̂(n)) is the amount of one-off damage that x generates by 
-    successfully performing attack a on node n"
-    
-    Args:
-        action_name: Name of the attack action
-        node: The target node
-        parameters: Economic parameters (uses defaults if None)
-        
-    Returns:
-        One-off damage amount (e.g., USD)
-    """
-    if parameters is None:
-        parameters = EconomicParameters()
-        
-    base_damage = parameters.critical_system_base_damage
-    
-    asset_multiplier = len(getattr(node, 'assets', [])) * 500.0
-    
-    if 'exfiltration' in action_name.lower() or 'tapestry' in action_name.lower():
-        base_damage *= parameters.critical_system_multiplier
-    
-    return base_damage + asset_multiplier
+    """Backward compatibility wrapper - delegates to economic_model instance"""
+    if parameters is not None:
+        temp_model = SimpleEconomicModel(parameters)
+        return temp_model.calculate_action_damage(action_name, node)
+    return economic_model.calculate_action_damage(action_name, node)
 
 
 def calculate_action_gain(action_name: str, node: Node, parameters: EconomicParameters = None) -> float:
-    """
-    Calculate one-off gain G(a, π̂(n)) from successful attack action.
-    
-    Per TIM paper Section 4.7:
-    "G(a, π̂(n)) is the one-off gain of x from successfully performing attack a on node n"
-    
-    Args:
-        action_name: Name of the attack action
-        node: The target node
-        
-    Returns:
-        One-off gain amount (e.g., USD)
-    """
-    damage = calculate_action_damage(action_name, node)
-    return damage * 0.3
+    """Backward compatibility wrapper - delegates to economic_model instance"""
+    if parameters is not None:
+        temp_model = SimpleEconomicModel(parameters)
+        return temp_model.calculate_action_gain(action_name, node)
+    return economic_model.calculate_action_gain(action_name, node)
 
 
 economic_model = SimpleEconomicModel()

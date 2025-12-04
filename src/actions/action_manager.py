@@ -13,6 +13,77 @@ logger = logging.getLogger(__name__)
 class ActionManager:
     def __init__(self):
         pass
+    
+    def validate_action_json(self, action_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate action JSON structure.
+        
+        Args:
+            action_data: Action configuration dictionary
+            
+        Returns:
+            Dictionary with validation results
+        """
+        errors = []
+        warnings = []
+        
+        # Required fields
+        required_fields = ['name', 'action_type', 'cost', 'duration', 'success_probability',
+                          'precondition', 'postcondition', 'detection_probability', 'damage_gain']
+        
+        for field in required_fields:
+            if field not in action_data:
+                errors.append(f"Missing required field: {field}")
+        
+        # Validate field types and values
+        if 'name' in action_data and not isinstance(action_data['name'], str):
+            errors.append("'name' must be a string")
+        
+        if 'action_type' in action_data:
+            if action_data['action_type'] not in ['node', 'link']:
+                errors.append("'action_type' must be 'node' or 'link'")
+        
+        if 'cost' in action_data:
+            if not isinstance(action_data['cost'], (int, float)) or action_data['cost'] < 0:
+                errors.append("'cost' must be a non-negative number")
+        
+        if 'duration' in action_data:
+            if not isinstance(action_data['duration'], (int, float)) or action_data['duration'] <= 0:
+                errors.append("'duration' must be a positive number")
+        
+        if 'success_probability' in action_data:
+            prob = action_data['success_probability']
+            if not isinstance(prob, (int, float)) or not (0 <= prob <= 1):
+                errors.append("'success_probability' must be a number between 0 and 1")
+        
+        # Validate damage_gain structure
+        if 'damage_gain' in action_data:
+            dg = action_data['damage_gain']
+            if not isinstance(dg, dict):
+                errors.append("'damage_gain' must be a dictionary")
+            else:
+                required_dg_fields = ['one_off_damage', 'one_off_gain', 'time_damage', 'time_gain']
+                for field in required_dg_fields:
+                    if field not in dg:
+                        errors.append(f"'damage_gain' missing required field: {field}")
+                    elif not isinstance(dg[field], (int, float)):
+                        errors.append(f"'damage_gain.{field}' must be a number")
+        
+        # Validate condition structures
+        if 'precondition' in action_data and not isinstance(action_data['precondition'], dict):
+            errors.append("'precondition' must be a dictionary")
+        
+        if 'postcondition' in action_data and not isinstance(action_data['postcondition'], dict):
+            errors.append("'postcondition' must be a dictionary")
+        
+        if 'detection_probability' in action_data and not isinstance(action_data['detection_probability'], dict):
+            errors.append("'detection_probability' must be a dictionary")
+        
+        return {
+            'valid': len(errors) == 0,
+            'errors': errors,
+            'warnings': warnings
+        }
 
     def create_function_from_spec(self, spec: Dict[str, Any]) -> Callable:
         if spec["type"] == "function_ref":
@@ -82,31 +153,59 @@ class ActionManager:
             return self.create_function_from_spec(spec)
 
     def action_from_json(self, action_data: Dict[str, Any]) -> Action:
-        precondition = self.create_function_from_spec(action_data["precondition"])
-        postcondition = self.create_postcondition_from_spec(action_data["postcondition"])
-        detection_probability = self.create_function_from_spec(action_data["detection_probability"])
-        damage_gain = action_data["damage_gain"]
-        one_off_damage = lambda node, access, actor: damage_gain["one_off_damage"]
-        one_off_gain = lambda node, access, actor: damage_gain["one_off_gain"]
-        time_damage = lambda node, access, actor: damage_gain["time_damage"]
-        time_gain = lambda node, access, actor: damage_gain["time_gain"]
-        action = Action(
-            name=action_data["name"],
-            precondition=precondition,
-            postcondition=postcondition,
-            cost=action_data["cost"],
-            duration=action_data["duration"],
-            success_probability=action_data["success_probability"],
-            action_type=action_data["action_type"],
-            detection_probability=detection_probability,
-            one_off_damage=one_off_damage,
-            one_off_gain=one_off_gain,
-            time_damage=time_damage,
-            time_gain=time_gain
-        )
-        # Store original JSON data for analysis
-        action._json_data = action_data
-        return action
+        """
+        Create Action from JSON configuration.
+        
+        Args:
+            action_data: Action configuration dictionary
+            
+        Returns:
+            Action object
+            
+        Raises:
+            ValueError: If action configuration is invalid
+        """
+        # Validate action data
+        validation = self.validate_action_json(action_data)
+        if not validation['valid']:
+            error_msg = f"Invalid action configuration for '{action_data.get('name', 'unknown')}':\n"
+            error_msg += "\n".join(f"  - {err}" for err in validation['errors'])
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        if validation['warnings']:
+            for warning in validation['warnings']:
+                logger.warning(f"Action '{action_data['name']}': {warning}")
+        
+        try:
+            precondition = self.create_function_from_spec(action_data["precondition"])
+            postcondition = self.create_postcondition_from_spec(action_data["postcondition"])
+            detection_probability = self.create_function_from_spec(action_data["detection_probability"])
+            damage_gain = action_data["damage_gain"]
+            one_off_damage = lambda node, access, actor: damage_gain["one_off_damage"]
+            one_off_gain = lambda node, access, actor: damage_gain["one_off_gain"]
+            time_damage = lambda node, access, actor: damage_gain["time_damage"]
+            time_gain = lambda node, access, actor: damage_gain["time_gain"]
+            action = Action(
+                name=action_data["name"],
+                precondition=precondition,
+                postcondition=postcondition,
+                cost=action_data["cost"],
+                duration=action_data["duration"],
+                success_probability=action_data["success_probability"],
+                action_type=action_data["action_type"],
+                detection_probability=detection_probability,
+                one_off_damage=one_off_damage,
+                one_off_gain=one_off_gain,
+                time_damage=time_damage,
+                time_gain=time_gain
+            )
+            # Store original JSON data for analysis
+            action._json_data = action_data
+            logger.debug(f"Created action: {action.name}")
+            return action
+        except Exception as e:
+            raise ValueError(f"Error creating action '{action_data.get('name', 'unknown')}': {e}")
 
     def action_to_json(self, action: Action) -> Dict[str, Any]:
         def get_function_spec(func):
@@ -358,25 +457,30 @@ def _analyze_postcondition_access(postcondition: Dict[str, Any]) -> Optional[str
     return None
 
 
-def would_action_improve_access(action, node, current_access: str, actor_id: str) -> bool:
+def would_action_improve_access(action, node, current_access, actor_id: str) -> bool:
     """
     Check if executing this action would improve the attacker's access level.
     
     Args:
         action: The action to check
         node: The target node
-        current_access: Current access level as string
+        current_access: Current access level (NodeAccessLevel enum)
         actor_id: The actor's ID
         
     Returns:
         True if the action would be beneficial, False otherwise
     """
     try:
-        # Convert current access to enum for comparison
-        current_level = NodeAccessLevel.from_string(current_access)
+        # Ensure we have an enum (backward compatibility for any string inputs)
+        if isinstance(current_access, str):
+            current_level = NodeAccessLevel.from_string(current_access)
+        else:
+            current_level = current_access
         
         # First try to analyze the postcondition directly
-        predicted_access = analyze_action_access_impact(action, current_access)
+        # For JSON analysis, we need string format
+        current_access_str = current_level.to_string() if hasattr(current_level, 'to_string') else str(current_level)
+        predicted_access = analyze_action_access_impact(action, current_access_str)
         if predicted_access:
             predicted_level = NodeAccessLevel.from_string(predicted_access)
             return predicted_level > current_level

@@ -25,10 +25,7 @@ class Sidebar(tk.Frame):
         super().__init__(master, bd=2, relief=tk.RIDGE, bg=self.sidebar_color)
         
         self.buttons = {}
-        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Actions", "Overview"]
-        
-        # Configure grid weights
-        self.grid_rowconfigure(6, weight=1)
+        self.tab_names = ["Simulation", "Network", "Attackers", "Defenders", "Actions", "Variables", "Overview"]
         
         # Create tab navigation buttons
         self._create_tab_buttons(switch_tab_callback)
@@ -64,8 +61,8 @@ class Sidebar(tk.Frame):
     def _create_spacer(self):
         """Create spacer to push fullscreen toggle to bottom."""
         self.spacer = tk.Label(self, bg=self.sidebar_color)
-        self.spacer.grid(row=6, column=0, sticky="nswe")
-        self.grid_rowconfigure(6, weight=1)
+        self.spacer.grid(row=7, column=0, sticky="nswe")
+        self.grid_rowconfigure(7, weight=1)
     
     def _create_fullscreen_toggle(self, toggle_fullscreen, fullscreen_state):
         """Create fullscreen toggle checkbox."""
@@ -81,7 +78,7 @@ class Sidebar(tk.Frame):
             activebackground=self.highlight_color,
             font=("Arial", 9)
         )
-        self.fullscreen_switch.grid(row=7, column=0, pady=(5, 15), padx=15, sticky="s")
+        self.fullscreen_switch.grid(row=8, column=0, pady=(5, 15), padx=15, sticky="s")
     
     def highlight_tab(self, tab_name):
         """

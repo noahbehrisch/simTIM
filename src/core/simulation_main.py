@@ -73,7 +73,7 @@ def simtim_main(
         
         attack_actions = get_attack_actions()
         defense_actions = get_defense_actions()
-        # TODO: Incorporate link actions into attack and defense actions
+        # Link actions are now fully integrated into attack strategies
         link_actions = get_link_action_library()
         
         all_attack_actions = attack_actions + list(link_actions.values())
@@ -116,6 +116,8 @@ def simtim_main(
                 # Per TIM paper: attackers start with VISIBLE access to internet-exposed nodes
                 if hasattr(node, 'properties') and node.properties.get('exposed_to_internet', False):
                     node.access[attacker.id] = NodeAccessLevel.VISIBLE.to_string()
+                    # Add exposed nodes to visible set
+                    attacker.visible_nodes.add(node)
                 else:
                     node.access[attacker.id] = NodeAccessLevel.NONE.to_string()
             
@@ -124,6 +126,7 @@ def simtim_main(
                 if not hasattr(link, 'access'):
                     link.access = {}
                 link.access[attacker.id] = LinkAccessLevel.NONE.to_string()
+                # Note: Links become visible when attacker discovers connected nodes
                 
         for defender in defender_objs:
             for node in network['nodes_list']:

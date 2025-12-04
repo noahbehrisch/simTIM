@@ -1,6 +1,7 @@
 import random
 from typing import Any, Tuple, Optional
 from src.actions.action_manager import would_action_improve_access
+from src.core.access_utils import get_node_access
 
 
 class RandomAttackerStrategy:
@@ -22,7 +23,7 @@ class RandomAttackerStrategy:
                     if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
                         continue
                     
-                    actor_access = node.access.get(attacker.id, None)
+                    actor_access = get_node_access(node, attacker.id)
                     print(f"[DEBUG] Checking action {action.name} on node {getattr(node, 'id', 'unknown')} with access {actor_access}")
                     
                     try:

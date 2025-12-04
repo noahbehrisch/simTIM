@@ -5,6 +5,7 @@ Extracted from the existing defender.py implementation.
 Focuses on detection and surveillance capabilities to monitor network activity.
 """
 from typing import Any, Tuple, Optional
+from src.core.access_utils import get_node_access
 
 
 class MonitoringDefenderStrategy:
@@ -25,7 +26,7 @@ class MonitoringDefenderStrategy:
                     if not hasattr(node, 'links'):
                         continue  # Skip Link objects or other invalid types
                     
-                    actor_access = node.access.get(defender.id, None)
+                    actor_access = get_node_access(node, defender.id)
                     try:
                         if action.precondition(node, actor_access, defender.id):
                             priority = self.get_priority(action, node)

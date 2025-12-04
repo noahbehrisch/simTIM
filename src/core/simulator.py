@@ -3,6 +3,7 @@ import random
 import logging
 from typing import Any, Dict, List
 from .economic_model import economic_model, calculate_action_damage, calculate_action_gain
+from .access_utils import get_node_access, validate_node, validate_actor
 
 logger = logging.getLogger(__name__)
 infinity = float('inf') 
@@ -72,13 +73,8 @@ class Simulator:
         # Initialize actors and schedule their first decisions
         for actor in self.get_all_actors():
             actor.simulator = self
-            if hasattr(actor, 'is_attacker') and actor.is_attacker:
-                # Initialize attacker with only internet-exposed nodes
-                all_nodes = self.network.get('nodes', self.network.get('nodes_list', []))
-                exposed_nodes = [node for node in all_nodes 
-                               if hasattr(node, 'properties') and 
-                               node.properties.get('exposed_to_internet', False)]
-                actor.visible_nodes = set(exposed_nodes)
+            # Note: visible_nodes is already initialized in simulation_main.py
+            # Don't overwrite it here
             
             # Initialize actor and start its decision loop
             actor.running = True
@@ -192,14 +188,35 @@ class Simulator:
         actor = event_data["actor"]
         target = event_data["target"]
         
+        # Validate actor and target
+        actor_validation = validate_actor(actor)
+        if not actor_validation['valid']:
+            logger.error(f"Invalid actor: {actor_validation['errors']}")
+            self.history.append((self.current_time, "action_error", {
+                "reason": "invalid_actor",
+                "errors": actor_validation['errors']
+            }))
+            return
+        
+        target_validation = validate_node(target)
+        if not target_validation['valid']:
+            logger.error(f"Invalid target node: {target_validation['errors']}")
+            self.history.append((self.current_time, "action_error", {
+                "reason": "invalid_target",
+                "errors": target_validation['errors']
+            }))
+            return
+        
         # Check if actor has capacity for this action
         if not actor.can_schedule_action():
+            logger.warning(f"Actor {actor.id} capacity exceeded")
             self.history.append((self.current_time, "action_capacity_exceeded", event_data))
             return
         
         # Initial precondition check - action must be valid to start
-        current_access = target.access.get(actor.id, "NONE")
+        current_access = get_node_access(target, actor.id)
         if not action.precondition(target, current_access, actor.id):
+            logger.debug(f"Action {action.name} precondition failed at start for actor {actor.id}")
             self.history.append((self.current_time, "action_aborted_start", {
                 "actor": actor,
                 "action": action,
@@ -368,8 +385,8 @@ class Simulator:
         if ongoing_action is None:
             return
         
-        # Check if precondition still holds
-        current_access = target.access.get(actor.id, "NONE")
+        # Check if precondition still holds - use standardized access getter
+        current_access = get_node_access(target, actor.id)
         precond_holds = action.precondition(target, current_access, actor.id)
         if not precond_holds:
             self._interrupt_action(ongoing_action, "precondition_failed")

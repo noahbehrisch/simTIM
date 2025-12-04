@@ -1,6 +1,7 @@
 from .actor import Actor
 from src.core.graph import Node
 from .strategies import get_defender_strategy
+from src.core.access_utils import get_node_access
 
 class Defender(Actor):
     def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2, budget: float = float('inf')):
@@ -23,7 +24,7 @@ class Defender(Actor):
         decision = self.choose_best_action(network_state)
         if decision:
             action, target = decision
-            actor_access = target.access.get(self.id, None) 
+            actor_access = get_node_access(target, self.id)
             if action.precondition(target, actor_access, self.id):
                 self.simulator.schedule_event(self.simulator.current_time, "start_action", {
                     "actor": self,
@@ -130,7 +131,7 @@ class Defender(Actor):
                 "actor": self,
                 "action": action,
                 "target": target,
-                "actor_access": target.access.get(self.id, "ADMIN")
+                "actor_access": get_node_access(target, self.id)
             }
             self.simulator.schedule_event(
                 self.simulator.current_time,
