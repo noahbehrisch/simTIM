@@ -208,23 +208,6 @@ class SimulationTab(BaseTab):
             section_type="network"
         )
         
-        # Detection engine descriptions
-        engine_info_frame = tk.Frame(
-            self.pad_frame, 
-            bg=self.theme.COLORS['section_network'], 
-            **self.theme.BORDERS['light']
-        )
-        engine_info_frame.pack(fill="x", padx=self.theme.SPACING['md'], pady=self.theme.SPACING['sm'])
-        
-        # Dynamically create engine descriptions
-        for engine_key, engine_info in self.available_engines.items():
-            description = engine_info.get('description', f'{engine_key.replace("_", " ").title()}: No description available')
-            self.create_info_label(
-                engine_info_frame, 
-                f"• {description}",
-                bg_color=self.theme.COLORS['section_network']
-            ).pack(anchor="w", padx=15)
-        
         # Detection engine selection
         engine_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
         engine_frame.pack(fill="x", padx=10, pady=10)
