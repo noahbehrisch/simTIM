@@ -236,8 +236,10 @@ class App(tk.Tk):
             total_runs = sum(s['runs'] for s in scenarios)
             
             # Determine mode description based on variable type
-            if var_type == 'action_duration':
-                mode_desc = "ACTION DURATION COMPARISON"
+            if var_type == 'attack_duration':
+                mode_desc = "ATTACK DURATION COMPARISON"
+            elif var_type == 'defense_duration':
+                mode_desc = "DEFENSE DURATION COMPARISON"
             elif var_type == 'attacker_strategy':
                 mode_desc = "ATTACKER STRATEGY COMPARISON"
             elif var_type == 'defender_strategy':
@@ -255,8 +257,10 @@ class App(tk.Tk):
             for idx, scenario in enumerate(scenarios, 1):
                 runs = scenario['runs']
                 
-                if var_type == 'action_duration':
-                    overview += f"      {idx}. Duration: {scenario['duration']}h → {runs} runs\n"
+                if var_type == 'attack_duration':
+                    overview += f"      {idx}. Attack Duration: {scenario['duration']}h → {runs} runs\n"
+                elif var_type == 'defense_duration':
+                    overview += f"      {idx}. Defense Duration: {scenario['duration']}h → {runs} runs\n"
                 elif var_type == 'attacker_strategy':
                     overview += f"      {idx}. Attacker Strategy: {scenario['strategy']} → {runs} runs\n"
                 elif var_type == 'defender_strategy':

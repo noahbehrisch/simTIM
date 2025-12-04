@@ -654,7 +654,7 @@ class EnhancedResultsWindow:
         """Create focused violin plot comparing damage across scenarios"""
         try:
             scenarios = self.scenario_results['scenarios']
-            variable_type = self.scenario_results.get('variable_type', 'action_duration')
+            variable_type = self.scenario_results.get('variable_type', 'attack_duration')
             
             # Extract damage data grouped by scenario
             scenario_damages = []
@@ -663,7 +663,7 @@ class EnhancedResultsWindow:
             
             for scenario in scenarios:
                 # Get the variable value (duration or strategy)
-                if variable_type == 'action_duration':
+                if variable_type in ['attack_duration', 'defense_duration']:
                     value = scenario['duration']
                     label = f"{value}h"
                 else:  # strategy types
@@ -732,9 +732,12 @@ class EnhancedResultsWindow:
                 self.stat_ax.scatter(x_jitter, damages, alpha=0.4, s=30, color='black', zorder=3)
             
             # Dynamic title and labels based on variable type
-            if variable_type == 'action_duration':
-                title = 'Impact of Action Duration on Total Damage'
-                xlabel = 'Action Duration (hours)'
+            if variable_type == 'attack_duration':
+                title = 'Impact of Attack Action Duration on Total Damage'
+                xlabel = 'Attack Duration (hours)'
+            elif variable_type == 'defense_duration':
+                title = 'Impact of Defense Action Duration on Total Damage'
+                xlabel = 'Defense Duration (hours)'
             elif variable_type == 'attacker_strategy':
                 title = 'Impact of Attacker Strategy on Total Damage'
                 xlabel = 'Attacker Strategy'

@@ -1,5 +1,15 @@
 """
-Simulation Main Module
+Simulation Mdef simtim_main(
+    path_to_network_config: str,
+    attackers: list = None,
+    defenders: list = None,
+    sim_time: int = 10,
+    sim_runs: int = 1,
+    detection_engine_type="exponential",
+    action_duration_override=None,  # Override all action durations (legacy)
+    attack_duration_override=None,  # Override only attack action durations
+    defense_duration_override=None  # Override only defense action durations
+):e
 
 Contains the main simulation logic that can be used by both CLI and GUI.
 Implements TIM paper-compliant initialization with proper access levels.
@@ -21,7 +31,9 @@ def simtim_main(
     sim_time: int = 10,
     sim_runs: int = 1,
     detection_engine_type="exponential",
-    action_duration_override: float = None,
+    action_duration_override: float = None,  # Legacy: override all durations
+    attack_duration_override: float = None,  # Override only attack durations
+    defense_duration_override: float = None  # Override only defense durations
 ):
     """
     Run a complete simulation with the given parameters.
@@ -33,7 +45,9 @@ def simtim_main(
         attackers (list): List of attacker configurations
         defenders (list): List of defender configurations
         detection_engine_type (str): Type of detection engine to use
-        action_duration_override (float): Optional override for all action durations (in hours)
+        action_duration_override (float): Optional override for all action durations (in hours) - legacy
+        attack_duration_override (float): Optional override for attack action durations only (in hours)
+        defense_duration_override (float): Optional override for defense action durations only (in hours)
         
     Returns:
         list: All simulation histories from all runs
@@ -82,7 +96,8 @@ def simtim_main(
         # Link actions are now fully integrated into attack strategies
         link_actions = get_link_action_library()
         
-        # Apply action duration override if specified (for scenario comparison)
+        # Apply action duration overrides if specified (for scenario comparison)
+        # Legacy: action_duration_override applies to both
         if action_duration_override is not None:
             for action in attack_actions:
                 action.duration = action_duration_override
@@ -90,6 +105,17 @@ def simtim_main(
                 action.duration = action_duration_override
             for action in link_actions.values():
                 action.duration = action_duration_override
+        
+        # Specific overrides (take precedence over legacy override)
+        if attack_duration_override is not None:
+            for action in attack_actions:
+                action.duration = attack_duration_override
+            for action in link_actions.values():
+                action.duration = attack_duration_override
+        
+        if defense_duration_override is not None:
+            for action in defense_actions:
+                action.duration = defense_duration_override
         
         all_attack_actions = attack_actions + list(link_actions.values())
         
@@ -224,8 +250,10 @@ def run_variable_scenarios(
     """
     
     # Determine what we're comparing
-    if variable_type == "action_duration":
-        comparison_label = "action durations"
+    if variable_type == "attack_duration":
+        comparison_label = "attack action durations"
+    elif variable_type == "defense_duration":
+        comparison_label = "defense action durations"
     elif variable_type == "attacker_strategy":
         comparison_label = "attacker strategies"
     elif variable_type == "defender_strategy":
@@ -245,13 +273,20 @@ def run_variable_scenarios(
         
         # Extract the variable value and prepare override parameters
         action_duration_override = None
+        attack_duration_override = None
+        defense_duration_override = None
         scenario_attackers = attackers
         scenario_defenders = defenders
         
-        if variable_type == "action_duration":
+        if variable_type == "attack_duration":
             value = scenario['duration']
-            value_label = f"Action Duration: {value} hours"
-            action_duration_override = value
+            value_label = f"Attack Duration: {value} hours"
+            attack_duration_override = value
+            
+        elif variable_type == "defense_duration":
+            value = scenario['duration']
+            value_label = f"Defense Duration: {value} hours"
+            defense_duration_override = value
             
         elif variable_type == "attacker_strategy":
             value = scenario['strategy']
@@ -288,7 +323,9 @@ def run_variable_scenarios(
             sim_time=sim_time,
             sim_runs=runs,
             detection_engine_type=detection_engine_type,
-            action_duration_override=action_duration_override
+            action_duration_override=action_duration_override,
+            attack_duration_override=attack_duration_override,
+            defense_duration_override=defense_duration_override
         )
         
         # Store results with metadata (preserve original scenario structure)
@@ -298,7 +335,7 @@ def run_variable_scenarios(
         }
         
         # Add the variable-specific key
-        if variable_type == "action_duration":
+        if variable_type in ["attack_duration", "defense_duration"]:
             scenario_result['duration'] = value
         else:  # Both strategy types
             scenario_result['strategy'] = value
