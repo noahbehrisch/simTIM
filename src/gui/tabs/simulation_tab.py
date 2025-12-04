@@ -115,7 +115,7 @@ class SimulationTab(BaseTab):
         try:
             from src.detection import (UniformDetectionEngine, 
                                       ExponentialDetectionEngine, 
-                                      PolynomialDetectionEngine)
+                                      LinearDetectionEngine)
             return {
                 'uniform': {
                     'class': UniformDetectionEngine,
@@ -127,10 +127,10 @@ class SimulationTab(BaseTab):
                     'name': 'Exponential Detection',
                     'description': 'Fa(t) = 1 - e^(-λt) - Early detection bias'
                 },
-                'polynomial': {
-                    'class': PolynomialDetectionEngine,
-                    'name': 'Polynomial Detection',
-                    'description': 'Fa(t) = t^n - Late detection bias'
+                'linear': {
+                    'class': LinearDetectionEngine,
+                    'name': 'Linear Detection',
+                    'description': 'Fa(t) = t^n - Linear detection rate increase (n=2)'
                 }
             }
         except ImportError:

@@ -14,6 +14,8 @@ class VariablesTab(BaseTab):
         self.scenarios = []  # List of (duration, num_runs) tuples
         self.on_scenarios_changed = None  # Callback for when scenarios change
         self.enabled_var = tk.BooleanVar(value=False)  # Default: disabled
+        self.variable_type = tk.StringVar(value="action_duration")  # Which parameter to vary
+        self.app = parent  # Store reference to parent app for accessing other tabs
         super().__init__(parent, theme_colors)
     
     def create_widgets(self):
@@ -47,17 +49,40 @@ class VariablesTab(BaseTab):
         )
         enable_check.pack()
         
-        # Description
+        # Variable type selector (dropdown)
+        variable_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
+        variable_frame.pack(pady=15)
+        
+        tk.Label(
+            variable_frame,
+            text="Parameter to vary:",
+            font=("Arial", 10, "bold"),
+            bg=self.tab_color,
+            fg=self.button_fg
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.variable_dropdown = ttk.Combobox(
+            variable_frame,
+            textvariable=self.variable_type,
+            values=["action_duration", "attacker_strategy", "defender_strategy"],
+            state="readonly",
+            width=20,
+            font=("Arial", 10)
+        )
+        self.variable_dropdown.pack(side=tk.LEFT)
+        self.variable_dropdown.bind('<<ComboboxSelected>>', self._on_variable_type_changed)
+        
+        # Description (dynamically updated based on variable type)
         self.description_label = tk.Label(
             self.pad_frame,
-            text="When disabled, simulations use action durations from JSON files.\n"
-                 "When enabled, compare different action duration scenarios.",
+            text="",
             font=("Arial", 9),
             bg=self.tab_color,
             fg=self.button_fg,
             justify=tk.CENTER
         )
         self.description_label.pack(pady=5)
+        self._update_description()
         
         # Scenarios configuration (initially disabled)
         self.config_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
@@ -124,15 +149,60 @@ class VariablesTab(BaseTab):
         if self.enabled_var.get():
             # Enabled - show config and add default scenarios if none exist
             self._set_config_state('normal')
+            self.variable_dropdown.config(state="readonly")
             if not self.scenarios:
-                self._add_scenario_with_values(1.0, 5)
-                self._add_scenario_with_values(3.0, 5)
-                self._add_scenario_with_values(5.0, 5)
+                self._add_default_scenarios()
             self._update_status()
         else:
             # Disabled - gray out config
             self._set_config_state('disabled')
+            self.variable_dropdown.config(state="disabled")
             self._update_status()
+    
+    def _on_variable_type_changed(self, event=None):
+        """Handle variable type dropdown change"""
+        # Clear existing scenarios and reload defaults for new type
+        self._clear_all()
+        self._add_default_scenarios()
+        self._update_description()
+    
+    def _add_default_scenarios(self):
+        """Add default scenarios based on variable type"""
+        var_type = self.variable_type.get()
+        
+        if var_type == "action_duration":
+            # Default durations: 1h, 3h, 5h
+            self._add_scenario_with_values(1.0, 5)
+            self._add_scenario_with_values(3.0, 5)
+            self._add_scenario_with_values(5.0, 5)
+        elif var_type == "attacker_strategy":
+            # Get available attacker strategies
+            strategies = ["greedy", "random"]
+            for strategy in strategies:
+                self._add_scenario_with_values(strategy, 5)
+        elif var_type == "defender_strategy":
+            # Get available defender strategies
+            strategies = ["reactive", "proactive", "monitoring"]
+            for strategy in strategies:
+                self._add_scenario_with_values(strategy, 5)
+    
+    def _update_description(self):
+        """Update description based on variable type"""
+        var_type = self.variable_type.get()
+        
+        if var_type == "action_duration":
+            text = "When disabled, simulations use action durations from JSON files.\n" \
+                   "When enabled, compare different action duration scenarios."
+        elif var_type == "attacker_strategy":
+            text = "When disabled, simulations use attacker strategies from Attacker tab.\n" \
+                   "When enabled, compare different attacker strategy scenarios."
+        elif var_type == "defender_strategy":
+            text = "When disabled, simulations use defender strategies from Defender tab.\n" \
+                   "When enabled, compare different defender strategy scenarios."
+        else:
+            text = "Select a parameter to vary and configure scenarios below."
+        
+        self.description_label.config(text=text)
     
     def _set_config_state(self, state):
         """Enable or disable the configuration widgets"""
@@ -159,10 +229,18 @@ class VariablesTab(BaseTab):
     
     def _add_scenario(self):
         """Add a new scenario row"""
-        self._add_scenario_with_values(4.0, 5)
+        var_type = self.variable_type.get()
+        if var_type == "action_duration":
+            self._add_scenario_with_values(4.0, 5)
+        elif var_type == "attacker_strategy":
+            self._add_scenario_with_values("greedy", 5)
+        elif var_type == "defender_strategy":
+            self._add_scenario_with_values("reactive", 5)
     
-    def _add_scenario_with_values(self, duration=4.0, runs=5):
+    def _add_scenario_with_values(self, value, runs=5):
         """Add a scenario with specific values"""
+        var_type = self.variable_type.get()
+        
         row_frame = tk.Frame(
             self.scenarios_frame,
             bg="white",
@@ -182,18 +260,59 @@ class VariablesTab(BaseTab):
             width=4
         ).pack(side=tk.LEFT, padx=5, pady=5)
         
-        # Duration input
-        tk.Label(
-            row_frame,
-            text="Duration (hours):",
-            bg="white",
-            fg=self.button_fg,
-            font=("Arial", 9)
-        ).pack(side=tk.LEFT, padx=5)
+        # Value input (changes based on variable type)
+        if var_type == "action_duration":
+            tk.Label(
+                row_frame,
+                text="Duration (hours):",
+                bg="white",
+                fg=self.button_fg,
+                font=("Arial", 9)
+            ).pack(side=tk.LEFT, padx=5)
+            
+            value_var = tk.StringVar(value=str(value))
+            value_entry = tk.Entry(row_frame, textvariable=value_var, width=8, font=("Arial", 9))
+            value_entry.pack(side=tk.LEFT, padx=5)
         
-        duration_var = tk.StringVar(value=str(duration))
-        duration_entry = tk.Entry(row_frame, textvariable=duration_var, width=8, font=("Arial", 9))
-        duration_entry.pack(side=tk.LEFT, padx=5)
+        elif var_type == "attacker_strategy":
+            tk.Label(
+                row_frame,
+                text="Attacker Strategy:",
+                bg="white",
+                fg=self.button_fg,
+                font=("Arial", 9)
+            ).pack(side=tk.LEFT, padx=5)
+            
+            value_var = tk.StringVar(value=str(value))
+            value_dropdown = ttk.Combobox(
+                row_frame,
+                textvariable=value_var,
+                values=["greedy", "random"],
+                state="readonly",
+                width=12,
+                font=("Arial", 9)
+            )
+            value_dropdown.pack(side=tk.LEFT, padx=5)
+        
+        elif var_type == "defender_strategy":
+            tk.Label(
+                row_frame,
+                text="Defender Strategy:",
+                bg="white",
+                fg=self.button_fg,
+                font=("Arial", 9)
+            ).pack(side=tk.LEFT, padx=5)
+            
+            value_var = tk.StringVar(value=str(value))
+            value_dropdown = ttk.Combobox(
+                row_frame,
+                textvariable=value_var,
+                values=["reactive", "proactive", "monitoring"],
+                state="readonly",
+                width=12,
+                font=("Arial", 9)
+            )
+            value_dropdown.pack(side=tk.LEFT, padx=5)
         
         # Runs input
         tk.Label(
@@ -224,13 +343,13 @@ class VariablesTab(BaseTab):
         # Store scenario data
         scenario_data = {
             'frame': row_frame,
-            'duration_var': duration_var,
+            'value_var': value_var,
             'runs_var': runs_var
         }
         self.scenarios.append(scenario_data)
         
         # Update status when values change
-        duration_var.trace_add('write', lambda *args: self._update_status())
+        value_var.trace_add('write', lambda *args: self._update_status())
         runs_var.trace_add('write', lambda *args: self._update_status())
         
         self._update_status()
@@ -259,17 +378,36 @@ class VariablesTab(BaseTab):
         self._update_status()
     
     def _parse_scenarios(self):
-        """Parse all scenario configurations. Returns list of (duration, runs) tuples or None if invalid."""
+        """Parse all scenario configurations. Returns list of (value, runs) tuples or None if invalid."""
+        var_type = self.variable_type.get()
         result = []
+        
         for scenario in self.scenarios:
             try:
-                duration = float(scenario['duration_var'].get())
+                value = scenario['value_var'].get()
                 runs = int(scenario['runs_var'].get())
-                if duration <= 0 or runs <= 0:
+                
+                if runs <= 0:
                     return None
-                result.append((duration, runs))
+                
+                # Validate based on variable type
+                if var_type == "action_duration":
+                    duration = float(value)
+                    if duration <= 0:
+                        return None
+                    result.append((duration, runs))
+                elif var_type == "attacker_strategy":
+                    if value not in ["greedy", "random"]:
+                        return None
+                    result.append((value, runs))
+                elif var_type == "defender_strategy":
+                    if value not in ["reactive", "proactive", "monitoring"]:
+                        return None
+                    result.append((value, runs))
+                
             except ValueError:
                 return None
+        
         return result if result else []
     
     def _update_status(self):
@@ -279,19 +417,29 @@ class VariablesTab(BaseTab):
         
         # Check if scenarios are enabled
         if not self.enabled_var.get():
-            self.status_label.config(
-                text="Scenario comparison disabled - using default action durations",
-                fg=self.button_fg
-            )
+            var_type = self.variable_type.get()
+            if var_type == "action_duration":
+                msg = "Scenario comparison disabled - using default action durations"
+            elif var_type == "attacker_strategy":
+                msg = "Scenario comparison disabled - using attacker strategies from Attacker tab"
+            elif var_type == "defender_strategy":
+                msg = "Scenario comparison disabled - using defender strategies from Defender tab"
+            else:
+                msg = "Scenario comparison disabled"
+            
+            self.status_label.config(text=msg, fg=self.button_fg)
+            
             # Notify parent that scenarios are disabled
             if self.on_scenarios_changed:
                 self.on_scenarios_changed([])
             return
             
         scenarios = self._parse_scenarios()
+        var_type = self.variable_type.get()
+        
         if scenarios is None:
             self.status_label.config(
-                text="❌ Invalid input - check duration and run values",
+                text="❌ Invalid input - check values and run counts",
                 fg="#d32f2f"
             )
         elif not scenarios:
@@ -301,9 +449,22 @@ class VariablesTab(BaseTab):
             )
         else:
             total_runs = sum(runs for _, runs in scenarios)
-            duration_str = ", ".join(f"{d}h" for d, _ in scenarios)
+            
+            if var_type == "action_duration":
+                value_str = ", ".join(f"{v}h" for v, _ in scenarios)
+                label = "duration(s)"
+            elif var_type == "attacker_strategy":
+                value_str = ", ".join(f"{v}" for v, _ in scenarios)
+                label = "attacker strateg(ies)"
+            elif var_type == "defender_strategy":
+                value_str = ", ".join(f"{v}" for v, _ in scenarios)
+                label = "defender strateg(ies)"
+            else:
+                value_str = ", ".join(f"{v}" for v, _ in scenarios)
+                label = "scenario(s)"
+            
             self.status_label.config(
-                text=f"✓ {len(scenarios)} scenario(s): {duration_str} | Total runs: {total_runs}",
+                text=f"✓ {len(scenarios)} {label}: {value_str} | Total runs: {total_runs}",
                 fg="#2e7d32"
             )
         
@@ -322,10 +483,33 @@ class VariablesTab(BaseTab):
         if scenarios is None or not scenarios:
             return {}
         
-        return {
-            'scenarios': [
-                {'duration': duration, 'runs': runs} 
-                for duration, runs in scenarios
-            ]
-        }
+        var_type = self.variable_type.get()
+        
+        # Build config based on variable type
+        if var_type == "action_duration":
+            return {
+                'variable_type': 'action_duration',
+                'scenarios': [
+                    {'duration': value, 'runs': runs} 
+                    for value, runs in scenarios
+                ]
+            }
+        elif var_type == "attacker_strategy":
+            return {
+                'variable_type': 'attacker_strategy',
+                'scenarios': [
+                    {'strategy': value, 'runs': runs} 
+                    for value, runs in scenarios
+                ]
+            }
+        elif var_type == "defender_strategy":
+            return {
+                'variable_type': 'defender_strategy',
+                'scenarios': [
+                    {'strategy': value, 'runs': runs} 
+                    for value, runs in scenarios
+                ]
+            }
+        else:
+            return {}
 

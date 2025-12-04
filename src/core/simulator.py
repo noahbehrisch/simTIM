@@ -59,12 +59,13 @@ class Simulator:
         
         # Choose detection engine based on type
         from ..detection import (UniformDetectionEngine, ExponentialDetectionEngine, 
-                                 PolynomialDetectionEngine)
+                                 LinearDetectionEngine)
         
         engine_map = {
             "uniform": UniformDetectionEngine,
             "exponential": ExponentialDetectionEngine,
-            "polynomial": PolynomialDetectionEngine,
+            "linear": LinearDetectionEngine,
+            "polynomial": LinearDetectionEngine,  # Keep old name for backward compatibility
         }
         
         engine_type_lower = detection_engine_type.lower()

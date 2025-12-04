@@ -651,17 +651,25 @@ class EnhancedResultsWindow:
             self.stat_canvas.draw()
     
     def _create_scenario_comparison_plots(self):
-        """Create focused violin plot comparing damage across action durations"""
+        """Create focused violin plot comparing damage across scenarios"""
         try:
             scenarios = self.scenario_results['scenarios']
+            variable_type = self.scenario_results.get('variable_type', 'action_duration')
             
-            # Extract damage data grouped by scenario duration
+            # Extract damage data grouped by scenario
             scenario_damages = []
             scenario_labels = []
-            durations = []
+            scenario_values = []
             
             for scenario in scenarios:
-                duration = scenario['duration']
+                # Get the variable value (duration or strategy)
+                if variable_type == 'action_duration':
+                    value = scenario['duration']
+                    label = f"{value}h"
+                else:  # strategy types
+                    value = scenario['strategy']
+                    label = value
+                
                 histories = scenario['histories']
                 
                 # Analyze this scenario's results
@@ -677,13 +685,13 @@ class EnhancedResultsWindow:
                 # Only include scenarios with damage data
                 if damages:
                     scenario_damages.append(damages)
-                    scenario_labels.append(f"{duration}h")
-                    durations.append(duration)
+                    scenario_labels.append(label)
+                    scenario_values.append(value)
                 else:
                     # If no damage, add zero
                     scenario_damages.append([0])
-                    scenario_labels.append(f"{duration}h")
-                    durations.append(duration)
+                    scenario_labels.append(label)
+                    scenario_values.append(value)
             
             if not scenario_damages:
                 self.stat_ax.text(0.5, 0.5, 'No damage data available', 
@@ -723,14 +731,28 @@ class EnhancedResultsWindow:
                 x_jitter = np.random.normal(pos, 0.04, size=len(damages))
                 self.stat_ax.scatter(x_jitter, damages, alpha=0.4, s=30, color='black', zorder=3)
             
+            # Dynamic title and labels based on variable type
+            if variable_type == 'action_duration':
+                title = 'Impact of Action Duration on Total Damage'
+                xlabel = 'Action Duration (hours)'
+            elif variable_type == 'attacker_strategy':
+                title = 'Impact of Attacker Strategy on Total Damage'
+                xlabel = 'Attacker Strategy'
+            elif variable_type == 'defender_strategy':
+                title = 'Impact of Defender Strategy on Total Damage'
+                xlabel = 'Defender Strategy'
+            else:
+                title = 'Impact of Parameter on Total Damage'
+                xlabel = 'Parameter Value'
+            
             # Formatting
             self.stat_ax.set_title(
-                'Impact of Action Duration on Total Damage',
+                title,
                 fontsize=16, 
                 fontweight='bold',
                 pad=20
             )
-            self.stat_ax.set_xlabel('Action Duration (hours)', fontsize=14, fontweight='bold')
+            self.stat_ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
             self.stat_ax.set_ylabel('Total Damage ($)', fontsize=14, fontweight='bold')
             
             # Set x-axis

@@ -232,9 +232,20 @@ class App(tk.Tk):
         # Check if variable scenarios override the run count
         if variables_config and 'scenarios' in variables_config and variables_config['scenarios']:
             scenarios = variables_config['scenarios']
+            var_type = variables_config.get('variable_type', 'action_duration')
             total_runs = sum(s['runs'] for s in scenarios)
             
-            overview += f"   • Mode: SCENARIO COMPARISON\n"
+            # Determine mode description based on variable type
+            if var_type == 'action_duration':
+                mode_desc = "ACTION DURATION COMPARISON"
+            elif var_type == 'attacker_strategy':
+                mode_desc = "ATTACKER STRATEGY COMPARISON"
+            elif var_type == 'defender_strategy':
+                mode_desc = "DEFENDER STRATEGY COMPARISON"
+            else:
+                mode_desc = "SCENARIO COMPARISON"
+            
+            overview += f"   • Mode: {mode_desc}\n"
             overview += f"   • Scenarios: {len(scenarios)}\n"
             overview += f"   • Total Runs: {total_runs}\n"
             overview += f"   • Time per run: {sim_config['time']} seconds\n"
@@ -242,7 +253,16 @@ class App(tk.Tk):
             
             overview += "   Scenario Details:\n"
             for idx, scenario in enumerate(scenarios, 1):
-                overview += f"      {idx}. Duration: {scenario['duration']}h → {scenario['runs']} runs\n"
+                runs = scenario['runs']
+                
+                if var_type == 'action_duration':
+                    overview += f"      {idx}. Duration: {scenario['duration']}h → {runs} runs\n"
+                elif var_type == 'attacker_strategy':
+                    overview += f"      {idx}. Attacker Strategy: {scenario['strategy']} → {runs} runs\n"
+                elif var_type == 'defender_strategy':
+                    overview += f"      {idx}. Defender Strategy: {scenario['strategy']} → {runs} runs\n"
+                else:
+                    overview += f"      {idx}. Scenario → {runs} runs\n"
             overview += "\n"
         else:
             overview += f"   • Runs: {sim_config['runs']}\n"
@@ -389,11 +409,13 @@ class App(tk.Tk):
                 from src.core.simulation_main import run_variable_scenarios
                 
                 scenarios = variables_config['scenarios']
+                variable_type = variables_config.get('variable_type', 'action_duration')
                 total_runs = sum(s['runs'] for s in scenarios)
                 
                 results = run_variable_scenarios(
                     path_to_network_config=path_to_network_config,
                     scenarios=scenarios,
+                    variable_type=variable_type,
                     attackers=attackers,
                     defenders=defenders,
                     sim_time=sim_time,

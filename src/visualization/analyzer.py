@@ -40,15 +40,17 @@ def analyze_simulation_results(simulation_histories: List[List],
                     
                     # Calculate damage and gains based on action type and actor
                     if actor and hasattr(actor, 'is_attacker') and actor.is_attacker:
-                        # Attacker succeeded
+                        # Attacker succeeded - this causes damage AND gain
                         num_successful_attacks += 1
+                        action_damage = calculate_action_damage(action.name, target)
                         action_gain = calculate_action_gain(action.name, target)
-                        gains += action_gain
+                        damage += action_damage  # Damage to defender
+                        gains += action_gain     # Gain to attacker
                     elif actor and hasattr(actor, 'is_defender') and actor.is_defender:
                         # Defender succeeded (prevents damage)
                         num_successful_defenses += 1
                     else:
-                        # Generic action damage
+                        # Generic action (shouldn't normally happen)
                         action_damage = calculate_action_damage(action.name, target)
                         damage += action_damage
                         

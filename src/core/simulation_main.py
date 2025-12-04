@@ -185,22 +185,26 @@ def simtim_main(
 def run_variable_scenarios(
     path_to_network_config: str,
     scenarios: list,
+    variable_type: str = "action_duration",
     attackers: list = None,
     defenders: list = None,
     sim_time: int = 10,
     detection_engine_type="exponential",
 ):
     """
-    Run multiple simulation scenarios with different action durations.
+    Run multiple simulation scenarios with different parameters.
     
     This function runs complete simulation batches for each scenario,
-    where each scenario specifies a different action duration and number of runs.
+    where each scenario specifies a different parameter value and number of runs.
     Used for scenario comparison and sensitivity analysis.
     
     Args:
         path_to_network_config (str): Path to the network configuration file
-        scenarios (list): List of dicts with 'duration' and 'runs' keys
-                         e.g., [{'duration': 1.0, 'runs': 5}, {'duration': 3.0, 'runs': 5}]
+        scenarios (list): List of dicts with parameter value and 'runs' keys
+                         For action_duration: [{'duration': 1.0, 'runs': 5}, ...]
+                         For strategies: [{'strategy': 'greedy', 'runs': 5}, ...]
+        variable_type (str): Type of variable being compared ('action_duration', 
+                            'attacker_strategy', 'defender_strategy')
         attackers (list): List of attacker configurations
         defenders (list): List of defender configurations
         sim_time (float): Simulation end time
@@ -217,43 +221,89 @@ def run_variable_scenarios(
                       },
                       ...
                   ]
-              }
     """
+    
+    # Determine what we're comparing
+    if variable_type == "action_duration":
+        comparison_label = "action durations"
+    elif variable_type == "attacker_strategy":
+        comparison_label = "attacker strategies"
+    elif variable_type == "defender_strategy":
+        comparison_label = "defender strategies"
+    else:
+        comparison_label = "parameters"
     
     print(f"\n{'='*60}")
     print(f"SCENARIO COMPARISON MODE")
-    print(f"Running {len(scenarios)} scenarios with different action durations")
+    print(f"Running {len(scenarios)} scenarios with different {comparison_label}")
     print(f"{'='*60}\n")
     
-    results = {'scenarios': []}
+    results = {'scenarios': [], 'variable_type': variable_type}
     
     for scenario_idx, scenario in enumerate(scenarios, 1):
-        duration = scenario['duration']
         runs = scenario['runs']
+        
+        # Extract the variable value and prepare override parameters
+        action_duration_override = None
+        scenario_attackers = attackers
+        scenario_defenders = defenders
+        
+        if variable_type == "action_duration":
+            value = scenario['duration']
+            value_label = f"Action Duration: {value} hours"
+            action_duration_override = value
+            
+        elif variable_type == "attacker_strategy":
+            value = scenario['strategy']
+            value_label = f"Attacker Strategy: {value}"
+            # Override attacker strategies for this scenario
+            scenario_attackers = [
+                {**attacker, 'strategy': value} 
+                for attacker in (attackers or [])
+            ]
+            
+        elif variable_type == "defender_strategy":
+            value = scenario['strategy']
+            value_label = f"Defender Strategy: {value}"
+            # Override defender strategies for this scenario
+            scenario_defenders = [
+                {**defender, 'strategy': value} 
+                for defender in (defenders or [])
+            ]
+        else:
+            value = scenario.get('value', 'unknown')
+            value_label = f"Parameter: {value}"
         
         print(f"\n{'─'*60}")
         print(f"SCENARIO {scenario_idx}/{len(scenarios)}")
-        print(f"Action Duration: {duration} hours")
+        print(f"{value_label}")
         print(f"Number of Runs: {runs}")
         print(f"{'─'*60}\n")
         
-        # Run simulations for this scenario with duration override
+        # Run simulations for this scenario
         scenario_histories = simtim_main(
             path_to_network_config=path_to_network_config,
-            attackers=attackers,
-            defenders=defenders,
+            attackers=scenario_attackers,
+            defenders=scenario_defenders,
             sim_time=sim_time,
             sim_runs=runs,
             detection_engine_type=detection_engine_type,
-            action_duration_override=duration  # Pass duration to override all actions
+            action_duration_override=action_duration_override
         )
         
-        # Store results with metadata
-        results['scenarios'].append({
-            'duration': duration,
+        # Store results with metadata (preserve original scenario structure)
+        scenario_result = {
             'runs': runs,
             'histories': scenario_histories
-        })
+        }
+        
+        # Add the variable-specific key
+        if variable_type == "action_duration":
+            scenario_result['duration'] = value
+        else:  # Both strategy types
+            scenario_result['strategy'] = value
+            
+        results['scenarios'].append(scenario_result)
         
         print(f"\nScenario {scenario_idx} completed: {len(scenario_histories)} simulation runs")
     
