@@ -9,16 +9,35 @@ logger = logging.getLogger(__name__)
 infinity = float('inf') 
 
 class Event:
+    # Event type priority ordering (lower number = processed first at same timestamp)
+    EVENT_PRIORITY = {
+        'action_finished': 1,           # Process action completions first
+        'action_succeeded': 2,          # Then successes
+        'action_failed': 3,             # Then failures
+        'attack_detected': 4,           # Then detections
+        'action_interrupted_by_detection': 5,
+        'precondition_check': 6,        # Then precondition checks
+        'accumulate_time_proportional': 7,
+        'actor_run': 8,                 # Finally, actor decisions (AFTER action results)
+        'start_action': 9,
+        'complete_action': 10,
+    }
+    
     def __init__(self, time: float, event_type: str, data: Dict[str, Any]):
         self.time = time
         self.event_type = event_type
         self.data = data
+        self.priority = self.EVENT_PRIORITY.get(event_type, 50)  # Default priority
 
     def __lt__(self, other):
-        return self.time < other.time
+        # First compare by time
+        if self.time != other.time:
+            return self.time < other.time
+        # If times are equal, compare by priority (lower priority number = processed first)
+        return self.priority < other.priority
 
     def __repr__(self):
-        return f"Event(time={self.time}, type={self.event_type}, data={self.data})"
+        return f"Event(time={self.time}, type={self.event_type}, priority={self.priority}, data={self.data})"
 
 class Simulator:
     def __init__(self, network=None, detection_engine_type="exponential"):
@@ -277,6 +296,18 @@ class Simulator:
                     )
                     self._calculate_economic_impact(data)
                     
+                    # Track successful action execution on this node
+                    target = data["target"]
+                    actor_id = data["actor"].id
+                    action_name = data["action"].name
+                    if hasattr(target, 'id'):  # Only for node targets, not links
+                        if not hasattr(target, 'successful_actions_by_actor'):
+                            target.successful_actions_by_actor = {}
+                        if actor_id not in target.successful_actions_by_actor:
+                            target.successful_actions_by_actor[actor_id] = set()
+                        target.successful_actions_by_actor[actor_id].add(action_name)
+                        print(f"[DEBUG] Tracked successful action: {action_name} on {target.id} by {actor_id}")
+                    
                     if hasattr(data["actor"], "on_action_finished"):
                         data["actor"].on_action_finished(data["action"], "success", data["target"])
                     self.history.append((self.current_time, "action_succeeded", data))
@@ -505,12 +536,24 @@ class Simulator:
 
     def notify_nodes_discovered(self, actor_id: str, discovered_nodes: list):
         """Notify when an actor discovers new nodes through reconnaissance or scanning"""
+        print(f"[DEBUG] notify_nodes_discovered called for {actor_id}, {len(discovered_nodes)} nodes")
         for actor in self.get_all_actors():
             if actor.id == actor_id and hasattr(actor, 'visible_nodes'):
                 # Add newly discovered nodes to the actor's visible nodes
+                before_count = len(actor.visible_nodes)
                 for node in discovered_nodes:
                     if node not in actor.visible_nodes:
                         actor.visible_nodes.add(node)
+                        print(f"[DEBUG]   Added {node.id} to {actor_id}'s visible_nodes")
+                        # Also set access level to VISIBLE for discovered nodes
+                        from src.core.access_utils import set_node_access, get_node_access
+                        from src.core.access_levels import NodeAccessLevel
+                        current_access = get_node_access(node, actor_id)
+                        if current_access == NodeAccessLevel.NONE:
+                            set_node_access(node, actor_id, NodeAccessLevel.VISIBLE)
+                            print(f"[DEBUG]   Set {node.id} access to VISIBLE for {actor_id}")
+                after_count = len(actor.visible_nodes)
+                print(f"[DEBUG]   {actor_id} visible_nodes: {before_count} → {after_count}")
 
     def notify_links_discovered(self, actor_id: str, discovered_links: list):
         """Notify when an actor discovers new links through network scanning"""

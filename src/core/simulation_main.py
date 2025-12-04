@@ -21,6 +21,7 @@ def simtim_main(
     sim_time: int = 10,
     sim_runs: int = 1,
     detection_engine_type="exponential",
+    action_duration_override: float = None,
 ):
     """
     Run a complete simulation with the given parameters.
@@ -32,6 +33,7 @@ def simtim_main(
         attackers (list): List of attacker configurations
         defenders (list): List of defender configurations
         detection_engine_type (str): Type of detection engine to use
+        action_duration_override (float): Optional override for all action durations (in hours)
         
     Returns:
         list: All simulation histories from all runs
@@ -50,6 +52,10 @@ def simtim_main(
         return
     if not sim_runs or not isinstance(sim_runs, int) or sim_runs < 1:
         sim_runs = 1
+    
+    # Print action duration override info before starting runs
+    if action_duration_override is not None:
+        print(f"⚙️  All actions will use duration: {action_duration_override} hours\n")
         
     all_histories = []
     
@@ -75,6 +81,15 @@ def simtim_main(
         defense_actions = get_defense_actions()
         # Link actions are now fully integrated into attack strategies
         link_actions = get_link_action_library()
+        
+        # Apply action duration override if specified (for scenario comparison)
+        if action_duration_override is not None:
+            for action in attack_actions:
+                action.duration = action_duration_override
+            for action in defense_actions:
+                action.duration = action_duration_override
+            for action in link_actions.values():
+                action.duration = action_duration_override
         
         all_attack_actions = attack_actions + list(link_actions.values())
         
@@ -165,3 +180,87 @@ def simtim_main(
     
     print(f"\n=== All {sim_runs} simulation runs completed ===")
     return all_histories
+
+
+def run_variable_scenarios(
+    path_to_network_config: str,
+    scenarios: list,
+    attackers: list = None,
+    defenders: list = None,
+    sim_time: int = 10,
+    detection_engine_type="exponential",
+):
+    """
+    Run multiple simulation scenarios with different action durations.
+    
+    This function runs complete simulation batches for each scenario,
+    where each scenario specifies a different action duration and number of runs.
+    Used for scenario comparison and sensitivity analysis.
+    
+    Args:
+        path_to_network_config (str): Path to the network configuration file
+        scenarios (list): List of dicts with 'duration' and 'runs' keys
+                         e.g., [{'duration': 1.0, 'runs': 5}, {'duration': 3.0, 'runs': 5}]
+        attackers (list): List of attacker configurations
+        defenders (list): List of defender configurations
+        sim_time (float): Simulation end time
+        detection_engine_type (str): Type of detection engine to use
+        
+    Returns:
+        dict: Results grouped by scenario with metadata
+              {
+                  'scenarios': [
+                      {
+                          'duration': 1.0,
+                          'runs': 5,
+                          'histories': [...]  # List of simulation histories
+                      },
+                      ...
+                  ]
+              }
+    """
+    
+    print(f"\n{'='*60}")
+    print(f"SCENARIO COMPARISON MODE")
+    print(f"Running {len(scenarios)} scenarios with different action durations")
+    print(f"{'='*60}\n")
+    
+    results = {'scenarios': []}
+    
+    for scenario_idx, scenario in enumerate(scenarios, 1):
+        duration = scenario['duration']
+        runs = scenario['runs']
+        
+        print(f"\n{'─'*60}")
+        print(f"SCENARIO {scenario_idx}/{len(scenarios)}")
+        print(f"Action Duration: {duration} hours")
+        print(f"Number of Runs: {runs}")
+        print(f"{'─'*60}\n")
+        
+        # Run simulations for this scenario with duration override
+        scenario_histories = simtim_main(
+            path_to_network_config=path_to_network_config,
+            attackers=attackers,
+            defenders=defenders,
+            sim_time=sim_time,
+            sim_runs=runs,
+            detection_engine_type=detection_engine_type,
+            action_duration_override=duration  # Pass duration to override all actions
+        )
+        
+        # Store results with metadata
+        results['scenarios'].append({
+            'duration': duration,
+            'runs': runs,
+            'histories': scenario_histories
+        })
+        
+        print(f"\nScenario {scenario_idx} completed: {len(scenario_histories)} simulation runs")
+    
+    print(f"\n{'='*60}")
+    print(f"ALL SCENARIOS COMPLETED")
+    print(f"Total scenarios: {len(scenarios)}")
+    print(f"Total simulation runs: {sum(len(s['histories']) for s in results['scenarios'])}")
+    print(f"{'='*60}\n")
+    
+    return results

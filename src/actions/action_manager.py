@@ -443,6 +443,7 @@ def _analyze_postcondition_access(postcondition: Dict[str, Any]) -> Optional[str
         
     Returns:
         The access level that would be set, or None if not determinable
+        Returns 'NO_ACCESS_CHANGE' if postcondition doesn't modify node access
     """
     if postcondition.get('type') == 'compound':
         # Handle compound postconditions
@@ -453,6 +454,11 @@ def _analyze_postcondition_access(postcondition: Dict[str, Any]) -> Optional[str
     elif postcondition.get('type') == 'set_access':
         # Direct set_access action
         return postcondition.get('value')
+    elif postcondition.get('type') in ['set_links_access', 'set_property', 'clear_assets', 
+                                        'add_vulnerability', 'remove_vulnerability', 
+                                        'increment_counter', 'set_software']:
+        # These postconditions don't change node access level
+        return 'NO_ACCESS_CHANGE'
     
     return None
 
@@ -463,13 +469,28 @@ def would_action_improve_access(action, node, current_access, actor_id: str) -> 
     
     Args:
         action: The action to check
-        node: The target node
+        node: The target node (or link for link actions)
         current_access: Current access level (NodeAccessLevel enum)
         actor_id: The actor's ID
         
     Returns:
         True if the action would be beneficial, False otherwise
     """
+    # If this is a link action, use different logic
+    if hasattr(action, 'is_link_action') and action.is_link_action():
+        # Link actions don't improve node access
+        # They're beneficial if not already executed on this link
+        if hasattr(node, 'successful_actions_by_actor'):
+            actor_actions = node.successful_actions_by_actor.get(actor_id, set())
+            if action.name in actor_actions:
+                return False  # Already executed on this link
+        return True  # First time on this link
+    
+    # Check if target is actually a Node (not a Link)
+    if not hasattr(node, 'id') or not hasattr(node, 'access'):
+        # This is likely a Link being passed to a node action - reject it
+        return False
+    
     try:
         # Ensure we have an enum (backward compatibility for any string inputs)
         if isinstance(current_access, str):
@@ -481,15 +502,41 @@ def would_action_improve_access(action, node, current_access, actor_id: str) -> 
         # For JSON analysis, we need string format
         current_access_str = current_level.to_string() if hasattr(current_level, 'to_string') else str(current_level)
         predicted_access = analyze_action_access_impact(action, current_access_str)
-        if predicted_access:
+        
+        if predicted_access == 'NO_ACCESS_CHANGE':
+            # This action doesn't change node access (e.g., network scan, data exfiltration)
+            # It may still be useful once, but not repeatedly
+            # Check if this action has already been successfully executed on this node
+            if hasattr(node, 'successful_actions_by_actor'):
+                actor_actions = node.successful_actions_by_actor.get(actor_id, set())
+                if action.name in actor_actions:
+                    # Already successfully executed this action on this node
+                    print(f"[DEBUG would_improve] {action.name} on {getattr(node, 'id', '?')}: Already executed, returning False")
+                    return False
+                else:
+                    print(f"[DEBUG would_improve] {action.name} on {getattr(node, 'id', '?')}: First time, returning True")
+            else:
+                print(f"[DEBUG would_improve] {action.name} on {getattr(node, 'id', '?')}: No history, returning True")
+            # First time execution of a non-access-changing action could be beneficial
+            # (e.g., network scan discovers links, data exfiltration gets info)
+            return True
+        elif predicted_access:
             predicted_level = NodeAccessLevel.from_string(predicted_access)
             return predicted_level > current_level
         
         # Fallback to heuristic analysis based on action names
         action_name_lower = action.name.lower()
         
+        # Network discovery/reconnaissance actions - beneficial once per node
+        if any(keyword in action_name_lower for keyword in ['scan', 'reconnaissance', 'discovery']):
+            if hasattr(node, 'successful_actions_by_actor'):
+                actor_actions = node.successful_actions_by_actor.get(actor_id, set())
+                if action.name in actor_actions:
+                    return False  # Already scanned this node
+            return True  # First scan is beneficial
+        
         # Initial access actions (VISIBLE → USER)
-        if any(keyword in action_name_lower for keyword in ['phishing', 'exploitation', 'scan', 'brute']):
+        if any(keyword in action_name_lower for keyword in ['phishing', 'exploitation', 'brute']):
             target_level = NodeAccessLevel.USER
         # Privilege escalation actions (USER → ADMIN)
         elif any(keyword in action_name_lower for keyword in ['privilege', 'escalation', 'admin']):
@@ -524,7 +571,15 @@ def _has_already_exfiltrated(node, actor_id: str) -> bool:
     Check if we've already performed data exfiltration on this node.
     This prevents repeated exfiltration of the same data.
     """
-    return hasattr(node, 'exfiltrated_by') and actor_id in getattr(node, 'exfiltrated_by', set())
+    # Check if the node has no more assets to exfiltrate
+    if not hasattr(node, 'assets') or len(node.assets) == 0:
+        return True
+    # Also check if we've already executed data exfiltration successfully
+    if hasattr(node, 'successful_actions_by_actor'):
+        actor_actions = node.successful_actions_by_actor.get(actor_id, set())
+        if 'Data Exfiltration' in actor_actions:
+            return True
+    return False
 
 
 if __name__ == "__main__":

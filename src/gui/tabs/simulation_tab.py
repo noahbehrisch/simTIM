@@ -170,11 +170,22 @@ class SimulationTab(BaseTab):
             fg=self.button_fg
         ).grid(row=0, column=0, padx=10, pady=10, sticky="w")
         
-        self.create_styled_entry(
+        self.sim_runs_entry = self.create_styled_entry(
             params_frame, 
             self.sim_runs_var,
             width=10
-        ).grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        )
+        self.sim_runs_entry.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        
+        # Info label for variable scenarios
+        self.runs_info_label = tk.Label(
+            params_frame,
+            text="",
+            bg=self.tab_color,
+            fg="#FF9800",  # Orange color for info
+            font=("Arial", 9, "italic")
+        )
+        self.runs_info_label.grid(row=0, column=2, padx=10, pady=10, sticky="w")
         
         # Simulation time input
         tk.Label(
@@ -234,6 +245,34 @@ class SimulationTab(BaseTab):
             width=15
         )
         detection_dropdown.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+    
+    def update_runs_info(self, variable_scenarios=None):
+        """
+        Update the info label to show variable scenario information.
+        
+        Args:
+            variable_scenarios: List of scenario dicts or None
+        """
+        if not hasattr(self, 'runs_info_label'):
+            return
+            
+        if variable_scenarios and len(variable_scenarios) > 0:
+            total_runs = sum(s['runs'] for s in variable_scenarios)
+            scenario_count = len(variable_scenarios)
+            
+            info_text = f"⚠ Overridden by Variables tab: {scenario_count} scenario(s), {total_runs} total runs"
+            self.runs_info_label.config(text=info_text)
+            
+            # Disable the runs entry since it's overridden
+            if hasattr(self, 'sim_runs_entry'):
+                self.sim_runs_entry.config(state='readonly')
+        else:
+            self.runs_info_label.config(text="")
+            
+            # Re-enable the runs entry
+            if hasattr(self, 'sim_runs_entry'):
+                self.sim_runs_entry.config(state='normal')
+
     
     def get_simulation_config(self):
         """

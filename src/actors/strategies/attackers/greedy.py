@@ -13,6 +13,9 @@ class GreedyAttackerStrategy:
         visible_nodes = list(attacker.visible_nodes)
         visible_links = list(attacker.visible_links)
         
+        print(f"[GREEDY] Choosing action for {attacker.id}")
+        print(f"[GREEDY]   {len(visible_nodes)} visible nodes, {len(visible_links)} visible links")
+        
         # Expand visibility to include nodes connected to compromised nodes
         # This simulates network discovery from systems with USER or ADMIN access
         
@@ -40,43 +43,42 @@ class GreedyAttackerStrategy:
         best = None
         best_gain = float('-inf')
         
+        candidates = []  # For debugging
+        
         for action in attacker.available_actions:
+            # SKIP LINK ACTIONS - not yet implemented
+            if hasattr(action, 'is_link_action') and action.is_link_action():
+                continue
+            
             if action.is_node_action():
                 for node in visible_nodes:
                     # Ensure we're only processing Node objects, not Link objects
                     if not hasattr(node, 'links'):
                         continue  # Skip Link objects or other invalid types
                     
-                    # Skip already compromised nodes
-                    if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
-                        continue
-                    
                     actor_access = get_node_access(node, attacker.id)
                     try:
                         # Check precondition and beneficial action criteria
-                        if (action.precondition(node, actor_access, attacker.id) and 
-                            would_action_improve_access(action, node, actor_access, attacker.id)):
+                        precond_ok = action.precondition(node, actor_access, attacker.id)
+                        would_improve = would_action_improve_access(action, node, actor_access, attacker.id)
+                        
+                        if precond_ok and would_improve:
                             gain = action.get_one_off_gain(node, actor_access, attacker.id)
+                            candidates.append((action.name, node.id, gain, actor_access))
                             if gain > best_gain:
                                 best = (action, node)
                                 best_gain = gain
                     except Exception as e:
                         # Skip actions that fail precondition check
                         continue
-            elif action.is_link_action():
-                for link in visible_links:
-                    # Links don't have id attribute, so check differently
-                    if link in attacker.compromised_links:
-                        continue
-                    actor_access = getattr(link, 'access', {}).get(attacker.id, None)
-                    try:
-                        if action.precondition(link, actor_access, attacker.id):
-                            gain = action.get_one_off_gain(link, actor_access, attacker.id)
-                            if gain > best_gain:
-                                best = (action, link)
-                                best_gain = gain
-                    except Exception as e:
-                        # Skip actions that fail precondition check
-                        continue
+        
+        print(f"[GREEDY]   Found {len(candidates)} candidate node actions:")
+        for cname, nid, gain, access in candidates[:10]:  # Show top 10
+            print(f"[GREEDY]     {cname} on {nid} (gain={gain}, access={access})")
+        
+        if best:
+            print(f"[GREEDY]   Best: {best[0].name} on {best[1].id if hasattr(best[1], 'id') else best[1]} (gain={best_gain})")
+        else:
+            print(f"[GREEDY]   No beneficial action found!")
         
         return best

@@ -19,10 +19,6 @@ class RandomAttackerStrategy:
         for action in attacker.available_actions:
             if action.is_node_action():
                 for node in visible_nodes:
-                    # Skip already compromised nodes
-                    if hasattr(node, 'id') and node.id in attacker.compromised_nodes:
-                        continue
-                    
                     actor_access = get_node_access(node, attacker.id)
                     print(f"[DEBUG] Checking action {action.name} on node {getattr(node, 'id', 'unknown')} with access {actor_access}")
                     

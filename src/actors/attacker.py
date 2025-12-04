@@ -18,12 +18,18 @@ class Attacker(Actor):
 
     def make_decision(self, network_state):
         if not self.can_schedule_action():
+            print(f"[DEBUG] {self.id} cannot schedule action (capacity: {len(self.ongoing_actions)}/{self.capacity})")
             return False  # No capacity for more actions
             
+        print(f"[DEBUG] {self.id} making decision at t={self.simulator.current_time if self.simulator else '?'}")
+        print(f"[DEBUG]   Visible nodes: {[n.id if hasattr(n, 'id') else str(n) for n in self.visible_nodes]}")
+        print(f"[DEBUG]   Available actions: {len(self.available_actions)}")
+        
         decision = self.choose_action(network_state)
         if decision:
             action, target = decision
             actor_access = get_node_access(target, self.id)
+            print(f"[DEBUG]   Chose: {action.name} on {getattr(target, 'id', str(target))} (access: {actor_access})")
             if action.precondition(target, actor_access, self.id):
                 self.simulator.schedule_event(self.simulator.current_time, "start_action", {
                     "actor": self,
@@ -39,6 +45,8 @@ class Attacker(Actor):
                 })
                 self.ongoing_actions.add(action)
                 return True  # Action was scheduled
+        else:
+            print(f"[DEBUG]   No valid action found!")
         return False  # No valid action found
 
     def choose_action(self, network_state):

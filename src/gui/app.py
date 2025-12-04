@@ -100,6 +100,9 @@ class App(tk.Tk):
         self.action_tab = ActionTab(self, self.theme_colors)
         self.variables_tab = VariablesTab(self, self.theme_colors)
         
+        # Connect variables tab callback to update simulation tab
+        self.variables_tab.on_scenarios_changed = self._on_variable_scenarios_changed
+        
         # Store tab objects in tabs dict for easy access
         self.tabs["Simulation"] = self.simulation_tab.frame
         self.tabs["Network"] = self.network_tab.frame
@@ -217,6 +220,7 @@ class App(tk.Tk):
         network_config = self.network_tab.get_network_config()
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
+        variables_config = self.variables_tab.get_variables_config()
         
         # Build overview text
         overview = "SIMULATION CONFIGURATION\n"
@@ -224,9 +228,26 @@ class App(tk.Tk):
         
         # Simulation parameters
         overview += "Simulation Parameters:\n"
-        overview += f"   • Runs: {sim_config['runs']}\n"
-        overview += f"   • Time: {sim_config['time']} seconds\n"
-        overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
+        
+        # Check if variable scenarios override the run count
+        if variables_config and 'scenarios' in variables_config and variables_config['scenarios']:
+            scenarios = variables_config['scenarios']
+            total_runs = sum(s['runs'] for s in scenarios)
+            
+            overview += f"   • Mode: SCENARIO COMPARISON\n"
+            overview += f"   • Scenarios: {len(scenarios)}\n"
+            overview += f"   • Total Runs: {total_runs}\n"
+            overview += f"   • Time per run: {sim_config['time']} seconds\n"
+            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
+            
+            overview += "   Scenario Details:\n"
+            for idx, scenario in enumerate(scenarios, 1):
+                overview += f"      {idx}. Duration: {scenario['duration']}h → {scenario['runs']} runs\n"
+            overview += "\n"
+        else:
+            overview += f"   • Runs: {sim_config['runs']}\n"
+            overview += f"   • Time: {sim_config['time']} seconds\n"
+            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
         
         # Network configuration
         overview += "Network Configuration:\n"
@@ -284,6 +305,16 @@ class App(tk.Tk):
             idx = self.tab_names.index(self.current_tab)
             if idx < len(self.tab_names) - 1:
                 self.show_tab(self.tab_names[idx + 1])
+    
+    def _on_variable_scenarios_changed(self, scenarios):
+        """
+        Callback when variable scenarios are modified.
+        Updates the simulation tab to show total run count.
+        
+        Args:
+            scenarios: List of scenario dicts with 'duration' and 'runs'
+        """
+        self.simulation_tab.update_runs_info(scenarios)
 
     def open_create_network_window(self):
         """Delegate to network tab."""
@@ -295,6 +326,42 @@ class App(tk.Tk):
             'button_fg': self.button_fg
         }
         results_window = EnhancedResultsWindow(self, all_histories, theme_colors)
+    
+    def open_results_window_scenarios(self, scenario_results):
+        """
+        Open results window for scenario comparison mode.
+        
+        Args:
+            scenario_results: Dict with 'scenarios' key containing list of scenario data
+                             Each scenario has 'duration', 'runs', and 'histories'
+        """
+        theme_colors = {
+            'bg_color': self.bg_color,
+            'button_fg': self.button_fg
+        }
+        # For now, show results with scenario metadata
+        # Future: Create a specialized ScenarioComparisonWindow with violin plots
+        
+        # Flatten all histories for the existing results window
+        all_histories = []
+        for scenario in scenario_results['scenarios']:
+            all_histories.extend(scenario['histories'])
+        
+        # TODO: Create ScenarioComparisonWindow that shows:
+        # 1. Violin plots of damage distribution per scenario (like TIM paper Figure 2)
+        # 2. Side-by-side comparison of economic metrics
+        # 3. Statistical significance tests between scenarios
+        
+        results_window = EnhancedResultsWindow(self, all_histories, theme_colors)
+        
+        # Add scenario info label at the top
+        info_text = "Scenario Comparison Results:\n" + "\n".join([
+            f"  • {s['duration']}h duration: {s['runs']} runs"
+            for s in scenario_results['scenarios']
+        ])
+        
+        # Note: This is a temporary solution showing all runs together
+        # A proper implementation would create violin plots grouped by scenario
 
     def open_help_window(self):
         win = tk.Toplevel(self)
@@ -326,23 +393,80 @@ class App(tk.Tk):
             return
         
         try:
-            all_histories = simtim_main(
-                path_to_network_config=path_to_network_config,
-                sim_runs=sim_runs,
-                sim_time=sim_time,
-                attackers=attackers,
-                defenders=defenders,
-                detection_engine_type=detection_engine_type
-            )
-            self.all_histories = all_histories
-            self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
-            
-            custom_messagebox = tk.Toplevel(self)
-            custom_messagebox.title("Simulation Complete")
-            custom_messagebox.geometry("800x400")
-            custom_messagebox.configure(bg=self.bg_color)
-            tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg, font=("Arial", 16)).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-            tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
+            # Check if variable scenarios are configured
+            if variables_config and 'scenarios' in variables_config and variables_config['scenarios']:
+                # Run scenario comparison mode
+                from src.core.simulation_main import run_variable_scenarios
+                
+                scenarios = variables_config['scenarios']
+                total_runs = sum(s['runs'] for s in scenarios)
+                
+                results = run_variable_scenarios(
+                    path_to_network_config=path_to_network_config,
+                    scenarios=scenarios,
+                    attackers=attackers,
+                    defenders=defenders,
+                    sim_time=sim_time,
+                    detection_engine_type=detection_engine_type
+                )
+                
+                # Store results with scenario metadata
+                self.scenario_results = results
+                self.all_histories = []  # Flatten for backward compatibility
+                for scenario in results['scenarios']:
+                    self.all_histories.extend(scenario['histories'])
+                
+                self.results_button.config(
+                    state=tk.NORMAL,
+                    command=lambda: self.open_results_window_scenarios(results)
+                )
+                
+                custom_messagebox = tk.Toplevel(self)
+                custom_messagebox.title("Scenario Comparison Complete")
+                custom_messagebox.geometry("800x400")
+                custom_messagebox.configure(bg=self.bg_color)
+                
+                summary = (
+                    f"Completed {len(scenarios)} scenarios\n"
+                    f"Total runs: {total_runs}"
+                )
+                
+                tk.Label(
+                    custom_messagebox,
+                    text=summary,
+                    bg=self.bg_color,
+                    fg=self.button_fg,
+                    font=("Arial", 14),
+                    justify=tk.CENTER
+                ).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+                
+                tk.Button(
+                    custom_messagebox,
+                    text="OK",
+                    command=custom_messagebox.destroy,
+                    bg=self.button_color,
+                    fg=self.button_fg
+                ).pack(pady=10)
+                
+            else:
+                # Run normal single-configuration mode
+                all_histories = simtim_main(
+                    path_to_network_config=path_to_network_config,
+                    sim_runs=sim_runs,
+                    sim_time=sim_time,
+                    attackers=attackers,
+                    defenders=defenders,
+                    detection_engine_type=detection_engine_type
+                )
+                self.all_histories = all_histories
+                self.results_button.config(state=tk.NORMAL, command=lambda: self.open_results_window(all_histories))
+                
+                custom_messagebox = tk.Toplevel(self)
+                custom_messagebox.title("Simulation Complete")
+                custom_messagebox.geometry("800x400")
+                custom_messagebox.configure(bg=self.bg_color)
+                tk.Label(custom_messagebox, text="Simulation Complete", bg=self.bg_color, fg=self.button_fg, font=("Arial", 16)).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+                tk.Button(custom_messagebox, text="OK", command=custom_messagebox.destroy, bg=self.button_color, fg=self.button_fg).pack(pady=10)
             
         except Exception as e:
             import traceback
@@ -351,6 +475,7 @@ class App(tk.Tk):
             print("Full traceback:")
             traceback.print_exc()
             tk.messagebox.showerror("Simulation Error", error_msg)
+
 
     def launch_visualizer(self):
         """Delegate to network tab."""

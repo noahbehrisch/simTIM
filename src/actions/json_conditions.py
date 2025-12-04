@@ -550,7 +550,11 @@ class ActionExecutor:
     def _execute_set_links_access(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
         # Ensure we're working with a Node object that has links
         if not hasattr(node, 'links'):
+            print(f"[DEBUG] set_links_access: Node {getattr(node, 'id', '?')} has no links attribute")
             return  # Skip if not a Node object
+        
+        print(f"[DEBUG] set_links_access on node {node.id} by {actor_id}")
+        print(f"[DEBUG]   Node has {len(node.links)} links")
             
         access_value = action['access_value']
         discovered_nodes = []
@@ -560,6 +564,8 @@ class ActionExecutor:
             old_access = get_link_access(link, actor_id)
             set_link_access(link, actor_id, access_value)
             
+            print(f"[DEBUG]   Link access: {old_access} → {access_value}")
+            
             # If this is a new discovery (from NONE to VISIBLE), track discovered link and connected node
             if old_access == LinkAccessLevel.NONE and validate_link_access(access_value) == LinkAccessLevel.VISIBLE:
                 discovered_links.append(link)
@@ -567,11 +573,16 @@ class ActionExecutor:
                 other_node = link.get_other_node(node)
                 if other_node and other_node not in discovered_nodes:
                     discovered_nodes.append(other_node)
+                    print(f"[DEBUG]   Discovered node: {other_node.id}")
+        
+        print(f"[DEBUG]   Total discovered: {len(discovered_nodes)} nodes, {len(discovered_links)} links")
         
         # Notify the simulator about newly discovered nodes and links
         if discovered_nodes and hasattr(self, '_simulator') and self._simulator:
+            print(f"[DEBUG]   Notifying simulator about {len(discovered_nodes)} discovered nodes")
             self._simulator.notify_nodes_discovered(actor_id, discovered_nodes)
         if discovered_links and hasattr(self, '_simulator') and self._simulator:
+            print(f"[DEBUG]   Notifying simulator about {len(discovered_links)} discovered links")
             self._simulator.notify_links_discovered(actor_id, discovered_links)
 
     def _execute_set_access_neighbors(self, action: Dict[str, Any], node: Node, actor_id: str) -> None:
