@@ -1,20 +1,12 @@
 """
-Simulation Mdef simtim_main(
-    path_to_network_config: str,
-    attackers: list = None,
-    defenders: list = None,
-    sim_time: int = 10,
-    sim_runs: int = 1,
-    detection_engine_type="exponential",
-    action_duration_override=None,  # Override all action durations (legacy)
-    attack_duration_override=None,  # Override only attack action durations
-    defense_duration_override=None  # Override only defense action durations
-):e
+Simulation Main
 
 Contains the main simulation logic that can be used by both CLI and GUI.
 Implements TIM paper-compliant initialization with proper access levels.
 """
 
+import logging
+from typing import List, Optional, Dict, Any
 from src.core.simulator import Simulator
 from src.actions.action_manager import get_attack_actions, get_defense_actions
 from src.actions.link_actions import get_link_action_library
@@ -23,58 +15,60 @@ from src.actors.attacker import Attacker
 from src.actors.defender import Defender
 from src.core.access_levels import NodeAccessLevel, LinkAccessLevel
 
+logger = logging.getLogger(__name__)
+
 
 def simtim_main(
     path_to_network_config: str,
-    attackers: list = None,
-    defenders: list = None,
+    attackers: Optional[List[Dict[str, Any]]] = None,
+    defenders: Optional[List[Dict[str, Any]]] = None,
     sim_time: int = 10,
     sim_runs: int = 1,
-    detection_engine_type="exponential",
-    action_duration_override: float = None,  # Legacy: override all durations
-    attack_duration_override: float = None,  # Override only attack durations
-    defense_duration_override: float = None  # Override only defense durations
-):
+    detection_engine_type: str = "exponential",
+    action_duration_override: Optional[float] = None,  # Legacy: override all durations
+    attack_duration_override: Optional[float] = None,  # Override only attack durations
+    defense_duration_override: Optional[float] = None  # Override only defense durations
+) -> Optional[List[List]]:
     """
     Run a complete simulation with the given parameters.
     
     Args:
-        path_to_network_config (str): Path to the network configuration file
-        sim_runs (int): Number of simulation runs
-        sim_time (float): Simulation end time
-        attackers (list): List of attacker configurations
-        defenders (list): List of defender configurations
-        detection_engine_type (str): Type of detection engine to use
-        action_duration_override (float): Optional override for all action durations (in hours) - legacy
-        attack_duration_override (float): Optional override for attack action durations only (in hours)
-        defense_duration_override (float): Optional override for defense action durations only (in hours)
+        path_to_network_config: Path to the network configuration file
+        sim_runs: Number of simulation runs
+        sim_time: Simulation end time
+        attackers: List of attacker configurations
+        defenders: List of defender configurations
+        detection_engine_type: Type of detection engine to use
+        action_duration_override: Optional override for all action durations (in hours) - legacy
+        attack_duration_override: Optional override for attack action durations only (in hours)
+        defense_duration_override: Optional override for defense action durations only (in hours)
         
     Returns:
-        list: All simulation histories from all runs
+        List of all simulation histories from all runs, or None if validation fails
     """
     if not path_to_network_config:
-        print("Error: No network configuration file provided.")
-        return
+        logger.error("No network configuration file provided")
+        return None
     if not attackers or not isinstance(attackers, list) or len(attackers) == 0:
-        print("Error: No attackers specified.")
-        return
+        logger.error("No attackers specified")
+        return None
     if not defenders or not isinstance(defenders, list) or len(defenders) == 0:
-        print("Error: No defenders specified.")
-        return
+        logger.error("No defenders specified")
+        return None
     if sim_time is None:
-        print("Error: Simulation end time not provided.")
-        return
+        logger.error("Simulation end time not provided")
+        return None
     if not sim_runs or not isinstance(sim_runs, int) or sim_runs < 1:
         sim_runs = 1
     
-    # Print action duration override info before starting runs
+    # Log action duration override info before starting runs
     if action_duration_override is not None:
-        print(f"⚙️  All actions will use duration: {action_duration_override} hours\n")
+        logger.info(f"All actions will use duration: {action_duration_override} hours")
         
     all_histories = []
     
     for run in range(sim_runs):
-        print(f"\n=== Running simulation {run + 1}/{sim_runs} ===")
+        logger.info(f"Running simulation {run + 1}/{sim_runs}")
         
         config = load_network_config(path_to_network_config)
         network = create_network_from_config(config)
@@ -196,15 +190,15 @@ def simtim_main(
                 history_tuples.append(event)
         
         all_histories.append(history_tuples)
-        print(f"Simulation run {run + 1} completed with {len(history_tuples)} events")
+        logger.info(f"Simulation run {run + 1} completed with {len(history_tuples)} events")
         if run + 1 < sim_runs:
-            print("Preparing next simulation run...")
+            logger.debug("Preparing next simulation run...")
         else:
-            print("\nFinal network state:")
+            logger.debug("Final network state:")
             for n in network.values():
-                print(n)
+                logger.debug(str(n))
     
-    print(f"\n=== All {sim_runs} simulation runs completed ===")
+    logger.info(f"All {sim_runs} simulation runs completed")
     return all_histories
 
 
@@ -261,10 +255,10 @@ def run_variable_scenarios(
     else:
         comparison_label = "parameters"
     
-    print(f"\n{'='*60}")
-    print(f"SCENARIO COMPARISON MODE")
-    print(f"Running {len(scenarios)} scenarios with different {comparison_label}")
-    print(f"{'='*60}\n")
+    logger.info(f"{'='*60}")
+    logger.info("SCENARIO COMPARISON MODE")
+    logger.info(f"Running {len(scenarios)} scenarios with different {comparison_label}")
+    logger.info(f"{'='*60}")
     
     results = {'scenarios': [], 'variable_type': variable_type}
     
@@ -309,11 +303,11 @@ def run_variable_scenarios(
             value = scenario.get('value', 'unknown')
             value_label = f"Parameter: {value}"
         
-        print(f"\n{'─'*60}")
-        print(f"SCENARIO {scenario_idx}/{len(scenarios)}")
-        print(f"{value_label}")
-        print(f"Number of Runs: {runs}")
-        print(f"{'─'*60}\n")
+        logger.info(f"{'─'*60}")
+        logger.info(f"SCENARIO {scenario_idx}/{len(scenarios)}")
+        logger.info(value_label)
+        logger.info(f"Number of Runs: {runs}")
+        logger.info(f"{'─'*60}")
         
         # Run simulations for this scenario
         scenario_histories = simtim_main(
@@ -342,12 +336,12 @@ def run_variable_scenarios(
             
         results['scenarios'].append(scenario_result)
         
-        print(f"\nScenario {scenario_idx} completed: {len(scenario_histories)} simulation runs")
+        logger.info(f"Scenario {scenario_idx} completed: {len(scenario_histories)} simulation runs")
     
-    print(f"\n{'='*60}")
-    print(f"ALL SCENARIOS COMPLETED")
-    print(f"Total scenarios: {len(scenarios)}")
-    print(f"Total simulation runs: {sum(len(s['histories']) for s in results['scenarios'])}")
-    print(f"{'='*60}\n")
+    logger.info(f"{'='*60}")
+    logger.info("ALL SCENARIOS COMPLETED")
+    logger.info(f"Total scenarios: {len(scenarios)}")
+    logger.info(f"Total simulation runs: {sum(len(s['histories']) for s in results['scenarios'])}")
+    logger.info(f"{'='*60}")
     
     return results

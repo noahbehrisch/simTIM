@@ -1,7 +1,11 @@
+import logging
 from .actor import Actor
 from src.core.graph import Node
 from .strategies import get_defender_strategy
 from src.core.access_utils import get_node_access
+
+logger = logging.getLogger(__name__)
+
 
 class Defender(Actor):
     def __init__(self, id: str, strategy: str = "reactive", capacity: int = 2, budget: float = float('inf')):
@@ -76,12 +80,12 @@ class Defender(Actor):
         detected_actor = detection_data.get("detected_actor")
         
         if not all([detected_action, detected_target, detected_actor]):
-            print(f"⚠️  Defender {self.id}: Invalid detection data received")
+            logger.warning(f"Defender {self.id}: Invalid detection data received")
             return
             
         timestamp = getattr(self.simulator, 'current_time', 0.0)
         
-        print(f"🚨 Defender {self.id}: Detected {detected_action.name} by {detected_actor.id} on {getattr(detected_target, 'id', str(detected_target))}")
+        logger.info(f"Defender {self.id}: Detected {detected_action.name} by {detected_actor.id} on {getattr(detected_target, 'id', str(detected_target))}")
         
         # Record the detection for economic tracking
         self.detected_attacks.append({

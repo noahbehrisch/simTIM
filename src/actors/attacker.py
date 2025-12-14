@@ -1,8 +1,13 @@
+import logging
 from .actor import Actor
 from src.core.graph import Node, Link
 from .strategies import get_attacker_strategy
-from src.core.access_utils import get_node_access
+from src.core.access_utils import get_node_access, set_node_access
 from src.core.access_levels import NodeAccessLevel
+from src.core.economic_model import calculate_action_gain
+
+logger = logging.getLogger(__name__)
+
 
 class Attacker(Actor):
     def __init__(self, id: str, strategy: str = "random", capacity: int = 3, budget: float = float('inf')):
@@ -18,18 +23,18 @@ class Attacker(Actor):
 
     def make_decision(self, network_state):
         if not self.can_schedule_action():
-            print(f"[DEBUG] {self.id} cannot schedule action (capacity: {len(self.ongoing_actions)}/{self.capacity})")
+            logger.debug(f"{self.id} cannot schedule action (capacity: {len(self.ongoing_actions)}/{self.capacity})")
             return False  # No capacity for more actions
             
-        print(f"[DEBUG] {self.id} making decision at t={self.simulator.current_time if self.simulator else '?'}")
-        print(f"[DEBUG]   Visible nodes: {[n.id if hasattr(n, 'id') else str(n) for n in self.visible_nodes]}")
-        print(f"[DEBUG]   Available actions: {len(self.available_actions)}")
+        logger.debug(f"{self.id} making decision at t={self.simulator.current_time if self.simulator else '?'}")
+        logger.debug(f"  Visible nodes: {[n.id if hasattr(n, 'id') else str(n) for n in self.visible_nodes]}")
+        logger.debug(f"  Available actions: {len(self.available_actions)}")
         
         decision = self.choose_action(network_state)
         if decision:
             action, target = decision
             actor_access = get_node_access(target, self.id)
-            print(f"[DEBUG]   Chose: {action.name} on {getattr(target, 'id', str(target))} (access: {actor_access})")
+            logger.debug(f"  Chose: {action.name} on {getattr(target, 'id', str(target))} (access: {actor_access})")
             if action.precondition(target, actor_access, self.id):
                 self.simulator.schedule_event(self.simulator.current_time, "start_action", {
                     "actor": self,
@@ -46,7 +51,7 @@ class Attacker(Actor):
                 self.ongoing_actions.add(action)
                 return True  # Action was scheduled
         else:
-            print(f"[DEBUG]   No valid action found!")
+            logger.debug(f"  No valid action found!")
         return False  # No valid action found
 
     def choose_action(self, network_state):
@@ -92,12 +97,9 @@ class Attacker(Actor):
                 # Update access if currently NONE
                 current_access = get_node_access(connected_node, self.id)
                 if current_access == NodeAccessLevel.NONE:
-                    from src.core.access_utils import set_node_access
                     set_node_access(connected_node, self.id, NodeAccessLevel.VISIBLE)
 
     def on_successful_attack(self, action, target, timestamp):
-        from src.core.economic_model import calculate_action_gain
-        
         actor_access = get_node_access(target, self.id)
         one_off_gain = calculate_action_gain(action.name, target)
         self.total_gain += one_off_gain
