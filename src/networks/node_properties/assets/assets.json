@@ -3,22 +3,12 @@
     "customer_database",
     "financial_records",
     "employee_data",
-    "company_secrets",
     "intellectual_property",
-    "web_application",
-    "access_logs",
-    "backup_data",
-    "encryption_keys",
     "authentication_credentials",
     "source_code",
-    "configuration_files",
     "user_credentials",
     "payment_information",
     "personal_identifiable_information",
-    "trade_secrets",
-    "research_data",
-    "email_archives",
-    "document_repository",
     "api_keys"
   ]
 }
