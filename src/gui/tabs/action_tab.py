@@ -44,10 +44,9 @@ class ActionTab(BaseTab):
             style_type='heading'
         ).pack(anchor="w", pady=(0, self.theme.SPACING['lg']))
         
-        # Create info label
         info_label = self.create_styled_label(
             self.pad_frame,
-            "Enable or disable actions for the simulation. Disabled actions will not be available to actors.",
+            "Enable/disable actions for simulation.",
             style_type='secondary'
         )
         info_label.pack(anchor="w", pady=(0, self.theme.SPACING['md']))

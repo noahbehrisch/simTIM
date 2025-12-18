@@ -143,64 +143,18 @@ class NetworkCreator(tk.Toplevel):
         
         help_content = """Network Creator Help
 
-        Creating Nodes:
-        • Click 'Add Node' button to create a new node
-        • Fill in node properties in the dialog
-        • Node will appear at a random position on the canvas
+Selection:
+  • Left-click drag on empty space: Selection box (multiple nodes)
+  • Click node: Select single node (turns red)
 
-        Selecting Nodes:
-        • Click on a node to select it (turns red)
-        • Click and drag on empty space to draw a selection box (blue dashed rectangle)
-        • All nodes inside the selection box will be selected
-        • Click on empty space to deselect all
+Creating Links:
+  • Right-click drag: From node to node (red preview line)
+  • Button mode: Click 'Create Link', then click two nodes
 
-        Moving Nodes:
-        • Click and drag a node to move it
-        • Links connected to the node will update automatically
-        • Multiple selected nodes can be moved together
-
-        Creating Links:
-        • Method 1 - Button Mode:
-            1. Click 'Create Link' button
-            2. Click on the first node
-            3. Click on the second node
-            (Status bar shows current step)
-        
-        • Method 2 - Right-Click Drag:
-            1. Right-click and hold on the first node
-            2. Drag to the second node (red dashed line appears)
-            3. Release to create the link
-            (Works even when 'Create Link' button is not active)
-
-        Deleting:
-        • Select one or more nodes
-        • Click 'Delete Selected' to remove them
-        • All connected links will also be removed
-
-        Generating Networks:
-        • Click 'Generate Random Network' to create a network automatically
-        • Uses Barabási-Albert model for scale-free topology
-        • Specify number of nodes and percentage of exposed nodes
-        • Generated nodes are arranged in a circle
-
-        Saving/Loading:
-        • Save: Exports network to JSON file with all node and link data
-        • Load: Imports network from JSON file
-        • All node properties (OS, services, vulnerabilities, etc.) are preserved
-
-        Visual Indicators:
-        • Red node = Selected
-        • Yellow node = Exposed to Internet
-        • Blue dashed rectangle = Selection box (drag on empty space)
-        • Red dashed line = Link preview (right-click drag)
-        • Green dashed line = Link creation in progress (button mode)
-
-        Tips:
-        • Drag nodes to organize your network layout
-        • Use right-click drag for quick link creation
-        • Use selection box to select multiple nodes at once
-        • Status bar at bottom shows current action and helpful information
-        """
+Visual Indicators:
+  • Red node = Selected
+  • Yellow node = Exposed to Internet
+"""
         
         self.help_text_widget.insert('1.0', help_content)
         self.help_text_widget.config(state=tk.DISABLED)
@@ -1081,8 +1035,7 @@ class NetworkCreator(tk.Toplevel):
         
         help_text = tk.Label(
             form_frame,
-            text="Creates a scale-free network using the Barabási-Albert model.\n"
-                 "Nodes connect preferentially to well-connected nodes, creating realistic network topology.",
+            text="Scale-free network with preferential attachment.",
             font=self.theme.FONTS['body_small'],
             bg=self.theme.COLORS['bg_primary'],
             fg=self.theme.COLORS['text_secondary'],
@@ -1093,12 +1046,10 @@ class NetworkCreator(tk.Toplevel):
         tk.Label(form_frame, text="Number of Nodes:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=2, column=0, sticky='w', pady=8)
         num_nodes_var = tk.IntVar(value=20)
         tk.Entry(form_frame, textvariable=num_nodes_var).grid(row=2, column=1, sticky='ew', pady=8, padx=5)
-        tk.Label(form_frame, text="Total nodes in network", font=self.theme.FONTS['body_small'], bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_secondary']).grid(row=2, column=2, sticky='w', padx=5)
         
         tk.Label(form_frame, text="Exposed Nodes %:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=3, column=0, sticky='w', pady=8)
         exposed_percent_var = tk.IntVar(value=10)
         tk.Entry(form_frame, textvariable=exposed_percent_var).grid(row=3, column=1, sticky='ew', pady=8, padx=5)
-        tk.Label(form_frame, text="Internet-facing nodes (red)", font=self.theme.FONTS['body_small'], bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_secondary']).grid(row=3, column=2, sticky='w', padx=5)
         
         def generate():
             try:
