@@ -16,7 +16,7 @@ HELP_CONTENT = {
     
     "Attackers": {
         "title": "Attacker Configuration",
-        "content": """• Strategy: random | greedy | targeted
+        "content": """• Strategy: random | greedy
 • Capacity: Max concurrent actions
 • Budget: Max spending (use 'inf' for unlimited)
 • Access levels: NONE → VISIBLE → USER → ADMIN"""
