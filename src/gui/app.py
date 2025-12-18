@@ -8,6 +8,7 @@ from src.gui.enhanced_results_window import EnhancedResultsWindow
 from src.gui.tabs import SimulationTab, NetworkTab, AttackerTab, DefenderTab, ActionTab, VariablesTab
 from src.gui.sidebar import Sidebar
 from src.gui.theme import Theme
+from src.gui.help_window import HelpWindow
 
 class App(tk.Tk):
     def __init__(self):
@@ -378,11 +379,7 @@ class App(tk.Tk):
         )
 
     def open_help_window(self):
-        win = tk.Toplevel(self)
-        win.title("Help")
-        win.geometry("1800x1400")
-        win.configure(bg=self.bg_color)
-        tk.Label(win, text="Help!", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
+        HelpWindow(self, self.current_tab)
 
     def run_simulation_from_gui(self):
         # Get configuration from all tabs

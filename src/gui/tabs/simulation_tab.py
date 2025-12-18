@@ -5,6 +5,8 @@ import inspect
 import os
 from pathlib import Path
 from .base_tab import BaseTab
+from src.gui.help_content import TOOLTIPS
+from src.gui.help_window import ToolTip
 
 class SimulationTab(BaseTab):
     def __init__(self, parent, theme_colors):
@@ -176,6 +178,7 @@ class SimulationTab(BaseTab):
             width=10
         )
         self.sim_runs_entry.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        ToolTip(self.sim_runs_entry, TOOLTIPS.get("sim_runs", ""))
         
         # Info label for variable scenarios
         self.runs_info_label = tk.Label(
@@ -195,11 +198,13 @@ class SimulationTab(BaseTab):
             fg=self.button_fg
         ).grid(row=1, column=0, padx=10, pady=10, sticky="w")
         
-        self.create_styled_entry(
+        sim_time_entry = self.create_styled_entry(
             params_frame, 
             self.sim_time_var,
             width=10
-        ).grid(row=1, column=1, padx=10, pady=10, sticky="w")
+        )
+        sim_time_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
+        ToolTip(sim_time_entry, TOOLTIPS.get("sim_time", ""))
         
         # Detection Engine section (moved below parameters)
         self.create_section_header(

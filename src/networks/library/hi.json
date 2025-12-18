@@ -1,0 +1,306 @@
+{
+  "name": "Custom Network",
+  "description": "Custom network with 10 nodes and 17 links",
+  "nodes": [
+    {
+      "id": "node_1",
+      "name": "Node 1",
+      "software": {
+        "os": "Linux",
+        "version": "22.04",
+        "services": [
+          "rdp",
+          "smb"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2022-22965",
+        "CVE-2021-44228"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_2",
+      "name": "Node 2",
+      "software": {
+        "os": "Linux",
+        "version": "22.04",
+        "services": [
+          "ssh",
+          "http"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2022-21457"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_3",
+      "name": "Node 3",
+      "software": {
+        "os": "Windows Server",
+        "version": "22.04",
+        "services": [
+          "ssh",
+          "http"
+        ]
+      },
+      "vulnerabilities": [],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_4",
+      "name": "Node 4",
+      "software": {
+        "os": "Linux",
+        "version": "22.04",
+        "services": [
+          "rdp",
+          "smb"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2021-44228",
+        "CVE-2022-21457",
+        "CVE-2021-27850"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_5",
+      "name": "Node 5",
+      "software": {
+        "os": "CentOS",
+        "version": "18.04",
+        "services": [
+          "ssh",
+          "http"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2021-27850",
+        "CVE-2020-1472",
+        "CVE-2022-22965"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_6",
+      "name": "Node 6",
+      "software": {
+        "os": "CentOS",
+        "version": "19.04",
+        "services": [
+          "rdp",
+          "smb"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2020-1472"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_7",
+      "name": "Node 7",
+      "software": {
+        "os": "Ubuntu",
+        "version": "22.04",
+        "services": [
+          "rdp",
+          "smb"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2021-27850",
+        "CVE-2021-34527",
+        "CVE-2022-21457"
+      ],
+      "assets": [
+        "sensitive_data",
+        "database"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true
+      }
+    },
+    {
+      "id": "node_8",
+      "name": "Node 8",
+      "software": {
+        "os": "Windows 10",
+        "version": "18.04",
+        "services": [
+          "ssh",
+          "http"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2021-34527",
+        "CVE-2021-27850",
+        "CVE-2022-22965"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_9",
+      "name": "Node 9",
+      "software": {
+        "os": "Linux",
+        "version": "21.04",
+        "services": [
+          "ssh",
+          "https",
+          "mysql"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2020-1472",
+        "CVE-2021-34527",
+        "CVE-2022-22965"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false
+      }
+    },
+    {
+      "id": "node_10",
+      "name": "Node 10",
+      "software": {
+        "os": "Ubuntu",
+        "version": "22.04",
+        "services": [
+          "dns",
+          "http"
+        ]
+      },
+      "vulnerabilities": [
+        "CVE-2022-21457"
+      ],
+      "assets": [],
+      "properties": {
+        "exposed_to_internet": true,
+        "critical": false
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "node_1",
+      "node2": "node_2",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_1",
+      "node2": "node_3",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_2",
+      "node2": "node_3",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_4",
+      "node2": "node_2",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_4",
+      "node2": "node_1",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_5",
+      "node2": "node_4",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_5",
+      "node2": "node_1",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_6",
+      "node2": "node_2",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_6",
+      "node2": "node_1",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_7",
+      "node2": "node_6",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_7",
+      "node2": "node_4",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_8",
+      "node2": "node_1",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_8",
+      "node2": "node_3",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_9",
+      "node2": "node_4",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_9",
+      "node2": "node_3",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_10",
+      "node2": "node_4",
+      "bidirectional": true
+    },
+    {
+      "node1": "node_10",
+      "node2": "node_3",
+      "bidirectional": true
+    }
+  ]
+}

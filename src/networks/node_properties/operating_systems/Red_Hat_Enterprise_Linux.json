@@ -1,0 +1,17 @@
+{
+  "name": "Red Hat Enterprise Linux",
+  "versions": [
+    {
+      "version": "9",
+      "vulnerabilities": ["CVE-2023-2650", "CVE-2023-1667", "CVE-2022-42898"]
+    },
+    {
+      "version": "8",
+      "vulnerabilities": ["CVE-2022-1271", "CVE-2021-4034", "CVE-2021-3560"]
+    },
+    {
+      "version": "7",
+      "vulnerabilities": ["CVE-2021-44228", "CVE-2019-14287", "CVE-2018-14634"]
+    }
+  ]
+}

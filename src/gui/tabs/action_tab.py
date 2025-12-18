@@ -167,6 +167,30 @@ class ActionTab(BaseTab):
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
+        # Add mouse wheel scrolling support
+        def on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        def on_mousewheel_linux(event):
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+        
+        # Bind scrolling when mouse enters the canvas
+        def bind_scroll(event):
+            canvas.bind_all("<MouseWheel>", on_mousewheel)
+            canvas.bind_all("<Button-4>", on_mousewheel_linux)
+            canvas.bind_all("<Button-5>", on_mousewheel_linux)
+        
+        def unbind_scroll(event):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+        
+        canvas.bind("<Enter>", bind_scroll)
+        canvas.bind("<Leave>", unbind_scroll)
+        
         # Pack canvas and scrollbar
         canvas.pack(side="left", fill="both", expand=True, padx=5, pady=5)
         scrollbar.pack(side="right", fill="y")

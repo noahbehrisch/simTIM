@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
 from .base_tab import BaseTab
+from src.networks.network_creator import NetworkCreator
 
 class NetworkTab(BaseTab):
     def __init__(self, parent, theme_colors):
@@ -98,6 +99,12 @@ class NetworkTab(BaseTab):
         )
         self.predefined_dropdown.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.predefined_dropdown.bind('<<ComboboxSelected>>', self._update_network_path)
+        
+        self.create_styled_button(
+            self.predefined_frame,
+            "Refresh",
+            self._refresh_networks
+        ).grid(row=0, column=2, padx=5, pady=5, sticky="w")
         
         # Add refresh button for predefined networks
         self.create_styled_button(
@@ -272,18 +279,7 @@ class NetworkTab(BaseTab):
                 self.description_label.config(text=description)
     
     def open_create_network_window(self):
-        """Open network creation window."""
-        win = tk.Toplevel(self.parent)
-        win.title("Create Network")
-        win.geometry("1800x1200")
-        win.configure(bg=self.bg_color)
-        tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
-        """Open network creation window."""
-        win = tk.Toplevel(self.parent)
-        win.title("Create Network")
-        win.geometry("1800x1200")
-        win.configure(bg=self.bg_color)
-        tk.Label(win, text="Network creation window", bg=self.tab_color, fg=self.button_fg).pack(padx=20, pady=20)
+        NetworkCreator(self.parent)
     
     def browse_network_file(self):
         """Open file dialog to select network file."""

@@ -1,0 +1,24 @@
+{
+  "categories": [
+    "Web Server",
+    "Database Server",
+    "File Server",
+    "Mail Server",
+    "DNS Server",
+    "Application Server",
+    "Backup Server",
+    "Domain Controller",
+    "Firewall",
+    "Router",
+    "Workstation",
+    "IoT Device",
+    "Cloud Service",
+    "Container",
+    "Load Balancer",
+    "Proxy Server",
+    "VPN Server",
+    "Storage System",
+    "Monitoring System",
+    "Development Server"
+  ]
+}

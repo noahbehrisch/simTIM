@@ -1,0 +1,26 @@
+{
+  "services": [
+    "ssh",
+    "http",
+    "https",
+    "ftp",
+    "smtp",
+    "dns",
+    "mysql",
+    "postgresql",
+    "apache",
+    "nginx",
+    "php",
+    "rdp",
+    "smb",
+    "telnet",
+    "snmp",
+    "ldap",
+    "file_server",
+    "sql_server",
+    "mongodb",
+    "redis",
+    "docker",
+    "kubernetes"
+  ]
+}

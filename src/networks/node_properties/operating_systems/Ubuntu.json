@@ -1,0 +1,37 @@
+{
+  "name": "Ubuntu",
+  "versions": [
+    {
+      "version": "24.04 LTS",
+      "vulnerabilities": [
+        "CVE-2024-6387",
+        "CVE-2023-7008",
+        "CVE-2023-4911"
+      ]
+    },
+    {
+      "version": "22.04 LTS",
+      "vulnerabilities": [
+        "CVE-2023-2640",
+        "CVE-2023-32629",
+        "CVE-2022-22965"
+      ]
+    },
+    {
+      "version": "20.04 LTS",
+      "vulnerabilities": [
+        "CVE-2022-0847",
+        "CVE-2021-44228",
+        "CVE-2021-3156"
+      ]
+    },
+    {
+      "version": "18.04 LTS",
+      "vulnerabilities": [
+        "CVE-2021-44228",
+        "CVE-2021-3156",
+        "CVE-2019-14287"
+      ]
+    }
+  ]
+}

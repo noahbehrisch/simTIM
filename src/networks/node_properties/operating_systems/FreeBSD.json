@@ -1,0 +1,13 @@
+{
+  "name": "FreeBSD",
+  "versions": [
+    {
+      "version": "14.0",
+      "vulnerabilities": ["CVE-2023-5717", "CVE-2023-3446", "CVE-2023-2975"]
+    },
+    {
+      "version": "13.2",
+      "vulnerabilities": ["CVE-2022-23093", "CVE-2022-23091", "CVE-2021-29632"]
+    }
+  ]
+}
