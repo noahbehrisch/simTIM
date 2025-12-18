@@ -143,64 +143,64 @@ class NetworkCreator(tk.Toplevel):
         
         help_content = """Network Creator Help
 
-Creating Nodes:
-  • Click 'Add Node' button to create a new node
-  • Fill in node properties in the dialog
-  • Node will appear at a random position on the canvas
+        Creating Nodes:
+        • Click 'Add Node' button to create a new node
+        • Fill in node properties in the dialog
+        • Node will appear at a random position on the canvas
 
-Selecting Nodes:
-  • Click on a node to select it (turns red)
-  • Click and drag on empty space to draw a selection box (blue dashed rectangle)
-  • All nodes inside the selection box will be selected
-  • Click on empty space to deselect all
+        Selecting Nodes:
+        • Click on a node to select it (turns red)
+        • Click and drag on empty space to draw a selection box (blue dashed rectangle)
+        • All nodes inside the selection box will be selected
+        • Click on empty space to deselect all
 
-Moving Nodes:
-  • Click and drag a node to move it
-  • Links connected to the node will update automatically
-  • Multiple selected nodes can be moved together
+        Moving Nodes:
+        • Click and drag a node to move it
+        • Links connected to the node will update automatically
+        • Multiple selected nodes can be moved together
 
-Creating Links:
-  • Method 1 - Button Mode:
-    1. Click 'Create Link' button
-    2. Click on the first node
-    3. Click on the second node
-    (Status bar shows current step)
-  
-  • Method 2 - Right-Click Drag:
-    1. Right-click and hold on the first node
-    2. Drag to the second node (red dashed line appears)
-    3. Release to create the link
-    (Works even when 'Create Link' button is not active)
+        Creating Links:
+        • Method 1 - Button Mode:
+            1. Click 'Create Link' button
+            2. Click on the first node
+            3. Click on the second node
+            (Status bar shows current step)
+        
+        • Method 2 - Right-Click Drag:
+            1. Right-click and hold on the first node
+            2. Drag to the second node (red dashed line appears)
+            3. Release to create the link
+            (Works even when 'Create Link' button is not active)
 
-Deleting:
-  • Select one or more nodes
-  • Click 'Delete Selected' to remove them
-  • All connected links will also be removed
+        Deleting:
+        • Select one or more nodes
+        • Click 'Delete Selected' to remove them
+        • All connected links will also be removed
 
-Generating Networks:
-  • Click 'Generate Random Network' to create a network automatically
-  • Uses Barabási-Albert model for scale-free topology
-  • Specify number of nodes and percentage of exposed nodes
-  • Generated nodes are arranged in a circle
+        Generating Networks:
+        • Click 'Generate Random Network' to create a network automatically
+        • Uses Barabási-Albert model for scale-free topology
+        • Specify number of nodes and percentage of exposed nodes
+        • Generated nodes are arranged in a circle
 
-Saving/Loading:
-  • Save: Exports network to JSON file with all node and link data
-  • Load: Imports network from JSON file
-  • All node properties (OS, services, vulnerabilities, etc.) are preserved
+        Saving/Loading:
+        • Save: Exports network to JSON file with all node and link data
+        • Load: Imports network from JSON file
+        • All node properties (OS, services, vulnerabilities, etc.) are preserved
 
-Visual Indicators:
-  • Red node = Selected
-  • Yellow node = Exposed to Internet
-  • Blue dashed rectangle = Selection box (drag on empty space)
-  • Red dashed line = Link preview (right-click drag)
-  • Green dashed line = Link creation in progress (button mode)
+        Visual Indicators:
+        • Red node = Selected
+        • Yellow node = Exposed to Internet
+        • Blue dashed rectangle = Selection box (drag on empty space)
+        • Red dashed line = Link preview (right-click drag)
+        • Green dashed line = Link creation in progress (button mode)
 
-Tips:
-  • Drag nodes to organize your network layout
-  • Use right-click drag for quick link creation
-  • Use selection box to select multiple nodes at once
-  • Status bar at bottom shows current action and helpful information
-"""
+        Tips:
+        • Drag nodes to organize your network layout
+        • Use right-click drag for quick link creation
+        • Use selection box to select multiple nodes at once
+        • Status bar at bottom shows current action and helpful information
+        """
         
         self.help_text_widget.insert('1.0', help_content)
         self.help_text_widget.config(state=tk.DISABLED)
