@@ -20,10 +20,10 @@ class NetworkCreator(tk.Toplevel):
         self.nodes = {}
         self.links = []
         self.selected_node = None
-        self.selected_nodes = []  # For multiple selection
+        self.selected_nodes = []
         self.link_start_node = None
         self.link_mode = False
-        self.right_click_link_start = None  # For right-click drag link creation
+        self.right_click_link_start = None
         self.help_visible = False
         self.dragging_node = None
         self.drag_start_x = 0
@@ -143,55 +143,64 @@ class NetworkCreator(tk.Toplevel):
         
         help_content = """Network Creator Help
 
-ADDING NODES:
-• Click 'Add Node' to create a new node
-• Fill in node properties (ID, name, OS, services, etc.)
-• Mark nodes as 'Exposed to Internet' (entry points for attackers)
+Creating Nodes:
+  • Click 'Add Node' button to create a new node
+  • Fill in node properties in the dialog
+  • Node will appear at a random position on the canvas
 
-ADDING LINKS:
-Right-Click + Drag:
-• Right-click on start node, drag to target node
-• Red dashed line shows link preview
-• Release to create link
+Selecting Nodes:
+  • Click on a node to select it (turns red)
+  • Click and drag on empty space to draw a selection box (blue dashed rectangle)
+  • All nodes inside the selection box will be selected
+  • Click on empty space to deselect all
 
-Button Mode:
-• Click 'Add Link' button (needs at least 2 nodes)
-• Click first node, then click second node
-• Status bar guides you through process
+Moving Nodes:
+  • Click and drag a node to move it
+  • Links connected to the node will update automatically
+  • Multiple selected nodes can be moved together
 
-MOVING NODES:
-• Left-click and drag any node to reposition it
-• Links automatically adjust to new positions
+Creating Links:
+  • Method 1 - Button Mode:
+    1. Click 'Create Link' button
+    2. Click on the first node
+    3. Click on the second node
+    (Status bar shows current step)
+  
+  • Method 2 - Right-Click Drag:
+    1. Right-click and hold on the first node
+    2. Drag to the second node (red dashed line appears)
+    3. Release to create the link
+    (Works even when 'Create Link' button is not active)
 
-SELECTING NODES:
-• Single: Left-click a node
-• Multiple: Left-click empty space and drag selection box
-• All nodes inside box will be selected
+Deleting:
+  • Select one or more nodes
+  • Click 'Delete Selected' to remove them
+  • All connected links will also be removed
 
-DELETING:
-• Select node(s) by clicking or box selection
-• Click 'Delete Selected' to remove them
-• Multiple nodes deleted at once
+Generating Networks:
+  • Click 'Generate Random Network' to create a network automatically
+  • Uses Barabási-Albert model for scale-free topology
+  • Specify number of nodes and percentage of exposed nodes
+  • Generated nodes are arranged in a circle
 
-RANDOM GENERATION:
-• Click 'Generate Random' for scale-free networks
-• Uses Barabási-Albert model (realistic topology)
-• Configure: number of nodes, exposed percentage
-• All nodes arranged in a circle
+Saving/Loading:
+  • Save: Exports network to JSON file with all node and link data
+  • Load: Imports network from JSON file
+  • All node properties (OS, services, vulnerabilities, etc.) are preserved
 
-COLOR CODING:
-• Red = Exposed to Internet (entry points)
-• Teal = Internal nodes
-• Blue outline = Selected node(s)
+Visual Indicators:
+  • Red node = Selected
+  • Yellow node = Exposed to Internet
+  • Blue dashed rectangle = Selection box (drag on empty space)
+  • Red dashed line = Link preview (right-click drag)
+  • Green dashed line = Link creation in progress (button mode)
 
-SAVING:
-• Click 'Save Network' to export as JSON
-• Saves to src/networks/library/
-• Can be loaded in simulation
-
-LOADING:
-• Click 'Load Network' to import existing network
-• Automatically positions nodes"""
+Tips:
+  • Drag nodes to organize your network layout
+  • Use right-click drag for quick link creation
+  • Use selection box to select multiple nodes at once
+  • Status bar at bottom shows current action and helpful information
+"""
         
         self.help_text_widget.insert('1.0', help_content)
         self.help_text_widget.config(state=tk.DISABLED)
@@ -239,7 +248,7 @@ LOADING:
         self.update_button_states()
     
     def load_operating_systems(self):
-        """Load all operating systems from JSON files"""
+        
         os_dir = "src/networks/node_properties/operating_systems"
         os_list = []
         for filepath in glob.glob(os.path.join(os_dir, "*.json")):
@@ -250,7 +259,6 @@ LOADING:
             except Exception as e:
                 print(f"Error loading {filepath}: {e}")
         
-        # Custom sort: Ubuntu first, then Windows Server, then rest alphabetically
         priority_os = []
         other_os = []
         
@@ -265,9 +273,9 @@ LOADING:
         return priority_os + other_os
     
     def load_os_data(self, os_name):
-        """Load version and vulnerability data for a specific OS"""
+        
         os_dir = "src/networks/node_properties/operating_systems"
-        # Convert display name to filename (e.g., "Windows Server" -> "Windows_Server.json")
+
         filename = os_name.replace(" ", "_") + ".json"
         filepath = os.path.join(os_dir, filename)
         try:
@@ -278,7 +286,7 @@ LOADING:
             return {"name": os_name, "versions": []}
     
     def load_services(self):
-        """Load all available services"""
+        
         try:
             with open("src/networks/node_properties/services/services.json", 'r') as f:
                 data = json.load(f)
@@ -288,7 +296,7 @@ LOADING:
             return []
     
     def load_assets(self):
-        """Load all available assets"""
+        
         try:
             with open("src/networks/node_properties/assets/assets.json", 'r') as f:
                 data = json.load(f)
@@ -298,7 +306,7 @@ LOADING:
             return []
     
     def load_categories(self):
-        """Load all available categories"""
+        
         try:
             with open("src/networks/node_properties/categories/categories.json", 'r') as f:
                 data = json.load(f)
@@ -347,7 +355,6 @@ LOADING:
         dialog.transient(self)
         dialog.grab_set()
         
-        # Create a canvas with scrollbar
         canvas = tk.Canvas(dialog, bg=self.theme.COLORS['bg_primary'], highlightthickness=0)
         scrollbar = tk.Scrollbar(dialog, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=self.theme.COLORS['bg_primary'])
@@ -363,7 +370,6 @@ LOADING:
         canvas.pack(side="left", fill="both", expand=True, padx=(20, 0), pady=20)
         scrollbar.pack(side="right", fill="y", padx=(0, 20), pady=20)
         
-        # Add mouse wheel scrolling for the main dialog (default)
         def on_dialog_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         def on_dialog_mousewheel_linux(event):
@@ -372,53 +378,45 @@ LOADING:
             elif event.num == 5:
                 canvas.yview_scroll(1, "units")
         
-        # Bind to dialog by default
         dialog.bind("<MouseWheel>", on_dialog_mousewheel)
         dialog.bind("<Button-4>", on_dialog_mousewheel_linux)
         dialog.bind("<Button-5>", on_dialog_mousewheel_linux)
         
-        # Use scrollable_frame instead of form_frame
         form_frame = scrollable_frame
         
-        # Configure grid to make column 1 (entry fields) expand
         form_frame.columnconfigure(1, weight=1)
         
         fields = {}
         current_row = 0
         
-        # Node ID (text box)
         tk.Label(form_frame, text="Node ID:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=current_row, column=0, sticky='w', pady=5, padx=5)
         fields['id'] = tk.Entry(form_frame)
         fields['id'].grid(row=current_row, column=1, sticky='ew', pady=5, padx=5)
         fields['id'].insert(0, f"node_{len(self.nodes) + 1}")
         current_row += 1
         
-        # Name (text box)
         tk.Label(form_frame, text="Name:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=current_row, column=0, sticky='w', pady=5, padx=5)
         fields['name'] = tk.Entry(form_frame)
         fields['name'].grid(row=current_row, column=1, sticky='ew', pady=5, padx=5)
         current_row += 1
         
-        # Operating System (dropdown)
         tk.Label(form_frame, text="Operating System:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=current_row, column=0, sticky='w', pady=5, padx=5)
         os_list = self.load_operating_systems()
         fields['os'] = ttk.Combobox(form_frame, values=os_list, state='readonly')
         fields['os'].grid(row=current_row, column=1, sticky='ew', pady=5, padx=5)
         if os_list:
-            # Set Ubuntu as default if available, otherwise first in list
+
             if 'Ubuntu' in os_list:
                 fields['os'].set('Ubuntu')
             else:
                 fields['os'].set(os_list[0])
         current_row += 1
         
-        # Version (dropdown - cascades from OS)
         tk.Label(form_frame, text="OS Version:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=current_row, column=0, sticky='w', pady=5, padx=5)
         fields['version'] = ttk.Combobox(form_frame, state='readonly')
         fields['version'].grid(row=current_row, column=1, sticky='ew', pady=5, padx=5)
         current_row += 1
         
-        # Category (dropdown)
         tk.Label(form_frame, text="Category:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=current_row, column=0, sticky='w', pady=5, padx=5)
         categories = self.load_categories()
         fields['category'] = ttk.Combobox(form_frame, values=categories, state='readonly')
@@ -427,7 +425,6 @@ LOADING:
             fields['category'].set(categories[0])
         current_row += 1
         
-        # Services (checkboxes with scrollable frame)
         tk.Label(form_frame, text="Services:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary'], font=self.theme.FONTS['heading_small']).grid(row=current_row, column=0, sticky='nw', pady=10, padx=5)
         
         services_outer_frame = tk.Frame(form_frame, bg=self.theme.COLORS['bg_secondary'], relief=tk.SUNKEN, bd=1)
@@ -448,7 +445,6 @@ LOADING:
         services_canvas.pack(side="left", fill="both", expand=True)
         services_scrollbar.pack(side="right", fill="y")
         
-        # Add mouse wheel scrolling support - bind to canvas and inner frame
         def on_services_mousewheel(event):
             services_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         def on_services_mousewheel_linux(event):
@@ -457,7 +453,6 @@ LOADING:
             elif event.num == 5:
                 services_canvas.yview_scroll(1, "units")
         
-        # Bind mouse wheel events when mouse enters the frame
         def bind_services_scroll(event):
             dialog.unbind("<MouseWheel>")
             dialog.unbind("<Button-4>")
@@ -487,7 +482,6 @@ LOADING:
                           anchor='w').pack(fill='x', padx=5, pady=2)
         current_row += 1
         
-        # Vulnerabilities (checkboxes - cascades from OS + version)
         tk.Label(form_frame, text="Vulnerabilities:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary'], font=self.theme.FONTS['heading_small']).grid(row=current_row, column=0, sticky='nw', pady=10, padx=5)
         
         vuln_outer_frame = tk.Frame(form_frame, bg=self.theme.COLORS['bg_secondary'], relief=tk.SUNKEN, bd=1)
@@ -508,7 +502,6 @@ LOADING:
         vuln_canvas.pack(side="left", fill="both", expand=True)
         vuln_scrollbar.pack(side="right", fill="y")
         
-        # Add mouse wheel scrolling support for vulnerabilities
         def on_vuln_mousewheel(event):
             vuln_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         def on_vuln_mousewheel_linux(event):
@@ -539,7 +532,6 @@ LOADING:
         fields['vuln_vars'] = {}
         current_row += 1
         
-        # Assets (checkboxes)
         tk.Label(form_frame, text="Assets:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary'], font=self.theme.FONTS['heading_small']).grid(row=current_row, column=0, sticky='nw', pady=10, padx=5)
         
         assets_outer_frame = tk.Frame(form_frame, bg=self.theme.COLORS['bg_secondary'], relief=tk.SUNKEN, bd=1)
@@ -560,7 +552,6 @@ LOADING:
         assets_canvas.pack(side="left", fill="both", expand=True)
         assets_scrollbar.pack(side="right", fill="y")
         
-        # Add mouse wheel scrolling support for assets
         def on_assets_mousewheel(event):
             assets_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         def on_assets_mousewheel_linux(event):
@@ -598,18 +589,15 @@ LOADING:
                           anchor='w').pack(fill='x', padx=5, pady=2)
         current_row += 1
         
-        # Exposed to Internet checkbox
         fields['exposed'] = tk.BooleanVar(value=False)
         tk.Checkbutton(form_frame, text="Exposed to Internet", variable=fields['exposed'], bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary']).grid(row=current_row, column=0, columnspan=2, pady=10)
         current_row += 1
         
-        # Cascading dropdown logic: OS -> Version -> Vulnerabilities
         def on_os_change(event=None):
             os_name = fields['os'].get()
             if not os_name:
                 return
             
-            # Update version dropdown
             os_data = self.load_os_data(os_name)
             versions = [v['version'] for v in os_data.get('versions', [])]
             fields['version']['values'] = versions
@@ -618,7 +606,7 @@ LOADING:
                 on_version_change()
             else:
                 fields['version'].set('')
-                # Clear vulnerabilities
+
                 for widget in fields['vuln_inner_frame'].winfo_children():
                     widget.destroy()
                 fields['vuln_vars'] = {}
@@ -629,7 +617,6 @@ LOADING:
             if not os_name or not version:
                 return
             
-            # Update vulnerabilities checkboxes
             os_data = self.load_os_data(os_name)
             vulnerabilities = []
             for v in os_data.get('versions', []):
@@ -637,12 +624,10 @@ LOADING:
                     vulnerabilities = v.get('vulnerabilities', [])
                     break
             
-            # Clear existing checkboxes
             for widget in fields['vuln_inner_frame'].winfo_children():
                 widget.destroy()
             fields['vuln_vars'] = {}
             
-            # Create new checkboxes for vulnerabilities
             for vuln in vulnerabilities:
                 var = tk.BooleanVar(value=False)
                 fields['vuln_vars'][vuln] = var
@@ -651,11 +636,9 @@ LOADING:
                               fg=self.theme.COLORS['text_primary'],
                               anchor='w').pack(fill='x', padx=5, pady=2)
         
-        # Bind cascading events
         fields['os'].bind('<<ComboboxSelected>>', on_os_change)
         fields['version'].bind('<<ComboboxSelected>>', on_version_change)
         
-        # Initialize version and vulnerabilities for default OS
         on_os_change()
         
         def create_node():
@@ -667,13 +650,10 @@ LOADING:
                 messagebox.showerror("Error", f"Node {node_id} already exists")
                 return
             
-            # Get selected services from checkboxes
             services = [service for service, var in fields['services_vars'].items() if var.get()]
             
-            # Get selected vulnerabilities from checkboxes
             vulnerabilities = [vuln for vuln, var in fields['vuln_vars'].items() if var.get()]
             
-            # Get selected assets from checkboxes
             assets = [asset for asset, var in fields['assets_vars'].items() if var.get()]
             
             x = random.randint(50, 750)
@@ -731,18 +711,16 @@ LOADING:
     def canvas_click(self, event):
         clicked_node = self.find_node_at(event.x, event.y)
         
-        # Store for potential dragging
         self.drag_start_x = event.x
         self.drag_start_y = event.y
         
-        # If we're in link creation mode
         if self.link_mode:
             if self.link_start_node is None:
-                # First click in link mode - select start node
+
                 if clicked_node:
                     self.link_start_node = clicked_node
-                    self.draw_network()  # Redraw to clear any previous selection
-                    # Highlight the start node
+                    self.draw_network()
+
                     self.canvas.create_oval(
                         self.nodes[clicked_node]['x'] - 22,
                         self.nodes[clicked_node]['y'] - 22,
@@ -758,9 +736,9 @@ LOADING:
                         fg='#0c5460'
                     )
             else:
-                # Second click in link mode - create the link
+
                 if clicked_node and clicked_node != self.link_start_node:
-                    # Check if link already exists
+
                     link_exists = any(
                         (l['node1'] == self.link_start_node and l['node2'] == clicked_node) or
                         (l['node1'] == clicked_node and l['node2'] == self.link_start_node)
@@ -787,7 +765,7 @@ LOADING:
                             bg=self.theme.COLORS['bg_sidebar'],
                             fg=self.theme.COLORS['text_primary']
                         )
-                    # Exit link mode after attempt
+
                     self.link_mode = False
                     self.link_start_node = None
                 elif clicked_node == self.link_start_node:
@@ -797,7 +775,7 @@ LOADING:
                         fg='#721c24'
                     )
                 else:
-                    # Clicked empty space - cancel link mode
+
                     self.link_mode = False
                     self.link_start_node = None
                     self.draw_network()
@@ -807,11 +785,11 @@ LOADING:
                         fg=self.theme.COLORS['text_primary']
                     )
         else:
-            # Normal selection mode
+
             if clicked_node:
                 self.selected_node = clicked_node
-                self.selected_nodes = [clicked_node]  # Single selection
-                self.dragging_node = clicked_node  # Prepare for potential drag
+                self.selected_nodes = [clicked_node]
+                self.dragging_node = clicked_node
                 self.selection_box_active = False
                 self.draw_network()
                 self.update_button_states()
@@ -821,7 +799,7 @@ LOADING:
                     fg='#0c5460'
                 )
             else:
-                # Clicked empty space - start selection box
+
                 self.selected_node = None
                 self.selected_nodes = []
                 self.dragging_node = None
@@ -844,9 +822,9 @@ LOADING:
         return None
     
     def canvas_drag(self, event):
-        # Handle selection box dragging
+
         if self.selection_box_active and self.selection_box_start:
-            # Draw selection box
+
             self.draw_network()
             x1, y1 = self.selection_box_start
             self.canvas.create_rectangle(
@@ -856,36 +834,31 @@ LOADING:
                 dash=(4, 4),
                 tags='selection_box'
             )
-        # Handle node dragging
+
         elif not self.link_mode and self.dragging_node:
-            # Calculate movement delta
+
             dx = event.x - self.drag_start_x
             dy = event.y - self.drag_start_y
             
-            # Check if actually dragging (moved more than a few pixels)
             if abs(dx) > 3 or abs(dy) > 3:
-                # Update node position
+
                 self.nodes[self.dragging_node]['x'] = event.x
                 self.nodes[self.dragging_node]['y'] = event.y
                 
-                # Redraw network
                 self.draw_network()
                 
-                # Update drag start for smooth continuous dragging
                 self.drag_start_x = event.x
                 self.drag_start_y = event.y
     
     def canvas_release(self, event):
-        # Handle selection box release
+
         if self.selection_box_active and self.selection_box_start:
             x1, y1 = self.selection_box_start
             x2, y2 = event.x, event.y
             
-            # Ensure x1 < x2 and y1 < y2
             min_x, max_x = min(x1, x2), max(x1, x2)
             min_y, max_y = min(y1, y2), max(y1, y2)
             
-            # Select all nodes within the rectangle
             self.selected_nodes = []
             for node_id, node in self.nodes.items():
                 if min_x <= node['x'] <= max_x and min_y <= node['y'] <= max_y:
@@ -907,9 +880,9 @@ LOADING:
                     bg=self.theme.COLORS['bg_sidebar'],
                     fg=self.theme.COLORS['text_primary']
                 )
-        # Handle node dragging release
+
         elif self.dragging_node and not self.link_mode:
-            # Final position update
+
             self.nodes[self.dragging_node]['x'] = event.x
             self.nodes[self.dragging_node]['y'] = event.y
             self.draw_network()
@@ -923,7 +896,7 @@ LOADING:
             self.dragging_node = None
     
     def canvas_right_click(self, event):
-        """Start link creation with right-click"""
+        
         clicked_node = self.find_node_at(event.x, event.y)
         if clicked_node:
             self.right_click_link_start = clicked_node
@@ -934,11 +907,11 @@ LOADING:
             )
     
     def canvas_right_drag(self, event):
-        """Show link preview while dragging with right-click"""
+        
         if self.right_click_link_start:
-            # Redraw network
+
             self.draw_network()
-            # Draw temporary line from start node to cursor
+
             start_node = self.nodes[self.right_click_link_start]
             self.canvas.create_line(
                 start_node['x'], start_node['y'],
@@ -950,12 +923,12 @@ LOADING:
             )
     
     def canvas_right_release(self, event):
-        """Complete link creation on right-click release"""
+        
         if self.right_click_link_start:
             target_node = self.find_node_at(event.x, event.y)
             
             if target_node and target_node != self.right_click_link_start:
-                # Check if link already exists
+
                 link_exists = any(
                     (l['node1'] == self.right_click_link_start and l['node2'] == target_node) or
                     (l['node1'] == target_node and l['node2'] == self.right_click_link_start)
@@ -969,7 +942,7 @@ LOADING:
                         fg='#721c24'
                     )
                 else:
-                    # Create the link
+
                     self.links.append({
                         'node1': self.right_click_link_start,
                         'node2': target_node,
@@ -990,7 +963,7 @@ LOADING:
                     fg='#721c24'
                 )
             else:
-                # Released on empty space
+
                 self.status_label.config(
                     text="Link creation cancelled - no target node.",
                     bg=self.theme.COLORS['bg_sidebar'],
@@ -1001,13 +974,13 @@ LOADING:
             self.draw_network()
     
     def delete_selected(self):
-        # Handle multiple selected nodes
+
         if self.selected_nodes:
             num_deleted = len(self.selected_nodes)
             for node_id in self.selected_nodes:
                 if node_id in self.nodes:
                     del self.nodes[node_id]
-            # Remove all links connected to deleted nodes
+
             self.links = [l for l in self.links 
                          if l['node1'] not in self.selected_nodes and l['node2'] not in self.selected_nodes]
             self.selected_nodes = []
@@ -1020,7 +993,7 @@ LOADING:
                 bg=self.theme.COLORS['bg_sidebar'],
                 fg=self.theme.COLORS['text_primary']
             )
-        # Handle single selected node
+
         elif self.selected_node:
             node_id = self.selected_node
             del self.nodes[self.selected_node]
@@ -1048,10 +1021,9 @@ LOADING:
             )
         
         for node_id, node in self.nodes.items():
-            # Color: red for exposed, teal for internal
+
             color = '#ff6b6b' if node['properties'].get('exposed_to_internet') else '#4ecdc4'
             
-            # Draw node outline (thicker and blue if selected)
             is_selected = node_id == self.selected_node or node_id in self.selected_nodes
             outline_color = 'blue' if is_selected else 'black'
             outline_width = 4 if is_selected else 2
@@ -1095,7 +1067,6 @@ LOADING:
         form_frame = tk.Frame(dialog, bg=self.theme.COLORS['bg_primary'])
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Configure grid columns - make column 1 (entry fields) expand
         form_frame.columnconfigure(1, weight=1)
         
         tk.Label(
@@ -1151,34 +1122,29 @@ LOADING:
         ).grid(row=7, column=0, columnspan=3, pady=20)
     
     def generate_scale_free_network(self, num_nodes, exposed_percent):
-        """Generate a scale-free network using Barabási-Albert model with default parameters"""
+        
         self.nodes = {}
         self.links = []
         
-        # Use sensible defaults for BA model
-        initial_nodes = min(3, num_nodes)  # Start with 3 nodes (or fewer if num_nodes < 3)
-        edges_per_node = min(2, initial_nodes)  # Each new node connects to 2 existing nodes
+        initial_nodes = min(3, num_nodes)
+        edges_per_node = min(2, initial_nodes)
         
-        # Load available options from configuration files
         os_list = self.load_operating_systems()
         services = self.load_services()
         assets = self.load_assets()
         categories = self.load_categories()
         
         width, height = 800, 600
-        radius = 250  # Radius of the circle
+        radius = 250
         
-        # Create all nodes positioned in a circle
         for i in range(num_nodes):
             angle = 2 * math.pi * i / num_nodes
             x = width / 2 + radius * math.cos(angle)
             y = height / 2 + radius * math.sin(angle)
             
-            # Select random OS and get its data
             chosen_os = random.choice(os_list) if os_list else "Linux"
             os_data = self.load_os_data(chosen_os)
             
-            # Select random version from the OS
             versions = os_data.get('versions', [])
             if versions:
                 chosen_version_data = random.choice(versions)
@@ -1189,15 +1155,12 @@ LOADING:
                 chosen_version = "1.0"
                 chosen_vulns = []
             
-            # Select random services (1-4 services)
             num_services = random.randint(1, min(4, len(services))) if services else 0
             chosen_services = random.sample(services, num_services) if num_services > 0 else []
             
-            # Select random assets (0-2 assets)
             num_assets = random.randint(0, min(2, len(assets))) if assets else 0
             chosen_assets = random.sample(assets, num_assets) if num_assets > 0 else []
             
-            # Select random category
             chosen_category = random.choice(categories) if categories else "Server"
             
             node_id = f"node_{i+1}"
@@ -1219,7 +1182,6 @@ LOADING:
                 }
             }
         
-        # Fully connect initial nodes
         for i in range(initial_nodes):
             for j in range(i+1, initial_nodes):
                 self.links.append({
@@ -1228,25 +1190,22 @@ LOADING:
                     'bidirectional': True
                 })
         
-        # Track node degrees for preferential attachment
         node_degrees = {f"node_{i+1}": 0 for i in range(num_nodes)}
         for link in self.links:
             node_degrees[link['node1']] += 1
             node_degrees[link['node2']] += 1
         
-        # Add links for remaining nodes with preferential attachment
         for i in range(initial_nodes, num_nodes):
             node_id = f"node_{i+1}"
             
-            # Preferential attachment: connect to existing nodes based on their degree
             total_degree = sum(node_degrees.values())
             targets = []
             for _ in range(min(edges_per_node, len(self.nodes) - 1)):
                 if total_degree == 0:
-                    # If no connections yet, choose randomly
+
                     target = random.choice([n for n in node_degrees.keys() if n != node_id and n not in targets])
                 else:
-                    # Choose based on degree (preferential attachment)
+
                     r = random.uniform(0, total_degree)
                     cumsum = 0
                     target = None
@@ -1272,7 +1231,6 @@ LOADING:
                     node_degrees[target] += 1
                     total_degree += 2
         
-        # Mark exposed nodes
         num_exposed = max(1, int(num_nodes * exposed_percent / 100))
         exposed_nodes = random.sample(list(self.nodes.keys()), num_exposed)
         for node_id in exposed_nodes:
@@ -1296,7 +1254,6 @@ LOADING:
             )
             return
         
-        # Ensure this window is focused before showing file dialog
         self.lift()
         self.focus_force()
         
@@ -1349,7 +1306,7 @@ LOADING:
                 )
     
     def load_network(self):
-        # Ensure this window is focused before showing file dialog
+
         self.lift()
         self.focus_force()
         
