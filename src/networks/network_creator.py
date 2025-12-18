@@ -425,62 +425,64 @@ class NetworkCreator(tk.Toplevel):
             fields['category'].set(categories[0])
         current_row += 1
         
-        tk.Label(form_frame, text="Services:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary'], font=self.theme.FONTS['heading_small']).grid(row=current_row, column=0, sticky='nw', pady=10, padx=5)
-        
-        services_outer_frame = tk.Frame(form_frame, bg=self.theme.COLORS['bg_secondary'], relief=tk.SUNKEN, bd=1)
-        services_outer_frame.grid(row=current_row, column=1, sticky='ew', pady=10, padx=5)
-        
-        services_canvas = tk.Canvas(services_outer_frame, bg=self.theme.COLORS['bg_primary'], height=150, highlightthickness=0)
-        services_scrollbar = tk.Scrollbar(services_outer_frame, orient="vertical", command=services_canvas.yview)
-        services_inner_frame = tk.Frame(services_canvas, bg=self.theme.COLORS['bg_primary'])
-        
-        services_inner_frame.bind(
-            "<Configure>",
-            lambda e: services_canvas.configure(scrollregion=services_canvas.bbox("all"))
-        )
-        
-        services_canvas.create_window((0, 0), window=services_inner_frame, anchor="nw")
-        services_canvas.configure(yscrollcommand=services_scrollbar.set)
-        
-        services_canvas.pack(side="left", fill="both", expand=True)
-        services_scrollbar.pack(side="right", fill="y")
-        
-        def on_services_mousewheel(event):
-            services_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        def on_services_mousewheel_linux(event):
-            if event.num == 4:
-                services_canvas.yview_scroll(-1, "units")
-            elif event.num == 5:
-                services_canvas.yview_scroll(1, "units")
-        
-        def bind_services_scroll(event):
-            dialog.unbind("<MouseWheel>")
-            dialog.unbind("<Button-4>")
-            dialog.unbind("<Button-5>")
-            dialog.bind("<MouseWheel>", on_services_mousewheel)
-            dialog.bind("<Button-4>", on_services_mousewheel_linux)
-            dialog.bind("<Button-5>", on_services_mousewheel_linux)
-        
-        def unbind_services_scroll(event):
-            dialog.unbind("<MouseWheel>")
-            dialog.unbind("<Button-4>")
-            dialog.unbind("<Button-5>")
-            dialog.bind("<MouseWheel>", on_dialog_mousewheel)
-            dialog.bind("<Button-4>", on_dialog_mousewheel_linux)
-            dialog.bind("<Button-5>", on_dialog_mousewheel_linux)
-        
-        services_outer_frame.bind("<Enter>", bind_services_scroll)
-        services_outer_frame.bind("<Leave>", unbind_services_scroll)
+        # tk.Label(form_frame, text="Services:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary'], font=self.theme.FONTS['heading_small']).grid(row=current_row, column=0, sticky='nw', pady=10, padx=5)
+        # 
+        # services_outer_frame = tk.Frame(form_frame, bg=self.theme.COLORS['bg_secondary'], relief=tk.SUNKEN, bd=1)
+        # services_outer_frame.grid(row=current_row, column=1, sticky='ew', pady=10, padx=5)
+        # 
+        # services_canvas = tk.Canvas(services_outer_frame, bg=self.theme.COLORS['bg_primary'], height=150, highlightthickness=0)
+        # services_scrollbar = tk.Scrollbar(services_outer_frame, orient="vertical", command=services_canvas.yview)
+        # services_inner_frame = tk.Frame(services_canvas, bg=self.theme.COLORS['bg_primary'])
+        # 
+        # services_inner_frame.bind(
+        #     "<Configure>",
+        #     lambda e: services_canvas.configure(scrollregion=services_canvas.bbox("all"))
+        # )
+        # 
+        # services_canvas.create_window((0, 0), window=services_inner_frame, anchor="nw")
+        # services_canvas.configure(yscrollcommand=services_scrollbar.set)
+        # 
+        # services_canvas.pack(side="left", fill="both", expand=True)
+        # services_scrollbar.pack(side="right", fill="y")
+        # 
+        # def on_services_mousewheel(event):
+        #     services_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        # def on_services_mousewheel_linux(event):
+        #     if event.num == 4:
+        #         services_canvas.yview_scroll(-1, "units")
+        #     elif event.num == 5:
+        #         services_canvas.yview_scroll(1, "units")
+        # 
+        # def bind_services_scroll(event):
+        #     dialog.unbind("<MouseWheel>")
+        #     dialog.unbind("<Button-4>")
+        #     dialog.unbind("<Button-5>")
+        #     dialog.bind("<MouseWheel>", on_services_mousewheel)
+        #     dialog.bind("<Button-4>", on_services_mousewheel_linux)
+        #     dialog.bind("<Button-5>", on_services_mousewheel_linux)
+        # 
+        # def unbind_services_scroll(event):
+        #     dialog.unbind("<MouseWheel>")
+        #     dialog.unbind("<Button-4>")
+        #     dialog.unbind("<Button-5>")
+        #     dialog.bind("<MouseWheel>", on_dialog_mousewheel)
+        #     dialog.bind("<Button-4>", on_dialog_mousewheel_linux)
+        #     dialog.bind("<Button-5>", on_dialog_mousewheel_linux)
+        # 
+        # services_outer_frame.bind("<Enter>", bind_services_scroll)
+        # services_outer_frame.bind("<Leave>", unbind_services_scroll)
+        # 
+        # fields['services_vars'] = {}
+        # for service in self.load_services():
+        #     var = tk.BooleanVar(value=False)
+        #     fields['services_vars'][service] = var
+        #     tk.Checkbutton(services_inner_frame, text=service, variable=var, 
+        #                   bg=self.theme.COLORS['bg_primary'], 
+        #                   fg=self.theme.COLORS['text_primary'],
+        #                   anchor='w').pack(fill='x', padx=5, pady=2)
+        # current_row += 1
         
         fields['services_vars'] = {}
-        for service in self.load_services():
-            var = tk.BooleanVar(value=False)
-            fields['services_vars'][service] = var
-            tk.Checkbutton(services_inner_frame, text=service, variable=var, 
-                          bg=self.theme.COLORS['bg_primary'], 
-                          fg=self.theme.COLORS['text_primary'],
-                          anchor='w').pack(fill='x', padx=5, pady=2)
-        current_row += 1
         
         tk.Label(form_frame, text="Vulnerabilities:", bg=self.theme.COLORS['bg_primary'], fg=self.theme.COLORS['text_primary'], font=self.theme.FONTS['heading_small']).grid(row=current_row, column=0, sticky='nw', pady=10, padx=5)
         

@@ -1,16 +1,3 @@
 {
-  "services": [
-    "ssh",
-    "http",
-    "https",
-    "ftp",
-    "smtp",
-    "dns",
-    "mysql",
-    "postgresql",
-    "rdp",
-    "smb",
-    "ldap",
-    "docker"
-  ]
+  "services": []
 }
