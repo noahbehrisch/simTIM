@@ -143,17 +143,8 @@ class NetworkCreator(tk.Toplevel):
         
         help_content = """Network Creator Help
 
-Selection:
-  • Left-click drag on empty space: Selection box (multiple nodes)
-  • Click node: Select single node (turns red)
-
-Creating Links:
-  • Right-click drag: From node to node (red preview line)
-  • Button mode: Click 'Create Link', then click two nodes
-
 Visual Indicators:
-  • Red node = Selected
-  • Yellow node = Exposed to Internet
+  • Red node = Exposed to Internet
 """
         
         self.help_text_widget.insert('1.0', help_content)
