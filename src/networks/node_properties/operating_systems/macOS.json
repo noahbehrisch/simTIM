@@ -3,15 +3,28 @@
   "versions": [
     {
       "version": "14 Sonoma",
-      "vulnerabilities": ["CVE-2023-42916", "CVE-2023-42917", "CVE-2023-40397"]
+      "vulnerabilities": [
+        "CVE-2023-42916",
+        "CVE-2023-42917",
+        "CVE-2023-40397"
+      ]
     },
     {
       "version": "13 Ventura",
-      "vulnerabilities": ["CVE-2023-32435", "CVE-2023-28204", "CVE-2022-42856"]
+      "vulnerabilities": [
+        "CVE-2023-32435",
+        "CVE-2023-28204",
+        "CVE-2022-42856"
+      ]
     },
     {
       "version": "12 Monterey",
-      "vulnerabilities": ["CVE-2022-32893", "CVE-2022-22675", "CVE-2021-30883"]
+      "vulnerabilities": [
+        "CVE-2022-32893",
+        "CVE-2022-22675",
+        "CVE-2021-30883"
+      ]
     }
   ]
 }
+
