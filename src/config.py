@@ -53,10 +53,13 @@ class GUIConfig:
     default_theme: str = 'dark'
     enable_animations: bool = True
     default_tab: str = 'simulation'
+
 sim_config = SimConfig()
 path_config = PathConfig()
 detection_config = DetectionConfig()
 gui_config = GUIConfig()
+
+#TODO: add config loading and saving
 
 def load_config_from_file(filepath: str):
     pass
