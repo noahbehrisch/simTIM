@@ -9,6 +9,7 @@ from src.gui.theme import Theme
 from .network_generator import NetworkGenerator
 from .node_dialog import NodeDialog
 
+
 class NetworkCreator(tk.Toplevel, NetworkGenerator, NodeDialog):
     def __init__(self, parent):
         super().__init__(parent)
