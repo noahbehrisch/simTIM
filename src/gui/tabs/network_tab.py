@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
 from .base_tab import BaseTab
-from src.networks.network_creator import NetworkCreator
+from ...networks.network_creator import NetworkCreator
 
 class NetworkTab(BaseTab):
     def __init__(self, parent, theme_colors):
@@ -296,7 +296,7 @@ class NetworkTab(BaseTab):
     def launch_visualizer(self):
         """Launch network visualizer."""
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-        from src.networks.network_visualizer import NetworkVisualizer
+        from networks.network_visualizer import NetworkVisualizer
         from src.core.graph import Graph
 
         network_path = self.network_file_var.get()
