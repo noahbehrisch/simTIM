@@ -2,6 +2,7 @@ import re
 from typing import Union
 
 class Version:
+
     def __init__(self, version_string: str):
         self.version_string = version_string.strip()
         self._parse_version()
@@ -11,14 +12,14 @@ class Version:
         self.is_prerelease = False
         self.prerelease_type = None
         self.prerelease_number = 0
-        prerelease_pattern = r'(a|alpha|b|beta|rc|dev)(\d*)'
+        prerelease_pattern = '(a|alpha|b|beta|rc|dev)(\\d*)'
         prerelease_match = re.search(prerelease_pattern, version)
         if prerelease_match:
             self.is_prerelease = True
             self.prerelease_type = prerelease_match.group(1)
             self.prerelease_number = int(prerelease_match.group(2)) if prerelease_match.group(2) else 0
             version = re.sub(prerelease_pattern, '', version)
-        clean_version = re.sub(r'[^0-9.]', '', version)
+        clean_version = re.sub('[^0-9.]', '', version)
         parts = clean_version.split('.')
         while len(parts) < 3:
             parts.append('0')
@@ -34,21 +35,13 @@ class Version:
     def _get_prerelease_priority(self) -> int:
         if not self.is_prerelease:
             return 1000
-        priorities = {
-            'dev': 0,
-            'a': 10, 'alpha': 10,
-            'b': 20, 'beta': 20,
-            'rc': 30
-        }
+        priorities = {'dev': 0, 'a': 10, 'alpha': 10, 'b': 20, 'beta': 20, 'rc': 30}
         return priorities.get(self.prerelease_type, 5)
 
     def _compare_to(self, other: 'Version') -> int:
         if not isinstance(other, Version):
             other = Version(str(other))
-        for self_part, other_part in zip(
-            [self.major, self.minor, self.patch] + self.additional,
-            [other.major, other.minor, other.patch] + other.additional
-        ):
+        for self_part, other_part in zip([self.major, self.minor, self.patch] + self.additional, [other.major, other.minor, other.patch] + other.additional):
             if self_part < other_part:
                 return -1
             elif self_part > other_part:

@@ -23,8 +23,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#TODO: Rework postcondition evaluation (currently redundant functions)
-#TODO: Action creator
-#TODO: Network creator
-#TODO: implement help window for every tab using only one help.py file

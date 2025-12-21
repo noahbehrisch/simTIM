@@ -2,6 +2,7 @@ import math
 import matplotlib.pyplot as plt
 
 class NetworkVisualizer:
+
     def __init__(self, network):
         self.network = network
         self.node_positions = {}
@@ -28,17 +29,10 @@ class NetworkVisualizer:
         for link in self.network.links:
             node1_pos = self.node_positions[link.node1.id]
             node2_pos = self.node_positions[link.node2.id]
-            ax.plot(
-                [node1_pos[0], node2_pos[0]],
-                [node1_pos[1], node2_pos[1]],
-                color='gray', linestyle='-', linewidth=1
-            )
+            ax.plot([node1_pos[0], node2_pos[0]], [node1_pos[1], node2_pos[1]], color='gray', linestyle='-', linewidth=1)
         for node_id, position in self.node_positions.items():
             ax.scatter(position[0], position[1], color='lightblue', s=200, zorder=2)
-            ax.text(
-                position[0], position[1], node_id,
-                fontsize=10, ha='center', va='center', zorder=3
-            )
+            ax.text(position[0], position[1], node_id, fontsize=10, ha='center', va='center', zorder=3)
 
     def _update(self, frame):
         self._draw_network()
