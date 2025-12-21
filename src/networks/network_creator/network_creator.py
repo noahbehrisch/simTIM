@@ -8,9 +8,11 @@ import glob
 from src.gui.theme import Theme
 from .network_generator import NetworkGenerator
 from .node_dialog import NodeDialog
+from .data_loaders import DataLoaders
+from .file_operations import FileOperations
 
 
-class NetworkCreator(tk.Toplevel, NetworkGenerator, NodeDialog):
+class NetworkCreator(tk.Toplevel, NetworkGenerator, NodeDialog, DataLoaders, FileOperations):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -36,74 +38,6 @@ class NetworkCreator(tk.Toplevel, NetworkGenerator, NodeDialog):
         
         self.create_widgets()
         self.transient(parent)
-    
-    def load_operating_systems(self):
-        
-        os_dir = "src/networks/node_properties/operating_systems"
-        os_list = []
-        for filepath in glob.glob(os.path.join(os_dir, "*.json")):
-            try:
-                with open(filepath, 'r') as f:
-                    os_data = json.load(f)
-                    os_list.append(os_data['name'])
-            except Exception as e:
-                print(f"Error loading {filepath}: {e}")
-        
-        priority_os = []
-        other_os = []
-        
-        for os_name in sorted(os_list):
-            if os_name == "Ubuntu":
-                priority_os.insert(0, os_name)
-            elif os_name == "Windows Server":
-                priority_os.append(os_name)
-            else:
-                other_os.append(os_name)
-        
-        return priority_os + other_os
-    
-    def load_os_data(self, os_name):
-        
-        os_dir = "src/networks/node_properties/operating_systems"
-
-        filename = os_name.replace(" ", "_") + ".json"
-        filepath = os.path.join(os_dir, filename)
-        try:
-            with open(filepath, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading OS data for {os_name}: {e}")
-            return {"name": os_name, "versions": []}
-    
-    def load_services(self):
-        
-        try:
-            with open("src/networks/node_properties/services/services.json", 'r') as f:
-                data = json.load(f)
-                return data['services']
-        except Exception as e:
-            print(f"Error loading services: {e}")
-            return []
-    
-    def load_assets(self):
-        
-        try:
-            with open("src/networks/node_properties/assets/assets.json", 'r') as f:
-                data = json.load(f)
-                return data['assets']
-        except Exception as e:
-            print(f"Error loading assets: {e}")
-            return []
-    
-    def load_categories(self):
-        
-        try:
-            with open("src/networks/node_properties/categories/categories.json", 'r') as f:
-                data = json.load(f)
-                return data['categories']
-        except Exception as e:
-            print(f"Error loading categories: {e}")
-            return []
     
     def update_button_states(self):
         if len(self.nodes) < 2:
@@ -654,123 +588,3 @@ Visual Indicators:
         
         self.update_properties_display()
         self.update_button_states()
- 
-    def save_network(self):
-        if not self.nodes:
-            self.status_label.config(
-                text="No network to save. Add nodes first.",
-                bg='#f8d7da',
-                fg='#721c24'
-            )
-            return
-        
-        self.lift()
-        self.focus_force()
-        
-        filename = filedialog.asksaveasfilename(
-            parent=self,
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            initialdir="src/networks/library"
-        )
-        
-        if filename:
-            network_data = {
-                "name": "Custom Network",
-                "description": f"Custom network with {len(self.nodes)} nodes and {len(self.links)} links",
-                "nodes": [],
-                "links": []
-            }
-            
-            for node_id, node in self.nodes.items():
-                network_data["nodes"].append({
-                    "id": node['id'],
-                    "name": node['name'],
-                    "software": node['software'],
-                    "vulnerabilities": node['vulnerabilities'],
-                    "assets": node['assets'],
-                    "properties": node['properties']
-                })
-            
-            for link in self.links:
-                network_data["links"].append({
-                    "node1": link['node1'],
-                    "node2": link['node2'],
-                    "bidirectional": link['bidirectional']
-                })
-            
-            try:
-                with open(filename, 'w') as f:
-                    json.dump(network_data, f, indent=2)
-                
-                self.status_label.config(
-                    text=f"Network saved to {filename}",
-                    bg='#d4edda',
-                    fg='#155724'
-                )
-            except Exception as e:
-                self.status_label.config(
-                    text=f"Error saving network: {str(e)}",
-                    bg='#f8d7da',
-                    fg='#721c24'
-                )
-    
-    def load_network(self):
-
-        self.lift()
-        self.focus_force()
-        
-        filename = filedialog.askopenfilename(
-            parent=self,
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            initialdir="src/networks/library"
-        )
-        
-        if filename:
-            try:
-                with open(filename, 'r') as f:
-                    data = json.load(f)
-                
-                self.nodes = {}
-                self.links = []
-                
-                for i, node in enumerate(data.get('nodes', [])):
-                    node_id = node['id']
-                    angle = 2 * math.pi * i / len(data['nodes'])
-                    x = 400 + 200 * math.cos(angle)
-                    y = 300 + 200 * math.sin(angle)
-                    
-                    self.nodes[node_id] = {
-                        'id': node_id,
-                        'name': node.get('name', node_id),
-                        'x': int(x),
-                        'y': int(y),
-                        'software': node.get('software', {}),
-                        'vulnerabilities': node.get('vulnerabilities', []),
-                        'assets': node.get('assets', []),
-                        'properties': node.get('properties', {})
-                    }
-                
-                for link in data.get('links', []):
-                    self.links.append({
-                        'node1': link['node1'],
-                        'node2': link['node2'],
-                        'bidirectional': link.get('bidirectional', True)
-                    })
-                
-                self.draw_network()
-                self.update_properties_display()
-                self.update_button_states()
-                
-                self.status_label.config(
-                    text=f"Network loaded from {filename}",
-                    bg='#d4edda',
-                    fg='#155724'
-                )
-                
-            except Exception as e:
-                self.status_label.config(
-                    text=f"Failed to load network: {str(e)}",
-                    bg='#f8d7da',
-                    fg='#721c24'
-                )
