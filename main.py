@@ -7,7 +7,7 @@ def main():
     simTIM Main Entry Point
 
     This is the main entry point for the simTIM application.
-    It launches the GUI interface for the simulation.
+    It launches the GUI for the simulation.
     """
     try:
         app = App()

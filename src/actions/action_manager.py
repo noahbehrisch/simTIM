@@ -399,6 +399,7 @@ def _has_already_exfiltrated(node, actor_id: str) -> bool:
     return False
 if __name__ == '__main__':
     print_action_summary()
+    
 all_actions = load_all_actions()
 all_attack_actions = all_actions.get('attack_actions', [])
 all_defense_actions = all_actions.get('defense_actions', [])
