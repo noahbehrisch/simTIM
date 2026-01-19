@@ -16,7 +16,7 @@
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.4
+    "value": 0.55
   },
   "damage_gain": {
     "one_off_damage": 0.0,

@@ -1,0 +1,64 @@
+{
+  "name": "SSH Lateral Movement",
+  "description": "Move laterally to a connected node via SSH. Requires SSH service running on target and no existing user access. Per TIM paper: link action postcondition applies to END node.",
+  "action_type": "link",
+  "cost": 400.0,
+  "duration": 2.0,
+  "success_probability": 0.7,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "end_node_property_check",
+        "property": "services.SSH",
+        "operator": "equals",
+        "value": "running"
+      },
+      {
+        "type": "end_node_access_check",
+        "operator": "less_than",
+        "value": "USER"
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_access",
+        "access_value": "USER"
+      },
+      {
+        "type": "set_property",
+        "property": "compromised",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "node_property_based",
+    "base_probability": 0.4,
+    "property_modifiers": [
+      {
+        "property": "properties",
+        "nested_property": "network_monitoring",
+        "value": true,
+        "probability_modifier": 0.3
+      },
+      {
+        "property": "properties",
+        "nested_property": "endpoint_protection",
+        "value": true,
+        "probability_modifier": 0.2
+      }
+    ]
+  },
+  "damage_gain": {
+    "one_off_damage": 500.0,
+    "one_off_gain": 150.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

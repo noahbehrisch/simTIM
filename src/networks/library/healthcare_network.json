@@ -25,7 +25,8 @@
         "physical_security": "maximum", 
         "network_segment": "10.10.0.0/16",
         "hipaa_compliant": true,
-        "logging_enabled": true
+        "logging_enabled": true,
+        "exposed_to_internet": true
       }
     },
     {

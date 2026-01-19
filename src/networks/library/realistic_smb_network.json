@@ -24,7 +24,8 @@
         "physical_security": "medium",
         "network_segment": "192.168.1.0/24",
         "manages_nat": true,
-        "vpn_enabled": true
+        "vpn_enabled": true,
+        "exposed_to_internet": true
       }
     },
     {
@@ -48,7 +49,8 @@
         "network_segment": "192.168.10.0/24", 
         "ip_address": "192.168.10.10",
         "exposed_services": ["80", "443"],
-        "outdated_cms": true
+        "outdated_cms": true,
+        "exposed_to_internet": true
       }
     },
     {

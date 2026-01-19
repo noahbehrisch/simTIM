@@ -1,9 +1,9 @@
 {
   "name": "Incident Response",
   "action_type": "node",
-  "cost": 800,
-  "duration": 24.0,
-  "success_probability": 0.75,
+  "cost": 5000,
+  "duration": 72.0,
+  "success_probability": 0.70,
   "precondition": {
     "type": "compound",
     "operator": "AND",

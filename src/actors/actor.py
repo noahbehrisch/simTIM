@@ -1,6 +1,13 @@
 class Actor:
 
-    def __init__(self, id: str, role: str, capacity: int=None, strategy: str='None', budget: float=float('inf')):
+    def __init__(
+        self,
+        id: str,
+        role: str,
+        capacity: int = None,
+        strategy: str = "None",
+        budget: float = float("inf"),
+    ):
         self.id = id
         self.role = role
         self.capacity = capacity if capacity is not None else 1
@@ -8,6 +15,7 @@ class Actor:
         self.budget = budget
         self.incurredCost = 0
         self.ongoing_actions = set()
+        self.pending_action_count = 0  # Track actions scheduled but not yet started
         self.simulator = None
         self.running = False
         self.decision_interval = 1.0
@@ -21,18 +29,26 @@ class Actor:
         if self.can_schedule_action():
             self.make_decision(self.simulator.network if self.simulator else None)
         if self.running and self.simulator:
-            self.simulator.schedule_event(self.simulator.current_time + self.decision_interval, 'actor_run', {'actor': self})
+            self.simulator.schedule_event(
+                self.simulator.current_time + self.decision_interval,
+                "actor_run",
+                {"actor": self},
+            )
 
     def __repr__(self) -> str:
-        return f'Actor(id={self.id}, capacity={self.capacity}, budget={self.budget}, incurredCost={self.incurredCost}, strategy={self.strategy})'
+        return f"Actor(id={self.id}, capacity={self.capacity}, budget={self.budget}, incurredCost={self.incurredCost}, strategy={self.strategy})"
 
     def can_schedule_action(self) -> bool:
-        capacity_ok = self.capacity == float('inf') or len(self.ongoing_actions) < self.capacity
-        budget_ok = self.budget == float('inf') or self.incurredCost < self.budget
+        # Include pending actions (scheduled but not yet started) in capacity check
+        total_ongoing = len(self.ongoing_actions) + self.pending_action_count
+        capacity_ok = self.capacity == float("inf") or total_ongoing < self.capacity
+        budget_ok = self.budget == float("inf") or self.incurredCost < self.budget
         return capacity_ok and budget_ok
 
     def schedule_action(self, action):
-        if self.can_schedule_action():
+        # Add action to ongoing_actions if not already there
+        # (may already be added by make_decision for immediate capacity tracking)
+        if action not in self.ongoing_actions and self.can_schedule_action():
             self.ongoing_actions.add(action)
 
     def notify_action_finished(self, action, status):
@@ -49,10 +65,24 @@ class Actor:
     def record_action_cost(self, action, timestamp):
         cost = action.cost
         self.incurredCost += cost
-        self.action_history.append({'timestamp': timestamp, 'action': action.name, 'cost': cost, 'type': 'cost'})
+        self.action_history.append(
+            {
+                "timestamp": timestamp,
+                "action": action.name,
+                "cost": cost,
+                "type": "cost",
+            }
+        )
 
     def get_concurrent_actions_count(self):
         return len(self.ongoing_actions)
 
     def record_economic_event(self, timestamp, event_type, value, details=None):
-        self.economic_events.append({'timestamp': timestamp, 'type': event_type, 'value': value, 'details': details or {}})
+        self.economic_events.append(
+            {
+                "timestamp": timestamp,
+                "type": event_type,
+                "value": value,
+                "details": details or {},
+            }
+        )

@@ -1,50 +1,36 @@
 import math
-import random
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable
 import logging
 from .base_detection import BaseDetectionEngine
+
 logger = logging.getLogger(__name__)
+
 
 class LinearDetectionEngine(BaseDetectionEngine):
 
-    def __init__(self, exponent: float=2.0, default_detection_probability: float=0.35):
-        super().__init__()
+    def __init__(
+        self, exponent: float = 2.0, default_detection_probability: float = 0.35
+    ):
+        super().__init__(default_detection_probability)
         if exponent < 1.0:
-            logger.warning(f'Exponent {exponent} < 1 would give early bias, setting to 1.0')
+            logger.warning(
+                f"Exponent {exponent} < 1 would give early bias, setting to 1.0"
+            )
             exponent = 1.0
         self.exponent = exponent
-        self.default_detection_probability = default_detection_probability
-        test_cdf = self.get_cdf_function(None)
-        if not self.validate_cdf(test_cdf):
-            logger.error(f'Polynomial CDF with n={exponent} failed validation!')
-        bias_type = 'linear' if exponent == 2.0 else 'late' if exponent > 1 else 'uniform'
-        logger.info(f'Initialized Linear Detection Engine: Fa(t) = t^{exponent} (detection rate: {bias_type}, default ϱ={default_detection_probability})')
-
-    def calculate_detection_probability(self, action, target, actor_access: str, actor) -> float:
-        try:
-            probability = action.get_detection_probability(target, actor_access, actor or 'unknown')
-            return max(0.0, min(1.0, probability))
-        except Exception as e:
-            logger.warning(f"Action '{action.name}' detection failed: {e}, using default")
-            return self.default_detection_probability
+        logger.info(f"Initialized Linear Detection Engine: Fa(t) = t^{exponent}")
 
     def get_cdf_function(self, action) -> Callable[[float], float]:
         n = self.exponent
         return lambda t: math.pow(t, n)
 
-    def calculate_detection_time(self, action, target, actor_access: str, actor, duration: float) -> Optional[float]:
-        detection_prob = self.calculate_detection_probability(action, target, actor_access, actor)
-        if random.random() >= detection_prob:
-            logger.debug(f'[Polynomial] {action.name} NOT detected (ϱ={detection_prob:.3f})')
-            return None
-        u = random.random()
-        t_normalized = math.pow(u, 1.0 / self.exponent)
-        t_normalized = min(1.0, max(0.0, t_normalized))
-        detection_time = t_normalized * duration
-        logger.debug(f'[Polynomial] {action.name} detected at t={detection_time:.2f}/{duration:.2f} (ϱ={detection_prob:.3f}, n={self.exponent}, Fa^(-1)({u:.3f})={t_normalized:.3f})')
-        return detection_time
+    def sample_inverse_cdf(self, u: float) -> float:
+        return math.pow(u, 1.0 / self.exponent)
 
     def get_configuration_summary(self) -> Dict[str, Any]:
-        cdf = self.get_cdf_function(None)
-        t_50_pct = math.pow(0.5, 1.0 / self.exponent)
-        return {'engine_type': 'LinearDetection', 'detection_strategy': 'Linear Detection Rate Increase', 'cdf_formula': f'Fa(t) = t^{self.exponent}', 'pdf_formula': f'fa(t) = {self.exponent}·t^{self.exponent - 1}', 'cdf_inverse': f'Fa^(-1)(u) = u^(1/{self.exponent})', 'exponent': self.exponent, 'description': 'Detection rate increases linearly over time - models behavioral analysis', 'paper_compliance': 'TIM Section 4.5 - Polynomial distribution with n=2 for linear rate', 'complexity': 'O(1) - Direct power and root operations', 'default_detection_probability': self.default_detection_probability, 'median_detection_time': f'{t_50_pct:.1%} of duration', 'characteristics': ['Detection rate increases linearly (fa(t) = 2t for n=2)', f'{int(cdf(0.25) * 100)}% detected by 25% of duration', f'{int(cdf(0.5) * 100)}% detected by 50% of duration', f'{int(cdf(0.75) * 100)}% detected by 75% of duration', 'Realistic for behavioral/anomaly detection', 'Models systems that need time to learn patterns']}
+        return {
+            "engine_type": "LinearDetection",
+            "cdf_formula": f"Fa(t) = t^{self.exponent}",
+            "exponent": self.exponent,
+            "default_detection_probability": self.default_detection_probability,
+        }

@@ -1,0 +1,26 @@
+{
+  "name": "Network Scan",
+  "description": "Scan connected network segment to discover adjacent nodes. Low cost reconnaissance action that makes previously unknown nodes VISIBLE. Per TIM paper: link action enables discovery of further nodes (R5).",
+  "action_type": "link",
+  "cost": 50.0,
+  "duration": 0.5,
+  "success_probability": 0.95,
+  "precondition": {
+    "type": "constant",
+    "value": true
+  },
+  "postcondition": {
+    "type": "set_access_if_none",
+    "access_value": "VISIBLE"
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.6
+  },
+  "damage_gain": {
+    "one_off_damage": 50.0,
+    "one_off_gain": 25.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}

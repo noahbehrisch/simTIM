@@ -1,37 +1,43 @@
-from typing import Any, Tuple, Optional
-from src.core.access_utils import get_node_access
+from typing import Any, Set
+from src.actors.strategies.base import DefenderStrategy
 
-class ReactiveDefenderStrategy:
+
+class ReactiveDefenderStrategy(DefenderStrategy):
+    """
+    Reactive: Strongly prioritizes responding to detected attacks and compromised nodes.
+    Prioritizes patching, firewall updates, and incident response when threats detected.
+    """
 
     def __init__(self):
-        self.name = 'reactive'
+        super().__init__("reactive", detection_window_hours=4.0)
 
-    def choose_action(self, defender, network_state) -> Optional[Tuple[Any, Any]]:
-        best = None
-        best_priority = -1
-        for action in defender.available_actions:
-            if action.is_node_action():
-                for node in network_state.get('nodes_list', []):
-                    if not hasattr(node, 'links'):
-                        continue
-                    actor_access = get_node_access(node, defender.id)
-                    try:
-                        if action.precondition(node, actor_access, defender.id):
-                            priority = self.get_priority(action, node)
-                            if priority > best_priority:
-                                best = (action, node)
-                                best_priority = priority
-                    except Exception as e:
-                        continue
-        return best
+    def get_priority(self, action: Any, node: Any, detected_nodes: Set[str]) -> float:
+        node_id = getattr(node, "id", str(node))
+        priority = 1
 
-    def get_priority(self, action: Any, node: Any) -> float:
-        priority = 0
-        if node.compromised and 'Incident Response' in action.name:
+        has_detection = detected_nodes and node_id in detected_nodes
+        is_compromised = node.compromised
+
+        if has_detection:
             priority += 100
-        elif node.compromised:
-            priority += 50
-        if len(node.vulnerabilities) > 0 and ('Patch' in action.name or 'Remediation' in action.name):
-            priority += 30 + len(node.vulnerabilities) * 10
+
+            if "Patch" in action.name or "Remediation" in action.name:
+                priority += 150
+            elif "Firewall" in action.name:
+                priority += 120
+            elif "Detection" in action.name or "Monitoring" in action.name:
+                priority += 50
+
+        if is_compromised:
+            if "Incident Response" in action.name:
+                priority += 300
+            elif "Patch" in action.name or "Remediation" in action.name:
+                priority += 100
+            elif "Firewall" in action.name:
+                priority += 80
+            else:
+                priority += 20
+
         priority += len(node.assets) * 2
+
         return priority

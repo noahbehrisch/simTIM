@@ -30,6 +30,7 @@ env/
 .pytest_cache/
 .noseids
 htmlcov/
+tests/
 
 # Distribution / packaging
 build/
@@ -45,4 +46,6 @@ results/
 # Miscellaneous
 misc/
 docs/
-tests/
+plots/
+profile/
+Zen.txt

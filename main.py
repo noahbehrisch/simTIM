@@ -23,7 +23,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# TODO: logging
-# TODO: Config
-# TODO: Big files ?

@@ -1,0 +1,50 @@
+{
+  "name": "RDP Lateral Movement",
+  "description": "Move laterally to a connected Windows node via Remote Desktop Protocol. Requires RDP service running on target. Gains ADMIN access on success. Per TIM paper: link action postcondition applies to END node.",
+  "action_type": "link",
+  "cost": 350.0,
+  "duration": 1.5,
+  "success_probability": 0.65,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "end_node_property_check",
+        "property": "services.RDP",
+        "operator": "equals",
+        "value": "running"
+      },
+      {
+        "type": "end_node_access_check",
+        "operator": "less_than",
+        "value": "USER"
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_access",
+        "access_value": "ADMIN"
+      },
+      {
+        "type": "set_property",
+        "property": "compromised",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.3
+  },
+  "damage_gain": {
+    "one_off_damage": 500.0,
+    "one_off_gain": 150.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  }
+}
