@@ -1,10 +1,9 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
 import random
+import tkinter as tk
+from tkinter import messagebox, ttk
 
 
 class NodeDialog:
-
     def add_node_dialog(self):
         dialog = tk.Toplevel(self)
         dialog.title("Add Node")
@@ -12,9 +11,7 @@ class NodeDialog:
         dialog.configure(bg=self.theme.COLORS["bg_primary"])
         dialog.transient(self)
         dialog.grab_set()
-        canvas = tk.Canvas(
-            dialog, bg=self.theme.COLORS["bg_primary"], highlightthickness=0
-        )
+        canvas = tk.Canvas(dialog, bg=self.theme.COLORS["bg_primary"], highlightthickness=0)
         scrollbar = tk.Scrollbar(dialog, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=self.theme.COLORS["bg_primary"])
         scrollable_frame.bind(
@@ -91,9 +88,7 @@ class NodeDialog:
             fg=self.theme.COLORS["text_primary"],
         ).grid(row=current_row, column=0, sticky="w", pady=5, padx=5)
         categories = self.load_categories()
-        fields["category"] = ttk.Combobox(
-            form_frame, values=categories, state="readonly"
-        )
+        fields["category"] = ttk.Combobox(form_frame, values=categories, state="readonly")
         fields["category"].grid(row=current_row, column=1, sticky="ew", pady=5, padx=5)
         if categories:
             fields["category"].set(categories[0])
@@ -119,16 +114,12 @@ class NodeDialog:
         vuln_scrollbar = tk.Scrollbar(
             vuln_outer_frame, orient="vertical", command=vuln_canvas.yview
         )
-        fields["vuln_inner_frame"] = tk.Frame(
-            vuln_canvas, bg=self.theme.COLORS["bg_primary"]
-        )
+        fields["vuln_inner_frame"] = tk.Frame(vuln_canvas, bg=self.theme.COLORS["bg_primary"])
         fields["vuln_inner_frame"].bind(
             "<Configure>",
             lambda e: vuln_canvas.configure(scrollregion=vuln_canvas.bbox("all")),
         )
-        vuln_canvas.create_window(
-            (0, 0), window=fields["vuln_inner_frame"], anchor="nw"
-        )
+        vuln_canvas.create_window((0, 0), window=fields["vuln_inner_frame"], anchor="nw")
         vuln_canvas.configure(yscrollcommand=vuln_scrollbar.set)
         vuln_canvas.pack(side="left", fill="both", expand=True)
         vuln_scrollbar.pack(side="right", fill="y")
@@ -296,15 +287,9 @@ class NodeDialog:
             if node_id in self.nodes:
                 messagebox.showerror("Error", f"Node {node_id} already exists")
                 return
-            services = [
-                service for service, var in fields["services_vars"].items() if var.get()
-            ]
-            vulnerabilities = [
-                vuln for vuln, var in fields["vuln_vars"].items() if var.get()
-            ]
-            assets = [
-                asset for asset, var in fields["assets_vars"].items() if var.get()
-            ]
+            services = [service for service, var in fields["services_vars"].items() if var.get()]
+            vulnerabilities = [vuln for vuln, var in fields["vuln_vars"].items() if var.get()]
+            assets = [asset for asset, var in fields["assets_vars"].items() if var.get()]
             x = random.randint(50, 750)
             y = random.randint(50, 550)
             self.nodes[node_id] = {

@@ -1,46 +1,37 @@
-from typing import Any, Set
+from typing import Any
+
 from src.actors.strategies.base import DefenderStrategy
 
 
 class ProactiveDefenderStrategy(DefenderStrategy):
-    """
-    Proactive: Strongly prioritizes prevention before attacks happen.
-    Lower priority for reaction (that's reactive's strength).
-    """
-
     def __init__(self):
-        super().__init__(
-            "proactive", detection_window_hours=1.0
-        )  # Short window - focuses on prevention
+        super().__init__("proactive", detection_window_hours=1.0)
 
-    def get_priority(self, action: Any, node: Any, detected_nodes: Set[str]) -> float:
-        priority = 1  # Base priority for any valid action
+    def get_priority(self, action: Any, node: Any, detected_nodes: set[str] | None = None) -> float:
+        tactic = self.get_d3fend_tactic(action)
+        priority = 1.0
 
-        # Highest: Patch vulnerabilities before they're exploited
         if not node.compromised and len(node.vulnerabilities) > 0:
-            if "Patch" in action.name or "Update" in action.name:
-                priority += 150 + len(node.vulnerabilities) * 20
+            if tactic == "Harden":
+                priority += 200 + len(node.vulnerabilities) * 25
+            elif tactic == "Model":
+                priority += 150 + len(node.vulnerabilities) * 15
 
-        # High: Deploy defensive measures
-        defensive_actions = [
-            "Firewall",
-            "EDR",
-            "Detection",
-            "Monitoring",
-            "Harden",
-            "Security",
-        ]
-        for defensive in defensive_actions:
-            if defensive in action.name:
-                priority += 80
-                break
+        tactic_priorities = {
+            "Harden": 120,
+            "Model": 100,
+            "Detect": 80,
+            "Isolate": 70,
+            "Deceive": 50,
+            "Evict": 30,
+            "Restore": 20,
+        }
+        priority += tactic_priorities.get(tactic, 10)
 
-        # Medium: Protect high-value assets
-        priority += len(node.assets) * 10
-        priority += len(node.links) * 3
+        priority += len(node.assets) * 12
+        priority += len(node.links) * 4
 
-        # Low priority for incident response (that's reactive's job)
         if node.compromised:
-            priority += 10  # Still do something, but not the focus
+            priority += 15
 
         return priority

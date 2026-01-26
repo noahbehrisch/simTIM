@@ -1,0 +1,53 @@
+{
+  "name": "Honeypot Deployment",
+  "description": "Deploy decoy systems that mimic production assets to detect, deflect, and study attacker behavior. Honeypots generate high-fidelity alerts as any interaction indicates malicious activity.",
+  "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-DHN",
+    "technique_name": "Decoy Honeynet",
+    "tactic": "Deceive",
+    "url": "https://d3fend.mitre.org/technique/d3f:DecoyHoneynet/"
+  },
+  "cost": 500,
+  "duration": 8.0,
+  "success_probability": 0.90,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {"type": "access_check", "operator": "equals", "value": "ADMIN"},
+      {"type": "property_check", "property": "honeypot_deployed", "operator": "not_equals", "value": true}
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "honeypot_deployed",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "deception_active",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": -200.0,
+    "one_off_gain": 0.0,
+    "time_damage": -50.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://d3fend.mitre.org/technique/d3f:DecoyHoneynet/",
+    "https://www.sans.org/white-papers/honeypots/"
+  ],
+  "notes": "Honeypots provide high-confidence alerts with minimal false positives. Cost includes setup, monitoring, and maintenance. Effectiveness depends on realistic decoy configuration."
+}

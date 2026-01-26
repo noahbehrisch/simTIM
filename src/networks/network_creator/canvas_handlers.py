@@ -1,8 +1,4 @@
-import tkinter as tk
-
-
 class CanvasHandlers:
-
     def start_link_creation(self):
         if len(self.nodes) < 2:
             return
@@ -39,15 +35,10 @@ class CanvasHandlers:
                     )
             elif clicked_node and clicked_node != self.link_start_node:
                 link_exists = any(
-                    (
-                        l["node1"] == self.link_start_node
-                        and l["node2"] == clicked_node
-                        or (
-                            l["node1"] == clicked_node
-                            and l["node2"] == self.link_start_node
-                        )
-                        for l in self.links
-                    )
+                    link["node1"] == self.link_start_node
+                    and link["node2"] == clicked_node
+                    or (link["node1"] == clicked_node and link["node2"] == self.link_start_node)
+                    for link in self.links
                 )
                 if link_exists:
                     self.status_label.config(
@@ -212,15 +203,13 @@ class CanvasHandlers:
             target_node = self.find_node_at(event.x, event.y)
             if target_node and target_node != self.right_click_link_start:
                 link_exists = any(
-                    (
-                        l["node1"] == self.right_click_link_start
-                        and l["node2"] == target_node
-                        or (
-                            l["node1"] == target_node
-                            and l["node2"] == self.right_click_link_start
-                        )
-                        for l in self.links
+                    link["node1"] == self.right_click_link_start
+                    and link["node2"] == target_node
+                    or (
+                        link["node1"] == target_node
+                        and link["node2"] == self.right_click_link_start
                     )
+                    for link in self.links
                 )
                 if link_exists:
                     self.status_label.config(
@@ -266,10 +255,10 @@ class CanvasHandlers:
                 if node_id in self.nodes:
                     del self.nodes[node_id]
             self.links = [
-                l
-                for l in self.links
-                if l["node1"] not in self.selected_nodes
-                and l["node2"] not in self.selected_nodes
+                link
+                for link in self.links
+                if link["node1"] not in self.selected_nodes
+                and link["node2"] not in self.selected_nodes
             ]
             self.selected_nodes = []
             self.selected_node = None
@@ -285,9 +274,9 @@ class CanvasHandlers:
             node_id = self.selected_node
             del self.nodes[self.selected_node]
             self.links = [
-                l
-                for l in self.links
-                if l["node1"] != self.selected_node and l["node2"] != self.selected_node
+                link
+                for link in self.links
+                if link["node1"] != self.selected_node and link["node2"] != self.selected_node
             ]
             self.selected_node = None
             self.draw_network()
@@ -304,18 +293,10 @@ class CanvasHandlers:
         for link in self.links:
             n1 = self.nodes[link["node1"]]
             n2 = self.nodes[link["node2"]]
-            self.canvas.create_line(
-                n1["x"], n1["y"], n2["x"], n2["y"], fill="gray", width=2
-            )
+            self.canvas.create_line(n1["x"], n1["y"], n2["x"], n2["y"], fill="gray", width=2)
         for node_id, node in self.nodes.items():
-            color = (
-                "#ff6b6b"
-                if node["properties"].get("exposed_to_internet")
-                else "#4ecdc4"
-            )
-            is_selected = (
-                node_id == self.selected_node or node_id in self.selected_nodes
-            )
+            color = "#ff6b6b" if node["properties"].get("exposed_to_internet") else "#4ecdc4"
+            is_selected = node_id == self.selected_node or node_id in self.selected_nodes
             outline_color = "blue" if is_selected else "black"
             outline_width = 4 if is_selected else 2
             self.canvas.create_oval(

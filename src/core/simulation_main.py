@@ -1,26 +1,31 @@
 import logging
-from typing import List, Optional, Dict, Any
-from src.core.simulator import Simulator
+from typing import Any
+
 from src.actions.action_manager import action_manager
-from src.networks.network_loader import load_network_config, create_network_from_config
 from src.actors.attacker import Attacker
 from src.actors.defender import Defender
-from src.core.access_levels import NodeAccessLevel, LinkAccessLevel
+from src.core.access_levels import LinkAccessLevel, NodeAccessLevel
+from src.core.economic_model import SimpleEconomicModel
+from src.core.simulator import Simulator
+from src.networks import NetworkLoader
 
 logger = logging.getLogger(__name__)
+
+# Global network loader instance
+_network_loader = NetworkLoader()
 
 
 def simtim_main(
     path_to_network_config: str,
-    attackers: Optional[List[Dict[str, Any]]] = None,
-    defenders: Optional[List[Dict[str, Any]]] = None,
+    attackers: list[dict[str, Any]] | None = None,
+    defenders: list[dict[str, Any]] | None = None,
     sim_time: int = 72,
     sim_runs: int = 1,
     detection_engine_type: str = "exponential",
-    action_duration_override: Optional[float] = None,
-    attack_duration_override: Optional[float] = None,
-    defense_duration_override: Optional[float] = None,
-) -> Optional[List[List]]:
+    action_duration_override: float | None = None,
+    attack_duration_override: float | None = None,
+    defense_duration_override: float | None = None,
+) -> list[list] | None:
     if not path_to_network_config:
         logger.error("No network configuration file provided")
         return None
@@ -40,19 +45,8 @@ def simtim_main(
     all_histories = []
     for run in range(sim_runs):
         logger.info(f"Running simulation {run + 1}/{sim_runs}")
-        config = load_network_config(path_to_network_config)
-        network = create_network_from_config(config)
-        network["nodes_list"] = list(network.values())
-        if hasattr(network, "links"):
-            network["links_list"] = list(getattr(network, "links", []))
-        elif "links" in network:
-            network["links_list"] = list(network["links"])
-        else:
-            links = set()
-            for node in network["nodes_list"]:
-                for link in getattr(node, "links", []):
-                    links.add(link)
-            network["links_list"] = list(links)
+        network = _network_loader.load(path_to_network_config)
+        # Links are already populated in the Network object
         attack_actions = action_manager.get_attack_actions()
         defense_actions = action_manager.get_defense_actions()
         if action_duration_override is not None:
@@ -66,7 +60,13 @@ def simtim_main(
         if defense_duration_override is not None:
             for action in defense_actions:
                 action.duration = defense_duration_override
-        simulator = Simulator(network, detection_engine_type=detection_engine_type)
+        # Create fresh economic model for each run to track economics separately
+        run_economic_model = SimpleEconomicModel()
+        simulator = Simulator(
+            network,
+            detection_engine_type=detection_engine_type,
+            economic_model_instance=run_economic_model,
+        )
         attacker_objs = []
         for i, attacker_config in enumerate(attackers):
             attacker = Attacker(
@@ -87,9 +87,9 @@ def simtim_main(
             )
             defender.available_actions = defense_actions
             defender_objs.append(defender)
-        network["actors"] = attacker_objs + defender_objs
+        network.actors = list(attacker_objs) + list(defender_objs)  # type: ignore[assignment]
         for attacker in attacker_objs:
-            for node in network["nodes_list"]:
+            for node in network.nodes_list:
                 if not hasattr(node, "access"):
                     node.access = {}
                 if hasattr(node, "properties") and node.properties.get(
@@ -99,7 +99,7 @@ def simtim_main(
                     attacker.visible_nodes.add(node)
                 else:
                     node.access[attacker.id] = NodeAccessLevel.NONE.to_string()
-            for link in network.get("links_list", []):
+            for link in network.links_list:
                 if not hasattr(link, "access"):
                     link.access = {}
                 link.access[attacker.id] = LinkAccessLevel.NONE.to_string()
@@ -113,12 +113,12 @@ def simtim_main(
                 )
 
         for defender in defender_objs:
-            for node in network["nodes_list"]:
+            for node in network.nodes_list:
                 if not hasattr(node, "access"):
                     node.access = {}
                 node.access[defender.id] = NodeAccessLevel.ADMIN.to_string()
                 defender.visible_nodes.add(node)
-            for link in network.get("links_list", []):
+            for link in network.links_list:
                 if not hasattr(link, "access"):
                     link.access = {}
                 link.access[defender.id] = LinkAccessLevel.VISIBLE.to_string()
@@ -132,14 +132,12 @@ def simtim_main(
             else:
                 history_tuples.append(event)
         all_histories.append(history_tuples)
-        logger.info(
-            f"Simulation run {run + 1} completed with {len(history_tuples)} events"
-        )
+        logger.info(f"Simulation run {run + 1} completed with {len(history_tuples)} events")
         if run + 1 < sim_runs:
             logger.debug("Preparing next simulation run...")
         else:
             logger.debug("Final network state:")
-            for n in network.values():
+            for n in network.nodes_list:
                 logger.debug(str(n))
     logger.info(f"All {sim_runs} simulation runs completed")
     return all_histories
@@ -149,8 +147,8 @@ def run_variable_scenarios(
     path_to_network_config: str,
     scenarios: list,
     variable_type: str = "action_duration",
-    attackers: list = None,
-    defenders: list = None,
+    attackers: list | None = None,
+    defenders: list | None = None,
     sim_time: int = 10,
     detection_engine_type="exponential",
 ):
@@ -168,7 +166,7 @@ def run_variable_scenarios(
     logger.info("SCENARIO COMPARISON MODE")
     logger.info(f"Running {len(scenarios)} scenarios with different {comparison_label}")
     logger.info(f"{'=' * 60}")
-    results = {"scenarios": [], "variable_type": variable_type}
+    results: dict[str, Any] = {"scenarios": [], "variable_type": variable_type}
     for scenario_idx, scenario in enumerate(scenarios, 1):
         runs = scenario["runs"]
         action_duration_override = None
@@ -187,15 +185,11 @@ def run_variable_scenarios(
         elif variable_type == "attacker_strategy":
             value = scenario["strategy"]
             value_label = f"Attacker Strategy: {value}"
-            scenario_attackers = [
-                {**attacker, "strategy": value} for attacker in attackers or []
-            ]
+            scenario_attackers = [{**attacker, "strategy": value} for attacker in attackers or []]
         elif variable_type == "defender_strategy":
             value = scenario["strategy"]
             value_label = f"Defender Strategy: {value}"
-            scenario_defenders = [
-                {**defender, "strategy": value} for defender in defenders or []
-            ]
+            scenario_defenders = [{**defender, "strategy": value} for defender in defenders or []]
         else:
             value = scenario.get("value", "unknown")
             value_label = f"Parameter: {value}"
@@ -221,14 +215,12 @@ def run_variable_scenarios(
         else:
             scenario_result["strategy"] = value
         results["scenarios"].append(scenario_result)
-        logger.info(
-            f"Scenario {scenario_idx} completed: {len(scenario_histories)} simulation runs"
-        )
+        histories_count = len(scenario_histories) if scenario_histories else 0
+        logger.info(f"Scenario {scenario_idx} completed: {histories_count} simulation runs")
     logger.info(f"{'=' * 60}")
     logger.info("ALL SCENARIOS COMPLETED")
     logger.info(f"Total scenarios: {len(scenarios)}")
-    logger.info(
-        f"Total simulation runs: {sum((len(s['histories']) for s in results['scenarios']))}"
-    )
+    total_runs = sum(len(s.get("histories") or []) for s in results["scenarios"])  # type: ignore[arg-type]
+    logger.info(f"Total simulation runs: {total_runs}")
     logger.info(f"{'=' * 60}")
     return results

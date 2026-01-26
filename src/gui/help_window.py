@@ -1,11 +1,11 @@
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import scrolledtext
+
 from src.gui.help_content import HELP_CONTENT
 from src.gui.theme import Theme
 
 
 class HelpWindow(tk.Toplevel):
-
     def __init__(self, parent, tab_name=None):
         super().__init__(parent)
         self.parent = parent
@@ -66,7 +66,6 @@ class HelpWindow(tk.Toplevel):
 
 
 class ToolTip:
-
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text

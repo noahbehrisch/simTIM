@@ -1,29 +1,23 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Callable
 import logging
 import random
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class BaseDetectionEngine(ABC):
-
     def __init__(self, default_detection_probability: float = 0.3):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.default_detection_probability = default_detection_probability
 
-    def calculate_detection_probability(
-        self, action, target, actor_access: str, actor
-    ) -> float:
+    def calculate_detection_probability(self, action, target, actor_access: str, actor) -> float:
         try:
-            probability = action.get_detection_probability(
-                target, actor_access, actor or "unknown"
-            )
+            probability = action.get_detection_probability(target, actor_access, actor or "unknown")
             return max(0.0, min(1.0, probability))
         except Exception as e:
-            self.logger.warning(
-                f"Action '{action.name}' detection failed: {e}, using default"
-            )
+            self.logger.warning(f"Action '{action.name}' detection failed: {e}, using default")
             return self.default_detection_probability
 
     @abstractmethod
@@ -35,15 +29,13 @@ class BaseDetectionEngine(ABC):
         pass
 
     @abstractmethod
-    def get_configuration_summary(self) -> Dict[str, Any]:
+    def get_configuration_summary(self) -> dict[str, Any]:
         pass
 
     def calculate_detection_time(
         self, action, target, actor_access: str, actor, duration: float
-    ) -> Optional[float]:
-        detection_prob = self.calculate_detection_probability(
-            action, target, actor_access, actor
-        )
+    ) -> float | None:
+        detection_prob = self.calculate_detection_probability(action, target, actor_access, actor)
         if random.random() >= detection_prob:
             self.logger.debug(f"{action.name} NOT detected (ϱ={detection_prob:.3f})")
             return None
@@ -58,13 +50,9 @@ class BaseDetectionEngine(ABC):
         )
         return detection_time
 
-    def validate_cdf(
-        self, cdf_func: Callable[[float], float], tolerance: float = 0.02
-    ) -> bool:
+    def validate_cdf(self, cdf_func: Callable[[float], float], tolerance: float = 0.02) -> bool:
         if abs(cdf_func(0.0)) > tolerance:
-            self.logger.error(
-                f"CDF constraint violated: Fa(0) = {cdf_func(0.0):.6f} ≠ 0"
-            )
+            self.logger.error(f"CDF constraint violated: Fa(0) = {cdf_func(0.0):.6f} ≠ 0")
             return False
         if abs(cdf_func(1.0) - 1.0) > tolerance:
             self.logger.warning(

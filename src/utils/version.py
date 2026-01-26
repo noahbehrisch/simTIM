@@ -1,9 +1,7 @@
 import re
-from typing import Union
 
 
 class Version:
-
     def __init__(self, version_string: str):
         self.version_string = version_string.strip()
         self._parse_version()
@@ -47,6 +45,7 @@ class Version:
         for self_part, other_part in zip(
             [self.major, self.minor, self.patch] + self.additional,
             [other.major, other.minor, other.patch] + other.additional,
+            strict=False,
         ):
             if self_part < other_part:
                 return -1

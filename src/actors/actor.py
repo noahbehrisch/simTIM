@@ -1,27 +1,29 @@
-class Actor:
+from typing import Any
 
+
+class Actor:
     def __init__(
         self,
         id: str,
         role: str,
-        capacity: int = None,
+        capacity: int | float | None = None,
         strategy: str = "None",
         budget: float = float("inf"),
     ):
         self.id = id
         self.role = role
-        self.capacity = capacity if capacity is not None else 1
+        self.capacity: int | float = capacity if capacity is not None else 1
         self.strategy = strategy
         self.budget = budget
         self.incurredCost = 0
-        self.ongoing_actions = set()
+        self.ongoing_actions: set[Any] = set()
         self.pending_action_count = 0  # Track actions scheduled but not yet started
-        self.simulator = None
+        self.simulator: Any = None
         self.running = False
         self.decision_interval = 1.0
         self.total_gain = 0.0
-        self.action_history = []
-        self.economic_events = []
+        self.action_history: list[dict[str, Any]] = []
+        self.economic_events: list[dict[str, Any]] = []
 
     def run(self):
         if not self.running:

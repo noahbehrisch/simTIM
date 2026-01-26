@@ -4,7 +4,6 @@ from tkinter import filedialog
 
 
 class FileOperations:
-
     def save_network(self):
         if not self.nodes:
             self.status_label.config(
@@ -26,7 +25,7 @@ class FileOperations:
                 "nodes": [],
                 "links": [],
             }
-            for node_id, node in self.nodes.items():
+            for _node_id, node in self.nodes.items():
                 network_data["nodes"].append(
                     {
                         "id": node["id"],
@@ -66,7 +65,7 @@ class FileOperations:
         )
         if filename:
             try:
-                with open(filename, "r") as f:
+                with open(filename) as f:
                     data = json.load(f)
                 self.nodes = {}
                 self.links = []

@@ -1,30 +1,21 @@
 import tkinter as tk
-from tkinter import ttk
+
 from ..theme import Theme
 
 
 class BaseTab:
-
     def __init__(self, parent, theme_colors):
         self.parent = parent
         self.theme_colors = theme_colors
         self.theme = Theme()
         self.bg_color = theme_colors.get("bg_color", self.theme.COLORS["bg_primary"])
-        self.tab_color = theme_colors.get(
-            "tab_color", self.theme.COLORS["bg_secondary"]
-        )
-        self.sidebar_color = theme_colors.get(
-            "sidebar_color", self.theme.COLORS["bg_sidebar"]
-        )
+        self.tab_color = theme_colors.get("tab_color", self.theme.COLORS["bg_secondary"])
+        self.sidebar_color = theme_colors.get("sidebar_color", self.theme.COLORS["bg_sidebar"])
         self.highlight_color = theme_colors.get(
             "highlight_color", self.theme.COLORS["accent_primary"]
         )
-        self.button_color = theme_colors.get(
-            "button_color", self.theme.COLORS["accent_secondary"]
-        )
-        self.button_fg = theme_colors.get(
-            "button_fg", self.theme.COLORS["text_primary"]
-        )
+        self.button_color = theme_colors.get("button_color", self.theme.COLORS["accent_secondary"])
+        self.button_fg = theme_colors.get("button_fg", self.theme.COLORS["text_primary"])
         self.frame = tk.Frame(parent, bg=self.tab_color)
         self.frame.grid(row=1, column=1, sticky="nswe")
         self.frame.grid_remove()
@@ -55,9 +46,7 @@ class BaseTab:
         else:
             bg = self.theme.COLORS["section_network"]
         header_frame = tk.Frame(parent, bg=bg, **self.theme.BORDERS["light"])
-        header_frame.pack(
-            fill="x", padx=self.theme.SPACING["md"], pady=self.theme.SPACING["sm"]
-        )
+        header_frame.pack(fill="x", padx=self.theme.SPACING["md"], pady=self.theme.SPACING["sm"])
         label_style = self.theme.get_label_style("subheading")
         label_style["bg"] = bg
         tk.Label(header_frame, text=text, **label_style).pack(
@@ -71,9 +60,7 @@ class BaseTab:
         label_style["bg"] = bg
         return tk.Label(parent, text=text, **label_style)
 
-    def create_styled_button(
-        self, parent, text, command, style_type="default", **kwargs
-    ):
+    def create_styled_button(self, parent, text, command, style_type="default", **kwargs):
         button_style = self.theme.get_button_style(style_type)
         button_style.update(kwargs)
         return tk.Button(parent, text=text, command=command, **button_style)
@@ -94,9 +81,7 @@ class BaseTab:
 
     def create_table_header(self, parent, columns):
         header_frame = tk.Frame(parent, bg=self.tab_color)
-        header_frame.pack(
-            fill="x", padx=self.theme.SPACING["md"], pady=self.theme.SPACING["sm"]
-        )
+        header_frame.pack(fill="x", padx=self.theme.SPACING["md"], pady=self.theme.SPACING["sm"])
         for i, (text, width) in enumerate(columns):
             label_style = self.theme.get_label_style("subheading")
             label_style.update(
@@ -106,7 +91,5 @@ class BaseTab:
                     **self.theme.BORDERS["light"],
                 }
             )
-            tk.Label(header_frame, text=text, **label_style).grid(
-                row=0, column=i, padx=1
-            )
+            tk.Label(header_frame, text=text, **label_style).grid(row=0, column=i, padx=1)
         return header_frame

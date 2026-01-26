@@ -1,29 +1,39 @@
-from typing import Any, Set
+from typing import Any
+
 from src.actors.strategies.base import DefenderStrategy
 
 
 class MonitoringDefenderStrategy(DefenderStrategy):
-    """
-    Monitoring: Strongly prioritizes deploying monitoring/detection capabilities.
-    Will still take other actions, but with lower priority.
-    """
-
     def __init__(self):
         super().__init__("monitoring", detection_window_hours=0.0)
 
-    def get_priority(self, action: Any, node: Any, detected_nodes: Set[str]) -> float:
-        priority = 1
+    def get_priority(self, action: Any, node: Any, detected_nodes: set[str] | None = None) -> float:
+        tactic = self.get_d3fend_tactic(action)
+        priority = 1.0
 
-        if (
-            "Monitoring" in action.name
-            or "Detection" in action.name
-            or "Log" in action.name
-        ):
-            priority += 100
-            priority += len(node.assets) * 10
-            priority += len(node.links) * 8
+        tactic_priorities = {
+            "Detect": 150,
+            "Model": 100,
+            "Deceive": 80,
+            "Isolate": 40,
+            "Harden": 30,
+            "Evict": 20,
+            "Restore": 20,
+        }
+        priority += tactic_priorities.get(tactic, 10)
+
+        if tactic == "Detect":
+            priority += len(node.assets) * 12
+            priority += len(node.links) * 10
+        elif tactic == "Model":
+            priority += len(node.assets) * 8
+        elif tactic == "Deceive":
+            priority += len(node.links) * 5
 
         if node.compromised:
-            priority += 30
+            if tactic == "Detect":
+                priority += 50
+            else:
+                priority += 20
 
         return priority

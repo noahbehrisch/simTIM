@@ -1,9 +1,6 @@
-import os
 import glob
-import importlib
-import inspect
 import logging
-from typing import List, Dict, Any, Type
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +9,7 @@ def get_src_path() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def discover_modules_in_directory(directory: str) -> List[str]:
+def discover_modules_in_directory(directory: str) -> list[str]:
     if not os.path.exists(directory):
         return []
 
@@ -25,21 +22,21 @@ def discover_modules_in_directory(directory: str) -> List[str]:
     return sorted(modules)
 
 
-def list_available_strategies(strategy_type: str) -> List[str]:
+def list_available_strategies(strategy_type: str) -> list[str]:
     src_path = get_src_path()
     strategy_dir = os.path.join(src_path, "actors", "strategies", strategy_type)
     return discover_modules_in_directory(strategy_dir)
 
 
-def list_attacker_strategies() -> List[str]:
+def list_attacker_strategies() -> list[str]:
     return list_available_strategies("attackers")
 
 
-def list_defender_strategies() -> List[str]:
+def list_defender_strategies() -> list[str]:
     return list_available_strategies("defenders")
 
 
-def list_available_networks() -> List[str]:
+def list_available_networks() -> list[str]:
     src_path = get_src_path()
     library_path = os.path.join(src_path, "networks", "library")
 
@@ -50,7 +47,7 @@ def list_available_networks() -> List[str]:
     return sorted([os.path.basename(f) for f in json_files])
 
 
-def list_available_detection_engines() -> List[str]:
+def list_available_detection_engines() -> list[str]:
     src_path = get_src_path()
     detection_dir = os.path.join(src_path, "detection")
 
@@ -62,12 +59,22 @@ def list_available_detection_engines() -> List[str]:
     return sorted(engines)
 
 
-def list_available_actions(action_type: str) -> List[str]:
+def list_available_actions(action_type: str) -> list[str]:
     src_path = get_src_path()
     action_dir = os.path.join(src_path, "actions", "library", action_type)
 
     if not os.path.exists(action_dir):
         return []
 
-    json_files = glob.glob(os.path.join(action_dir, "*.json"))
+    json_files = []
+
+    for item in os.listdir(action_dir):
+        item_path = os.path.join(action_dir, item)
+
+        if os.path.isdir(item_path):
+            subdir_files = glob.glob(os.path.join(item_path, "*.json"))
+            json_files.extend(subdir_files)
+        elif item.endswith(".json"):
+            json_files.append(item_path)
+
     return sorted([os.path.basename(f) for f in json_files])

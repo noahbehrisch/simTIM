@@ -1,0 +1,69 @@
+{
+  "name": "Data Collection",
+  "description": "Collect sensitive data from local file systems, databases, email clients, and browser storage. Includes searching for documents, credentials, and proprietary information.",
+  "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1005",
+    "technique_name": "Data from Local System",
+    "tactic": "collection",
+    "tactic_id": "TA0009",
+    "url": "https://attack.mitre.org/techniques/T1005/"
+  },
+  "cost": 150,
+  "duration": 4.0,
+  "success_probability": 0.70,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "greater_equal",
+        "value": "USER"
+      },
+      {
+        "type": "property_check",
+        "property": "compromised",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "type": "property_check",
+        "property": "data_staged",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "data_staged",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "exfiltration_ready",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.25
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 1000.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://attack.mitre.org/techniques/T1005/",
+    "https://www.verizon.com/business/resources/reports/dbir/"
+  ],
+  "notes": "Collection activities blend with normal user behavior, making detection difficult. DLP solutions can detect bulk data access patterns."
+}

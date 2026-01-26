@@ -1,5 +1,6 @@
 from enum import Enum
 from functools import total_ordering
+from typing import Any
 
 
 @total_ordering
@@ -9,13 +10,18 @@ class NodeAccessLevel(Enum):
     USER = 2
     ADMIN = 3
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
             return self.value < other.value
-        return NotImplemented
+        return NotImplemented  # type: ignore[return-value]
+
+    def __ge__(self, other: Any) -> bool:
+        if self.__class__ is other.__class__:
+            return self.value >= other.value
+        return NotImplemented  # type: ignore[return-value]
 
     @classmethod
-    def from_string(cls, access_str: str):
+    def from_string(cls, access_str: str) -> "NodeAccessLevel":
         if access_str is None:
             return cls.NONE
         access_upper = access_str.upper()

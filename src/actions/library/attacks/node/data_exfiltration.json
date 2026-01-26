@@ -2,6 +2,13 @@
   "name": "Data Exfiltration",
   "description": "Exfiltrate sensitive data to external infrastructure. Data is COPIED, not deleted. Duration accounts for data discovery, compression, encryption, and staged transfer to avoid detection.",
   "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1041",
+    "technique_name": "Exfiltration Over C2 Channel",
+    "tactic": "exfiltration",
+    "tactic_id": "TA0010",
+    "url": "https://attack.mitre.org/techniques/T1041"
+  },
   "cost": 300,
   "duration": 16.0,
   "success_probability": 0.55,
@@ -10,7 +17,8 @@
     "operator": "AND",
     "conditions": [
       {"type": "access_check", "operator": "greater_equal", "value": "USER"},
-      {"type": "assets_check", "check_type": "count", "operator": "greater_than", "value": 0}
+      {"type": "assets_check", "check_type": "count", "operator": "greater_than", "value": 0},
+      {"type": "property_check", "property": "data_exfiltrated", "operator": "not_equals", "value": true}
     ]
   },
   "postcondition": {

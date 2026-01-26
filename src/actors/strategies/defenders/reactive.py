@@ -1,43 +1,45 @@
-from typing import Any, Set
+from typing import Any
+
 from src.actors.strategies.base import DefenderStrategy
 
 
 class ReactiveDefenderStrategy(DefenderStrategy):
-    """
-    Reactive: Strongly prioritizes responding to detected attacks and compromised nodes.
-    Prioritizes patching, firewall updates, and incident response when threats detected.
-    """
-
     def __init__(self):
         super().__init__("reactive", detection_window_hours=4.0)
 
-    def get_priority(self, action: Any, node: Any, detected_nodes: Set[str]) -> float:
+    def get_priority(self, action: Any, node: Any, detected_nodes: set[str] | None = None) -> float:
         node_id = getattr(node, "id", str(node))
-        priority = 1
+        tactic = self.get_d3fend_tactic(action)
+        priority = 1.0
 
         has_detection = detected_nodes and node_id in detected_nodes
         is_compromised = node.compromised
 
         if has_detection:
             priority += 100
-
-            if "Patch" in action.name or "Remediation" in action.name:
-                priority += 150
-            elif "Firewall" in action.name:
-                priority += 120
-            elif "Detection" in action.name or "Monitoring" in action.name:
-                priority += 50
+            tactic_boost = {
+                "Evict": 200,
+                "Isolate": 150,
+                "Restore": 100,
+                "Detect": 50,
+                "Harden": 30,
+                "Model": 20,
+                "Deceive": 20,
+            }
+            priority += tactic_boost.get(tactic, 0)
 
         if is_compromised:
-            if "Incident Response" in action.name:
-                priority += 300
-            elif "Patch" in action.name or "Remediation" in action.name:
-                priority += 100
-            elif "Firewall" in action.name:
-                priority += 80
-            else:
-                priority += 20
+            tactic_boost = {
+                "Evict": 300,
+                "Restore": 200,
+                "Isolate": 150,
+                "Harden": 50,
+                "Detect": 30,
+                "Model": 20,
+                "Deceive": 20,
+            }
+            priority += tactic_boost.get(tactic, 20)
 
-        priority += len(node.assets) * 2
+        priority += len(node.assets) * 3
 
         return priority

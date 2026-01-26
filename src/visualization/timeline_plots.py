@@ -1,6 +1,7 @@
-import matplotlib.pyplot as plt
 import os
-from typing import List, Dict, Any
+from typing import Any
+
+import matplotlib.pyplot as plt
 
 COLORS = {
     "attacker": "#d62728",
@@ -28,16 +29,16 @@ EVENT_TYPES = [
 ]
 
 
-def _get_max_time(history: List) -> float:
-    max_time = 0
+def _get_max_time(history: list) -> float:
+    max_time: float = 0
     for entry in history:
         if len(entry) >= 1 and isinstance(entry[0], (int, float)):
-            max_time = max(max_time, entry[0])
+            max_time = max(max_time, float(entry[0]))
     return max_time
 
 
-def _extract_events(history: List) -> Dict[str, List]:
-    events = {et[0]: [] for et in EVENT_TYPES}
+def _extract_events(history: list) -> dict[str, list[dict[str, Any]]]:
+    events: dict[str, list[dict[str, Any]]] = {et[0]: [] for et in EVENT_TYPES}
     events["action_aborted"] = []
 
     for entry in history:
@@ -55,13 +56,11 @@ def _extract_events(history: List) -> Dict[str, List]:
             actor_type = "defender"
         else:
             continue
-        events[event_type].append(
-            {"time": time, "actor_type": actor_type, "data": data}
-        )
+        events[event_type].append({"time": time, "actor_type": actor_type, "data": data})
     return events
 
 
-def _extract_money(history: List, actors: List) -> Dict[str, List]:
+def _extract_money(history: list, actors: list) -> dict[str, list]:
     economic_events = []
 
     for actor in actors:
@@ -89,7 +88,7 @@ def _extract_money(history: List, actors: List) -> Dict[str, List]:
 
     economic_events.sort(key=lambda e: e["time"])
 
-    timeline = {
+    timeline: dict[str, list[Any]] = {
         "times": [],
         "cumulative_costs": [],
         "cumulative_gains": [],
@@ -121,9 +120,9 @@ def _extract_money(history: List, actors: List) -> Dict[str, List]:
     return timeline
 
 
-def _extract_nodes(economic_model) -> Dict[str, List]:
+def _extract_nodes(economic_model: Any) -> dict[str, list[Any]]:
     access_changes = getattr(economic_model, "access_state_changes", [])
-    timeline = {
+    timeline: dict[str, list[Any]] = {
         "times": [],
         "nodes_compromised": [],
         "nodes_admin": [],
@@ -134,16 +133,14 @@ def _extract_nodes(economic_model) -> Dict[str, List]:
         return timeline
 
     node_states = {}
-    for t in sorted(set(c[0] for c in access_changes)):
+    for t in sorted({c[0] for c in access_changes}):
         for change in access_changes:
             if change[0] == t:
                 node_states[change[1]] = change[4]
 
         admin = sum(1 for s in node_states.values() if s in ["ADMIN", "admin", 3])
         compromised = sum(
-            1
-            for s in node_states.values()
-            if s in ["USER", "ADMIN", "user", "admin", 2, 3]
+            1 for s in node_states.values() if s in ["USER", "ADMIN", "user", "admin", 2, 3]
         )
         visible = sum(1 for s in node_states.values() if s in ["VISIBLE", "visible", 1])
 
@@ -165,7 +162,6 @@ def _setup_axes(ax, xlabel, ylabel, title, max_time=None):
 
 
 class TimeSeriesPlotEngine:
-
     def __init__(self, output_dir="plots"):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -204,9 +200,7 @@ class TimeSeriesPlotEngine:
         plt.tight_layout()
         return fig
 
-    def create_money_over_time_plot(
-        self, history, actors, title="Economic Impact Over Time"
-    ):
+    def create_money_over_time_plot(self, history, actors, title="Economic Impact Over Time"):
         timeline = _extract_money(history, actors)
         max_time = _get_max_time(history)
 
@@ -330,7 +324,7 @@ class TimeSeriesPlotEngine:
         ax.fill_between(
             times,
             compromised,
-            [c + v for c, v in zip(compromised, visible)],
+            [c + v for c, v in zip(compromised, visible, strict=False)],
             label="Visible",
             color=self.colors["visible"],
             alpha=0.7,
@@ -338,11 +332,11 @@ class TimeSeriesPlotEngine:
         )
 
         if total_nodes:
-            safe = [total_nodes - c - v for c, v in zip(compromised, visible)]
+            safe = [total_nodes - c - v for c, v in zip(compromised, visible, strict=False)]
             ax.fill_between(
                 times,
-                [c + v for c, v in zip(compromised, visible)],
-                [c + v + s for c, v, s in zip(compromised, visible, safe)],
+                [c + v for c, v in zip(compromised, visible, strict=False)],
+                [c + v + s for c, v, s in zip(compromised, visible, safe, strict=False)],
                 label="Safe",
                 color=self.colors["none"],
                 alpha=0.5,

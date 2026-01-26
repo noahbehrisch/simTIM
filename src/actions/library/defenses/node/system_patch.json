@@ -1,6 +1,12 @@
 {
   "name": "System Patch",
   "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-SU",
+    "technique_name": "Software Update",
+    "url": "https://d3fend.mitre.org/technique/d3f:SoftwareUpdate",
+    "tactic": "Harden"
+  },
   "cost": 300,
   "duration": 1.5,
   "success_probability": 0.95,

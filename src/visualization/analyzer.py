@@ -1,17 +1,19 @@
-from .plots import ViolinPlotEngine
-from typing import List, Dict, Any
+from typing import Any
+
 from src.core.economic_model import calculate_action_damage, calculate_action_gain
 from src.utils.time_utils import parse_event
 
+from .plots import ViolinPlotEngine
+
 
 def analyze_simulation_results(
-    simulation_histories: List[List], parameters: Dict[str, Any] = None
-) -> List[Dict[str, Any]]:
-    results = []
+    simulation_histories: list[list], parameters: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
     for i, history in enumerate(simulation_histories):
-        damage = 0
-        gains = 0
-        costs = 0
+        damage: float = 0
+        gains: float = 0
+        costs: float = 0
         num_successful_attacks = 0
         num_successful_defenses = 0
         num_detections = 0
@@ -54,7 +56,7 @@ def analyze_simulation_results(
 
 
 def create_visualization_report(
-    simulation_results: List[Dict[str, Any]], output_dir: str = "simulation_plots"
+    simulation_results: list[dict[str, Any]], output_dir: str = "simulation_plots"
 ):
     plotter = ViolinPlotEngine(output_dir)
     if not simulation_results:
@@ -72,14 +74,7 @@ def create_visualization_report(
         plotter.save_plot(fig2, "parameter_sensitivity.png")
         for param in params:
             param_values = sorted(
-                list(
-                    set(
-                        (
-                            r.get("parameters", {}).get(param, 0)
-                            for r in simulation_results
-                        )
-                    )
-                )
+                {r.get("parameters", {}).get(param, 0) for r in simulation_results}
             )
             if len(param_values) > 1:
                 fig3 = plotter.create_damage_distribution_plot(

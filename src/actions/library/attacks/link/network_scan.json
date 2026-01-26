@@ -2,6 +2,13 @@
   "name": "Network Scan",
   "description": "Scan connected network segment to discover adjacent nodes. Low cost reconnaissance action that makes previously unknown nodes VISIBLE. Per TIM paper: link action enables discovery of further nodes (R5).",
   "action_type": "link",
+  "mitre_attack": {
+    "technique_id": "T1046",
+    "technique_name": "Network Service Discovery",
+    "tactic": "discovery",
+    "tactic_id": "TA0007",
+    "url": "https://attack.mitre.org/techniques/T1046"
+  },
   "cost": 50.0,
   "duration": 0.5,
   "success_probability": 0.95,

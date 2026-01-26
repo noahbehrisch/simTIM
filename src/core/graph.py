@@ -1,8 +1,8 @@
 import json
+from typing import Any
 
 
 class Node:
-
     def __init__(
         self,
         id: str,
@@ -18,8 +18,11 @@ class Node:
         self.repaired = False
         self.links: list[Link] = []
         self.access: dict[str, str] = {}
-        self.properties: dict[str, any] = {}
+        self.properties: dict[str, Any] = {}
         self.exposed_services: list[str] = []
+        self.services: dict[str, str] = {}
+        self.capabilities: list[str] = []
+        self.exposed_to_internet: bool = False
 
     def add_link(self, link: "Link") -> None:
         self.links.append(link)
@@ -41,10 +44,7 @@ class Node:
 
 
 class Link:
-
-    def __init__(
-        self, node1: Node, node2: Node, bidirectional: bool = True, latency: float = 0.0
-    ):
+    def __init__(self, node1: Node, node2: Node, bidirectional: bool = True, latency: float = 0.0):
         self.node1 = node1
         self.node2 = node2
         self.bidirectional = bidirectional
@@ -74,7 +74,6 @@ class Link:
 
 
 class Graph:
-
     def __init__(self):
         self.nodes = {}
         self.links = []
@@ -90,9 +89,7 @@ class Graph:
     def remove_node(self, node: Node):
         if node.id in self.nodes:
             del self.nodes[node.id]
-            self.links = [
-                link for link in self.links if link.node1 != node and link.node2 != node
-            ]
+            self.links = [link for link in self.links if link.node1 != node and link.node2 != node]
 
     def remove_link(self, link: Link):
         if link in self.links:
@@ -127,7 +124,7 @@ class Graph:
 
     @classmethod
     def from_json(cls, file_path):
-        with open(file_path, "r") as file:
+        with open(file_path) as file:
             graph_data = json.load(file)
         graph = cls()
         id_to_node = {}

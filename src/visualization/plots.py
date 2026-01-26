@@ -1,11 +1,11 @@
+import os
+from typing import Any
+
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import List, Dict, Any
-import os
 
 
 class ViolinPlotEngine:
-
     def __init__(self, output_dir: str = "plots"):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -14,9 +14,9 @@ class ViolinPlotEngine:
 
     def create_damage_distribution_plot(
         self,
-        simulation_results: List[Dict[str, Any]],
+        simulation_results: list[dict[str, Any]],
         parameter_name: str,
-        parameter_values: List[float],
+        parameter_values: list[float],
         title: str = "Damage Distribution Analysis",
     ) -> plt.Figure:
         damage_by_param = []
@@ -24,8 +24,7 @@ class ViolinPlotEngine:
             matching_results = [
                 r
                 for r in simulation_results
-                if abs(r.get("parameters", {}).get(parameter_name, 0) - param_val)
-                < 0.01
+                if abs(r.get("parameters", {}).get(parameter_name, 0) - param_val) < 0.01
             ]
             damages = [r.get("total_damage", 0) for r in matching_results]
             damage_by_param.append(damages)
@@ -37,7 +36,8 @@ class ViolinPlotEngine:
             showextrema=True,
             showmedians=True,
         )
-        for pc in parts["bodies"]:
+        bodies: Any = parts.get("bodies", [])
+        for pc in bodies:
             pc.set_facecolor(self.colors["damage"])
             pc.set_alpha(0.7)
         parts["cmeans"].set_color("black")
@@ -54,7 +54,7 @@ class ViolinPlotEngine:
 
     def create_economic_comparison_plot(
         self,
-        simulation_results: List[Dict[str, Any]],
+        simulation_results: list[dict[str, Any]],
         title: str = "Economic Impact Comparison",
     ) -> plt.Figure:
         damages = [r.get("total_damage", 0) for r in simulation_results]
@@ -62,7 +62,7 @@ class ViolinPlotEngine:
         costs = [r.get("total_costs", 0) for r in simulation_results]
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
         fig.suptitle(title, fontsize=14)
-        if damages and any((d > 0 for d in damages)):
+        if damages and any(d > 0 for d in damages):
             parts1 = ax1.violinplot([damages], showmeans=True, showmedians=True)
             for pc in parts1["bodies"]:
                 pc.set_facecolor(self.colors["damage"])
@@ -73,7 +73,7 @@ class ViolinPlotEngine:
         ax1.set_xticklabels(["Damage"])
         ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
         ax1.grid(True, alpha=0.3)
-        if gains and any((g > 0 for g in gains)):
+        if gains and any(g > 0 for g in gains):
             parts2 = ax2.violinplot([gains], showmeans=True, showmedians=True)
             for pc in parts2["bodies"]:
                 pc.set_facecolor(self.colors["gain"])
@@ -84,7 +84,7 @@ class ViolinPlotEngine:
         ax2.set_xticklabels(["Gains"])
         ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
         ax2.grid(True, alpha=0.3)
-        if costs and any((c > 0 for c in costs)):
+        if costs and any(c > 0 for c in costs):
             parts3 = ax3.violinplot([costs], showmeans=True, showmedians=True)
             for pc in parts3["bodies"]:
                 pc.set_facecolor(self.colors["cost"])
@@ -100,8 +100,8 @@ class ViolinPlotEngine:
 
     def create_parameter_sensitivity_plot(
         self,
-        simulation_results: List[Dict[str, Any]],
-        parameters: List[str],
+        simulation_results: list[dict[str, Any]],
+        parameters: list[str],
         title: str = "Parameter Sensitivity Analysis",
     ) -> plt.Figure:
         n_params = len(parameters)
@@ -111,14 +111,7 @@ class ViolinPlotEngine:
         fig.suptitle(title, fontsize=14)
         for i, param in enumerate(parameters):
             param_values = sorted(
-                list(
-                    set(
-                        (
-                            r.get("parameters", {}).get(param, 0)
-                            for r in simulation_results
-                        )
-                    )
-                )
+                {r.get("parameters", {}).get(param, 0) for r in simulation_results}
             )
             damage_by_param = []
             for param_val in param_values:
@@ -143,9 +136,7 @@ class ViolinPlotEngine:
                 axes[i].set_ylabel("Damage ($)" if i == 0 else "")
                 axes[i].set_xticks(range(len(param_values)))
                 axes[i].set_xticklabels([f"{val:.1f}" for val in param_values])
-                axes[i].yaxis.set_major_formatter(
-                    plt.FuncFormatter(lambda x, p: f"${x:,.0f}")
-                )
+                axes[i].yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
                 axes[i].grid(True, alpha=0.3)
         plt.tight_layout()
         return fig
@@ -163,7 +154,7 @@ def create_sample_data():
     np.random.seed(42)
     results = []
     for detection_time in [1, 3, 6, 12, 24]:
-        for run in range(20):
+        for _run in range(20):
             base_damage = 10000 + detection_time * 2000
             noise = np.random.normal(0, base_damage * 0.3)
             damage = max(0, base_damage + noise)

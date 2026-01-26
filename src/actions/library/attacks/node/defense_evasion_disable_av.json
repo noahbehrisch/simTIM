@@ -1,0 +1,63 @@
+{
+  "name": "Disable Security Tools",
+  "description": "Disable or tamper with security software including antivirus, EDR agents, and Windows Defender to evade detection. May involve stopping services, modifying registry, or killing processes.",
+  "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1562.001",
+    "technique_name": "Impair Defenses: Disable or Modify Tools",
+    "tactic": "defense-evasion",
+    "tactic_id": "TA0005",
+    "url": "https://attack.mitre.org/techniques/T1562/001/"
+  },
+  "cost": 125,
+  "duration": 1.0,
+  "success_probability": 0.45,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "property_check",
+        "property": "ids_deployed",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "ids_deployed",
+        "value": false
+      },
+      {
+        "type": "set_property",
+        "property": "detection_capability",
+        "value": 0.0
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.60
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 1500.0,
+    "time_damage": 0.0,
+    "time_gain": 100.0
+  },
+  "references": [
+    "https://attack.mitre.org/techniques/T1562/001/",
+    "https://www.mandiant.com/resources/reports/m-trends-2024"
+  ],
+  "notes": "Modern security tools have tamper protection making this harder. Success rate lower due to kernel-level protections and tamper alerts."
+}

@@ -17,8 +17,9 @@ Action Types:
 """
 
 from __future__ import annotations
-from typing import Any, Callable, Dict, TYPE_CHECKING
-import json
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 # Use TYPE_CHECKING to avoid circular imports
 # Node is only needed for type hints, not at runtime
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
 
 
 class Action:
-
     def __init__(
         self,
         name: str,
@@ -55,6 +55,7 @@ class Action:
         self.one_off_gain = one_off_gain
         self.time_damage = time_damage
         self.time_gain = time_gain
+        self._json_data: dict[str, Any] | None = None
 
     def get_detection_probability(self, node, actor_access, actor_id) -> float:
         return self.detection_probability(node, actor_access, actor_id)
@@ -77,27 +78,22 @@ class Action:
     def is_link_action(self) -> bool:
         return self.action_type == "link"
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
+        """Convert action to JSON-serializable dict."""
+        # Return original JSON data if available
+        if hasattr(self, "_json_data") and self._json_data:
+            return self._json_data.copy()
+
+        # Fallback for programmatically created actions
         return {
             "name": self.name,
             "action_type": self.action_type,
             "cost": self.cost,
             "duration": self.duration,
             "success_probability": self.success_probability,
-            "precondition": {
-                "type": "function_ref",
-                "function": getattr(self.precondition, "__name__", "unknown_function"),
-            },
-            "postcondition": {
-                "type": "function_ref",
-                "function": getattr(self.postcondition, "__name__", "unknown_function"),
-            },
-            "detection_probability": {
-                "type": "function_ref",
-                "function": getattr(
-                    self.detection_probability, "__name__", "unknown_function"
-                ),
-            },
+            "precondition": {"type": "constant", "value": True},
+            "postcondition": {"type": "constant", "value": True},
+            "detection_probability": {"type": "constant", "value": 0.0},
             "damage_gain": {
                 "one_off_damage": (
                     self.get_one_off_damage(None, None, None)
@@ -105,26 +101,20 @@ class Action:
                     else 0.0
                 ),
                 "one_off_gain": (
-                    self.get_one_off_gain(None, None, None)
-                    if callable(self.one_off_gain)
-                    else 0.0
+                    self.get_one_off_gain(None, None, None) if callable(self.one_off_gain) else 0.0
                 ),
                 "time_damage": (
-                    self.get_time_damage(None, None, None)
-                    if callable(self.time_damage)
-                    else 0.0
+                    self.get_time_damage(None, None, None) if callable(self.time_damage) else 0.0
                 ),
                 "time_gain": (
-                    self.get_time_gain(None, None, None)
-                    if callable(self.time_gain)
-                    else 0.0
+                    self.get_time_gain(None, None, None) if callable(self.time_gain) else 0.0
                 ),
             },
         }
 
     @classmethod
     def from_json(
-        cls, action_data: Dict[str, Any], function_registry: Dict[str, Callable] = None
+        cls, action_data: dict[str, Any], function_registry: dict[str, Callable] | None = None
     ):
         from src.actions.action_manager import action_manager
 

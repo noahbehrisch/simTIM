@@ -1,12 +1,12 @@
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
 import os
-from .base_tab import BaseTab
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
+
 from ...networks.network_creator import NetworkCreator
+from .base_tab import BaseTab
 
 
 class NetworkTab(BaseTab):
-
     def __init__(self, parent, theme_colors):
         default_network_path = os.path.abspath(
             os.path.join(
@@ -22,9 +22,7 @@ class NetworkTab(BaseTab):
         super().__init__(parent, theme_colors)
 
     def create_widgets(self):
-        selection_section = self.create_section_header(
-            self.pad_frame, "Network Selection", section_type="network"
-        )
+        self.create_section_header(self.pad_frame, "Network Selection", section_type="network")
         selection_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
         selection_frame.pack(fill="x", padx=10, pady=5)
         tk.Label(
@@ -57,9 +55,7 @@ class NetworkTab(BaseTab):
         ).grid(row=2, column=0, padx=20, pady=2, sticky="w")
         self.selection_content_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
         self.selection_content_frame.pack(fill="x", padx=10, pady=5)
-        self.predefined_frame = tk.Frame(
-            self.selection_content_frame, bg=self.tab_color
-        )
+        self.predefined_frame = tk.Frame(self.selection_content_frame, bg=self.tab_color)
         tk.Label(
             self.predefined_frame,
             text="Select from Library:",
@@ -76,16 +72,14 @@ class NetworkTab(BaseTab):
         )
         self.predefined_dropdown.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.predefined_dropdown.bind("<<ComboboxSelected>>", self._update_network_path)
-        self.create_styled_button(
-            self.predefined_frame, "Refresh", self._refresh_networks
-        ).grid(row=0, column=2, padx=5, pady=5, sticky="w")
-        self.create_styled_button(
-            self.predefined_frame, "Refresh", self._refresh_networks
-        ).grid(row=0, column=2, padx=5, pady=5, sticky="w")
-        descriptions_frame = tk.Frame(self.predefined_frame, bg=self.tab_color)
-        descriptions_frame.grid(
-            row=1, column=0, columnspan=3, padx=5, pady=5, sticky="ew"
+        self.create_styled_button(self.predefined_frame, "Refresh", self._refresh_networks).grid(
+            row=0, column=2, padx=5, pady=5, sticky="w"
         )
+        self.create_styled_button(self.predefined_frame, "Refresh", self._refresh_networks).grid(
+            row=0, column=2, padx=5, pady=5, sticky="w"
+        )
+        descriptions_frame = tk.Frame(self.predefined_frame, bg=self.tab_color)
+        descriptions_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
         self.network_descriptions = {
             "demo_network.json": "Simple 2-node network for testing and demonstrations",
             "healthcare_network.json": "Healthcare facility network with medical devices and systems",
@@ -116,9 +110,7 @@ class NetworkTab(BaseTab):
             self.custom_frame, "Browse", self.browse_network_file
         )
         self.browse_button.grid(row=0, column=2, padx=5, pady=5, sticky="w")
-        visualization_section = self.create_section_header(
-            self.pad_frame, "Network Visualization", section_type="network"
-        )
+        self.create_section_header(self.pad_frame, "Network Visualization", section_type="network")
         visualization_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
         visualization_frame.pack(fill="x", padx=10, pady=5)
         self.create_styled_button(
@@ -126,9 +118,7 @@ class NetworkTab(BaseTab):
         ).grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self._update_network_path()
         self._on_source_change()
-        creation_section = self.create_section_header(
-            self.pad_frame, "Network Creation", section_type="network"
-        )
+        self.create_section_header(self.pad_frame, "Network Creation", section_type="network")
         creation_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
         creation_frame.pack(fill="x", padx=10, pady=5)
         self.create_styled_button(
@@ -138,9 +128,7 @@ class NetworkTab(BaseTab):
     def _get_available_networks(self):
         try:
             library_dir = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__), "..", "..", "networks", "library"
-                )
+                os.path.join(os.path.dirname(__file__), "..", "..", "networks", "library")
             )
             if not os.path.exists(library_dir):
                 return ["demo_network.json"]
@@ -160,9 +148,7 @@ class NetworkTab(BaseTab):
         else:
             self.predefined_var.set(available_networks[0] if available_networks else "")
         self._update_network_path()
-        messagebox.showinfo(
-            "Refresh Complete", f"Found {len(available_networks)} network files"
-        )
+        messagebox.showinfo("Refresh Complete", f"Found {len(available_networks)} network files")
 
     def _on_source_change(self):
         for widget in self.selection_content_frame.winfo_children():
@@ -214,7 +200,6 @@ class NetworkTab(BaseTab):
             self.network_file_var.set(file_path)
 
     def launch_visualizer(self):
-        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         from networks.network_visualizer import NetworkVisualizer
         from src.core.graph import Graph
 

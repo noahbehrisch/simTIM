@@ -1,0 +1,118 @@
+{
+  "version": "1.3.0",
+  "description": "D3FEND Defensive Tactics Taxonomy for simTIM",
+  "source": "https://d3fend.mitre.org/",
+  "tactics": {
+    "Model": {
+      "description": "Gather information about systems, assets, and configurations",
+      "techniques": {
+        "D3-AI": "Asset Inventory",
+        "D3-AVE": "Asset Vulnerability Enumeration",
+        "D3-CIA": "Container Image Analysis",
+        "D3-CI": "Configuration Inventory",
+        "D3-SWI": "Software Inventory",
+        "D3-NVA": "Network Vulnerability Assessment",
+        "D3-SYSVA": "System Vulnerability Assessment",
+        "D3-PLM": "Physical Link Mapping",
+        "D3-LLM": "Logical Link Mapping",
+        "D3-ALLM": "Active Logical Link Mapping",
+        "D3-PLLM": "Passive Logical Link Mapping",
+        "D3-ODM": "Operational Dependency Mapping",
+        "D3-AM": "Access Modeling"
+      }
+    },
+    "Harden": {
+      "description": "Increase the difficulty of exploiting a system",
+      "techniques": {
+        "D3-MFA": "Multi-factor Authentication",
+        "D3-BAN": "Biometric Authentication",
+        "D3-CBAN": "Certificate-based Authentication",
+        "D3-ACH": "Application Configuration Hardening",
+        "D3-CH": "Credential Hardening",
+        "D3-CP": "Certificate Pinning",
+        "D3-CRO": "Credential Rotation",
+        "D3-CERO": "Certificate Rotation",
+        "D3-SU": "Software Update",
+        "D3-BA": "Bootloader Authentication",
+        "D3-FE": "File Encryption",
+        "D3-DE": "Disk Encryption"
+      }
+    },
+    "Detect": {
+      "description": "Identify potentially malicious activity",
+      "techniques": {
+        "D3-NTA": "Network Traffic Analysis",
+        "D3-NTSA": "Network Traffic Signature Analysis",
+        "D3-FA": "File Analysis",
+        "D3-FCA": "File Content Analysis",
+        "D3-PM": "Platform Monitoring",
+        "D3-FIM": "File Integrity Monitoring",
+        "D3-LAM": "Local Account Monitoring",
+        "D3-DAM": "Domain Account Monitoring",
+        "D3-ANET": "Authentication Event Thresholding",
+        "D3-AZET": "Authorization Event Thresholding",
+        "D3-RTSD": "Remote Terminal Session Detection",
+        "D3-PSA": "Process Spawn Analysis",
+        "D3-PSMD": "Process Self-Modification Detection",
+        "D3-CCSA": "Credential Compromise Scope Analysis",
+        "D3-UGLPA": "User Geolocation Logon Pattern Analysis"
+      }
+    },
+    "Isolate": {
+      "description": "Create logical or physical barriers to limit access",
+      "techniques": {
+        "D3-NTF": "Network Traffic Filtering",
+        "D3-ITF": "Inbound Traffic Filtering",
+        "D3-OTF": "Outbound Traffic Filtering",
+        "D3-EF": "Email Filtering",
+        "D3-NI": "Network Isolation",
+        "D3-BDI": "Broadcast Domain Isolation",
+        "D3-ET": "Encrypted Tunnels",
+        "D3-EAL": "Executable Allowlisting",
+        "D3-EDL": "Executable Denylisting",
+        "D3-SCF": "System Call Filtering",
+        "D3-CF": "Content Filtering",
+        "D3-CQ": "Content Quarantine",
+        "D3-UAP": "User Account Permissions"
+      }
+    },
+    "Deceive": {
+      "description": "Mislead adversaries with false information or decoys",
+      "techniques": {
+        "D3-DE": "Decoy Environment",
+        "D3-CHN": "Connected Honeynet",
+        "D3-DNR": "Decoy Network Resource",
+        "D3-DF": "Decoy File",
+        "D3-DP": "Decoy Persona",
+        "D3-DST": "Decoy Session Token",
+        "D3-DUC": "Decoy User Credential"
+      }
+    },
+    "Evict": {
+      "description": "Remove adversary presence from systems",
+      "techniques": {
+        "D3-CE": "Credential Eviction",
+        "D3-AL": "Account Locking",
+        "D3-ANCI": "Authentication Cache Invalidation",
+        "D3-CR": "Credential Revocation",
+        "D3-FE": "File Eviction",
+        "D3-PT": "Process Termination",
+        "D3-PS": "Process Suspension",
+        "D3-HR": "Host Reboot",
+        "D3-HS": "Host Shutdown"
+      }
+    },
+    "Restore": {
+      "description": "Return systems to a known good state",
+      "techniques": {
+        "D3-RC": "Reissue Credential",
+        "D3-RCO": "Restore Configuration",
+        "D3-RDB": "Restore Database",
+        "D3-RDI": "Restore Disk Image",
+        "D3-RF": "Restore File",
+        "D3-RS": "Restore Software",
+        "D3-UA": "Unlock Account"
+      }
+    }
+  }
+}

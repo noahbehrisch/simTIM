@@ -1,13 +1,25 @@
 {
   "name": "Intrusion Detection System",
   "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-NTA",
+    "technique_name": "Network Traffic Analysis",
+    "url": "https://d3fend.mitre.org/technique/d3f:NetworkTrafficAnalysis",
+    "related_techniques": [
+      "D3-NTSA"
+    ],
+    "tactic": "Detect"
+  },
   "cost": 300,
   "duration": 1.5,
   "success_probability": 0.8,
   "precondition": {
-    "type": "access_check",
-    "operator": "equals",
-    "value": "ADMIN"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {"type": "access_check", "operator": "equals", "value": "ADMIN"},
+      {"type": "property_check", "property": "ids_deployed", "operator": "not_equals", "value": true}
+    ]
   },
   "postcondition": {
     "type": "compound",

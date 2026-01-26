@@ -1,7 +1,14 @@
 {
-  "name": "Linux Privilege Escalation", 
+  "name": "Linux Privilege Escalation",
   "description": "Exploits Linux system vulnerabilities for local privilege escalation. Duration includes enumeration, exploit research, and careful execution.",
   "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1068",
+    "technique_name": "Exploitation for Privilege Escalation",
+    "tactic": "privilege-escalation",
+    "tactic_id": "TA0004",
+    "url": "https://attack.mitre.org/techniques/T1068"
+  },
   "cost": 150,
   "duration": 6.0,
   "success_probability": 0.45,
@@ -54,14 +61,14 @@
         "probability_modifier": 0.30
       },
       {
-        "property": "properties", 
+        "property": "properties",
         "nested_property": "endpoint_protection",
         "values": ["Sophos", "McAfee", "Symantec"],
         "probability_modifier": 0.20
       },
       {
         "property": "properties",
-        "nested_property": "endpoint_protection", 
+        "nested_property": "endpoint_protection",
         "values": ["Windows Defender", "basic"],
         "probability_modifier": 0.15
       },
@@ -79,7 +86,7 @@
       },
       {
         "property": "properties",
-        "nested_property": "security_monitoring", 
+        "nested_property": "security_monitoring",
         "values": ["business_hours"],
         "probability_modifier": 0.10
       },

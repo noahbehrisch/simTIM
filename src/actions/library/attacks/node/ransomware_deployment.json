@@ -1,0 +1,75 @@
+{
+  "name": "Ransomware Deployment",
+  "description": "Deploy ransomware to encrypt files and systems for extortion. Modern ransomware includes data exfiltration (double extortion) and may target backups and shadow copies.",
+  "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1486",
+    "technique_name": "Data Encrypted for Impact",
+    "tactic": "impact",
+    "tactic_id": "TA0040",
+    "url": "https://attack.mitre.org/techniques/T1486/"
+  },
+  "cost": 500,
+  "duration": 8.0,
+  "success_probability": 0.60,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "property_check",
+        "property": "c2_established",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "type": "property_check",
+        "property": "data_encrypted",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "data_encrypted",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "system_unusable",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "ransom_demanded",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.50
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 50000.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://attack.mitre.org/techniques/T1486/",
+    "https://www.ibm.com/reports/data-breach",
+    "https://www.cisa.gov/stopransomware"
+  ],
+  "notes": "Average ransomware dwell time is 4-5 days before deployment. Cost represents infrastructure and affiliate fees. Modern EDR can detect encryption patterns."
+}

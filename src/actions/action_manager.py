@@ -1,393 +1,288 @@
-import json
-import os
-import glob
+"""
+Action management module.
+
+Provides a unified interface (facade) for action operations, coordinating
+the validator, factory, registry, and loader components.
+
+Architecture:
+    ActionManager (Facade)
+        ├── ActionValidator  - Validates JSON configurations
+        ├── ActionFactory    - Creates Action objects
+        ├── ActionRegistry   - Stores and retrieves actions
+        └── ActionLoader     - Handles file I/O
+"""
+
 import logging
-from typing import Dict, List, Callable, Optional, Any
+from typing import Any
+
 from src.actions.action import Action
-from src.actions.json_conditions import condition_evaluator, action_executor
+from src.actions.action_factory import ActionFactory
+from src.actions.action_loader import ActionLoader
+from src.actions.action_registry import ActionRegistry
+from src.actions.action_validator import ActionValidator
 from src.core.access_levels import NodeAccessLevel
 
 logger = logging.getLogger(__name__)
 
 
 class ActionManager:
+    """
+    Facade for action management operations.
 
-    def __init__(self):
-        pass
+    Provides a unified API while delegating to specialized components:
+    - Validation → ActionValidator
+    - Creation → ActionFactory
+    - Storage → ActionRegistry
+    - File I/O → ActionLoader
+    """
 
-    def validate_action_json(self, action_data: Dict[str, Any]) -> Dict[str, Any]:
-        errors = []
-        warnings = []
-        required_fields = [
-            "name",
-            "action_type",
-            "cost",
-            "duration",
-            "success_probability",
-            "precondition",
-            "postcondition",
-            "detection_probability",
-            "damage_gain",
-        ]
-        for field in required_fields:
-            if field not in action_data:
-                errors.append(f"Missing required field: {field}")
-        if "name" in action_data and (not isinstance(action_data["name"], str)):
-            errors.append("'name' must be a string")
-        if "action_type" in action_data:
-            if action_data["action_type"] not in ["node", "link"]:
-                errors.append("'action_type' must be 'node' or 'link'")
-        if "cost" in action_data:
-            if (
-                not isinstance(action_data["cost"], (int, float))
-                or action_data["cost"] < 0
-            ):
-                errors.append("'cost' must be a non-negative number")
-        if "duration" in action_data:
-            if (
-                not isinstance(action_data["duration"], (int, float))
-                or action_data["duration"] <= 0
-            ):
-                errors.append("'duration' must be a positive number")
-        if "success_probability" in action_data:
-            prob = action_data["success_probability"]
-            if not isinstance(prob, (int, float)) or not 0 <= prob <= 1:
-                errors.append("'success_probability' must be a number between 0 and 1")
-        if "damage_gain" in action_data:
-            dg = action_data["damage_gain"]
-            if not isinstance(dg, dict):
-                errors.append("'damage_gain' must be a dictionary")
-            else:
-                required_dg_fields = [
-                    "one_off_damage",
-                    "one_off_gain",
-                    "time_damage",
-                    "time_gain",
-                ]
-                for field in required_dg_fields:
-                    if field not in dg:
-                        errors.append(f"'damage_gain' missing required field: {field}")
-                    elif not isinstance(dg[field], (int, float)):
-                        errors.append(f"'damage_gain.{field}' must be a number")
-        if "precondition" in action_data and (
-            not isinstance(action_data["precondition"], dict)
-        ):
-            errors.append("'precondition' must be a dictionary")
-        if "postcondition" in action_data and (
-            not isinstance(action_data["postcondition"], dict)
-        ):
-            errors.append("'postcondition' must be a dictionary")
-        if "detection_probability" in action_data and (
-            not isinstance(action_data["detection_probability"], dict)
-        ):
-            errors.append("'detection_probability' must be a dictionary")
-        return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
+    def __init__(
+        self,
+        validator: ActionValidator | None = None,
+        factory: ActionFactory | None = None,
+        registry: ActionRegistry | None = None,
+        loader: ActionLoader | None = None,
+        auto_load: bool = True,
+    ):
+        """
+        Initialize the action manager.
 
-    def create_function_from_spec(self, spec: Dict[str, Any]) -> Callable:
-        if spec["type"] == "function_ref":
-            error_msg = f"function_ref '{spec['function']}' is no longer supported. Please convert to JSON conditions."
-            logger.error(error_msg)
-            raise ValueError(
-                f"function_ref system has been removed. Convert '{spec['function']}' to JSON conditions."
-            )
-        elif spec["type"] == "json_condition":
-            return lambda node, access, actor: condition_evaluator.evaluate_condition(
-                spec, node, access, actor
-            )
-        elif spec["type"] == "compound":
-            return lambda node, access, actor: condition_evaluator.evaluate_condition(
-                spec, node, access, actor
-            )
-        elif spec["type"] in [
-            "access_check",
-            "software_check",
-            "version_check",
-            "property_check",
-            "vulnerability_check",
-            "assets_check",
-        ]:
-            return lambda node, access, actor: condition_evaluator.evaluate_condition(
-                spec, node, access, actor
-            )
-        elif spec["type"] == "constant":
-            value = spec["value"]
-            return lambda node, access, actor: value
-        elif spec["type"] == "zero":
-            return lambda node, access, actor: 0.0
-        elif spec["type"] == "node_property_based":
+        Args:
+            validator: Custom validator instance
+            factory: Custom factory instance
+            registry: Custom registry instance
+            loader: Custom loader instance
+            auto_load: Whether to automatically load actions from library
+        """
+        # Initialize components
+        self._validator = validator or ActionValidator()
+        self._factory = factory or ActionFactory(self._validator)
+        self._registry = registry or ActionRegistry()
+        self._loader = loader or ActionLoader(self._factory)
 
-            def detection_function(node, access, actor):
-                base_prob = spec.get("base_probability", 0.0)
-                modifier_sum = 0.0
-                for modifier in spec.get("property_modifiers", []):
-                    prop_name = modifier["property"]
-                    prop_value = None
-                    if hasattr(node, prop_name):
-                        prop_value = getattr(node, prop_name)
-                        if "nested_property" in modifier and isinstance(
-                            prop_value, dict
-                        ):
-                            nested_prop = modifier["nested_property"]
-                            prop_value = prop_value.get(nested_prop)
-                    if prop_value is not None:
-                        if "value" in modifier:
-                            if prop_value == modifier["value"]:
-                                modifier_sum += modifier.get(
-                                    "probability_modifier", 0.0
-                                )
-                        elif "values" in modifier:
-                            if prop_value in modifier["values"]:
-                                modifier_sum += modifier.get(
-                                    "probability_modifier", 0.0
-                                )
-                return min(1.0, base_prob + modifier_sum)
+        # Auto-load actions from library
+        if auto_load:
+            self._auto_load()
 
-            return detection_function
-        else:
-            raise ValueError(f"Unknown function spec type: {spec['type']}")
-
-    def create_postcondition_from_spec(self, spec: Dict[str, Any]) -> Callable:
-        if spec["type"] == "function_ref":
-            return self.get_function(spec["function"])
-        elif spec["type"] == "compound":
-            return lambda node, access, actor: action_executor.execute_postcondition(
-                spec, node, access, actor
-            )
-        elif spec.get("type") in [
-            "set_access",
-            "set_access_if_none",
-            "set_property",
-            "set_software",
-            "add_vulnerability",
-            "remove_vulnerability",
-            "increment_counter",
-            "set_links_access",
-            "set_access_neighbors",
-            "clear_assets",
-        ]:
-            return lambda node, access, actor: action_executor.execute_postcondition(
-                spec, node, access, actor
-            )
-        else:
-            return self.create_function_from_spec(spec)
-
-    def action_from_json(self, action_data: Dict[str, Any]) -> Action:
-        validation = self.validate_action_json(action_data)
-        if not validation["valid"]:
-            error_msg = f"Invalid action configuration for '{action_data.get('name', 'unknown')}':\n"
-            error_msg += "\n".join((f"  - {err}" for err in validation["errors"]))
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-        if validation["warnings"]:
-            for warning in validation["warnings"]:
-                logger.warning(f"Action '{action_data['name']}': {warning}")
+    def _auto_load(self) -> None:
+        """Load all actions from the library into the registry."""
         try:
-            precondition = self.create_function_from_spec(action_data["precondition"])
-            postcondition = self.create_postcondition_from_spec(
-                action_data["postcondition"]
-            )
-            detection_probability = self.create_function_from_spec(
-                action_data["detection_probability"]
-            )
-            damage_gain = action_data["damage_gain"]
-            one_off_damage = lambda node, access, actor: damage_gain["one_off_damage"]
-            one_off_gain = lambda node, access, actor: damage_gain["one_off_gain"]
-            time_damage = lambda node, access, actor: damage_gain["time_damage"]
-            time_gain = lambda node, access, actor: damage_gain["time_gain"]
-            action = Action(
-                name=action_data["name"],
-                precondition=precondition,
-                postcondition=postcondition,
-                cost=action_data["cost"],
-                duration=action_data["duration"],
-                success_probability=action_data["success_probability"],
-                action_type=action_data["action_type"],
-                detection_probability=detection_probability,
-                one_off_damage=one_off_damage,
-                one_off_gain=one_off_gain,
-                time_damage=time_damage,
-                time_gain=time_gain,
-            )
-            action._json_data = action_data
-            logger.debug(f"Created action: {action.name}")
-            return action
+            self._loader.load_into_registry(self._registry)
         except Exception as e:
-            raise ValueError(
-                f"Error creating action '{action_data.get('name', 'unknown')}': {e}"
-            )
+            logger.warning(f"Failed to auto-load actions: {e}")
 
-    def action_to_json(self, action: Action) -> Dict[str, Any]:
+    # =========================================================================
+    # Component Access
+    # =========================================================================
 
-        def get_function_spec(func):
-            if hasattr(func, "__name__") and func.__name__ in self.function_registry:
-                return {"type": "function_ref", "function": func.__name__}
-            elif hasattr(func, "__name__") and func.__name__ == "<lambda>":
-                try:
-                    test_result = func(None, None, None)
-                    if isinstance(test_result, (int, float)):
-                        return {"type": "constant", "value": test_result}
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Lambda function evaluation failed: {e}")
-                return {"type": "constant", "value": 0.0}
-            else:
-                return {"type": "constant", "value": 0.0}
+    @property
+    def validator(self) -> ActionValidator:
+        """Get the validator component."""
+        return self._validator
 
-        action_data = {
-            "name": action.name,
-            "action_type": action.action_type,
-            "cost": action.cost,
-            "duration": action.duration,
-            "success_probability": action.success_probability,
-            "precondition": get_function_spec(action.precondition),
-            "postcondition": get_function_spec(action.postcondition),
-            "detection_probability": get_function_spec(action.detection_probability),
-            "damage_gain": {
-                "one_off_damage": 0.0,
-                "one_off_gain": 0.0,
-                "time_damage": 0.0,
-                "time_gain": 0.0,
-            },
+    @property
+    def factory(self) -> ActionFactory:
+        """Get the factory component."""
+        return self._factory
+
+    @property
+    def registry(self) -> ActionRegistry:
+        """Get the registry component."""
+        return self._registry
+
+    @property
+    def loader(self) -> ActionLoader:
+        """Get the loader component."""
+        return self._loader
+
+    # =========================================================================
+    # Validation and Creation
+    # =========================================================================
+
+    def validate_action_json(self, action_data: dict[str, Any]) -> dict[str, Any]:
+        """
+        Validate an action JSON configuration.
+
+        Args:
+            action_data: Action configuration dictionary
+
+        Returns:
+            Dictionary with 'valid', 'errors', and 'warnings' keys
+        """
+        result = self._validator.validate(action_data)
+        return {
+            "valid": result.valid,
+            "errors": result.errors,
+            "warnings": result.warnings,
         }
-        try:
-            action_data["damage_gain"]["one_off_damage"] = action.one_off_damage(
-                None, None, None
-            )
-            action_data["damage_gain"]["one_off_gain"] = action.one_off_gain(
-                None, None, None
-            )
-            action_data["damage_gain"]["time_damage"] = action.time_damage(
-                None, None, None
-            )
-            action_data["damage_gain"]["time_gain"] = action.time_gain(None, None, None)
-        except (TypeError, AttributeError, ValueError) as e:
-            logger.debug(
-                f"Failed to extract damage/gain values for action '{action.name}': {e}"
-            )
-        return action_data
 
-    def load_actions_from_directory(self, directory_path: str) -> List[Action]:
-        actions = []
-        if not os.path.exists(directory_path):
-            return actions
-        json_files = glob.glob(os.path.join(directory_path, "*.json"))
-        for json_file in json_files:
-            try:
-                with open(json_file, "r") as f:
-                    action_data = json.load(f)
-                    action = self.action_from_json(action_data)
-                    actions.append(action)
-            except Exception as e:
-                logger.warning(f"Failed to load action from {json_file}: {e}")
+    def action_from_json(self, action_data: dict[str, Any]) -> Action:
+        """
+        Create an Action from JSON data.
+
+        Args:
+            action_data: Action configuration dictionary
+
+        Returns:
+            Configured Action instance
+
+        Raises:
+            ValueError: If validation fails or creation encounters an error
+        """
+        return self._factory.create(action_data)
+
+    def action_to_json(self, action: Action) -> dict[str, Any]:
+        """
+        Convert an Action to JSON format.
+
+        Args:
+            action: Action to serialize
+
+        Returns:
+            Dictionary representation
+        """
+        return self._factory.to_json(action)
+
+    # =========================================================================
+    # Loading Operations (delegates to loader)
+    # =========================================================================
+
+    def load_actions_from_directory(self, directory_path: str) -> list[Action]:
+        """Load actions from a directory."""
+        return self._loader.load_from_directory(directory_path)
+
+    def load_all_actions(self) -> dict[str, list[Action]]:
+        """
+        Load all actions from the library.
+
+        Returns:
+            Dictionary with 'attack_actions' and 'defense_actions' keys
+        """
+        actions = self._loader.load_all()
+        return {
+            "attack_actions": actions.get("attack", []),
+            "defense_actions": actions.get("defense", []),
+        }
+
+    def load_actions_from_file(self, file_path: str) -> dict[str, list[Action]]:
+        """Load actions from a bundled JSON file."""
+        return self._loader.load_from_bundle(file_path)
+
+    def load_specific_actions(self, action_names: list[str]) -> list[Action]:
+        """Load specific actions by name."""
+        result: list[Action] = []
+        for name in action_names:
+            if self._registry.contains(name):
+                action = self._registry.get(name)
+                if action is not None:
+                    result.append(action)
+        return result
+
+    # =========================================================================
+    # Registry Operations (delegates to registry)
+    # =========================================================================
+
+    def get_attack_actions(self) -> list[Action]:
+        """Get all attack actions from the registry."""
+        actions = self._registry.get_attack_actions()
+        if not actions:
+            # Fallback to loading if registry is empty
+            return self._loader.load_attacks()
         return actions
 
-    def load_all_actions(self) -> Dict[str, List[Action]]:
-        base_dir = os.path.join(os.path.dirname(__file__), "library")
-
-        # Load node attack actions
-        node_attacks_dir = os.path.join(base_dir, "attacks", "node")
-        node_attack_actions = self.load_actions_from_directory(node_attacks_dir)
-
-        # Load link attack actions
-        link_attacks_dir = os.path.join(base_dir, "attacks", "link")
-        link_attack_actions = self.load_actions_from_directory(link_attacks_dir)
-
-        # Combine all attack actions
-        attack_actions = node_attack_actions + link_attack_actions
-
-        # Load node defense actions
-        node_defenses_dir = os.path.join(base_dir, "defenses", "node")
-        node_defense_actions = self.load_actions_from_directory(node_defenses_dir)
-
-        # Load link defense actions
-        link_defenses_dir = os.path.join(base_dir, "defenses", "link")
-        link_defense_actions = self.load_actions_from_directory(link_defenses_dir)
-
-        # Combine all defense actions
-        defense_actions = node_defense_actions + link_defense_actions
-
-        return {"attack_actions": attack_actions, "defense_actions": defense_actions}
-
-    def get_attack_actions(self) -> List[Action]:
-        actions = self.load_all_actions()
-        return actions.get("attack_actions", [])
-
-    def get_defense_actions(self) -> List[Action]:
-        actions = self.load_all_actions()
-        return actions.get("defense_actions", [])
-
-    def get_all_available_actions(self) -> List[Action]:
-        all_actions = self.load_all_actions()
-        return all_actions.get("attack_actions", []) + all_actions.get(
-            "defense_actions", []
-        )
-
-    def load_specific_actions(self, action_names: List[str]) -> List[Action]:
-        all_actions = self.get_all_available_actions()
-        return [action for action in all_actions if action.name in action_names]
-
-    def load_actions_from_file(self, file_path: str) -> Dict[str, List[Action]]:
-        with open(file_path, "r") as f:
-            data = json.load(f)
-        actions = {}
-        for action_category, action_list in data["action_types"].items():
-            actions[action_category] = []
-            for action_data in action_list:
-                action = self.action_from_json(action_data)
-                actions[action_category].append(action)
+    def get_defense_actions(self) -> list[Action]:
+        """Get all defense actions from the registry."""
+        actions = self._registry.get_defense_actions()
+        if not actions:
+            return self._loader.load_defenses()
         return actions
 
-    def save_actions_to_file(self, actions: Dict[str, List[Action]], file_path: str):
-        data = {"action_types": {}}
-        for action_category, action_list in actions.items():
-            data["action_types"][action_category] = []
-            for action in action_list:
-                action_data = self.action_to_json(action)
-                data["action_types"][action_category].append(action_data)
-        with open(file_path, "w") as f:
-            json.dump(data, f, indent=2)
+    def get_all_available_actions(self) -> list[Action]:
+        """Get all available actions."""
+        return self._registry.get_all()
 
-    def save_action_to_file(self, action: Action, file_path: str):
-        action_data = self.action_to_json(action)
-        with open(file_path, "w") as f:
-            json.dump(action_data, f, indent=2)
+    def get_action(self, name: str) -> Action | None:
+        """Get an action by name."""
+        return self._registry.get(name)
 
-    def save_action_to_library(
-        self, action: Action, action_type: str = "attacks"
-    ) -> str:
-        base_dir = os.path.join(os.path.dirname(__file__), "library")
-        target_dir = os.path.join(base_dir, action_type)
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        filename = action.name.lower().replace(" ", "_").replace("-", "_") + ".json"
-        file_path = os.path.join(target_dir, filename)
-        self.save_action_to_file(action, file_path)
-        return file_path
+    def register_action(self, action: Action, category: str = "general") -> None:
+        """Register an action in the registry."""
+        self._registry.register(action, category)
+
+    # =========================================================================
+    # Saving Operations (delegates to loader)
+    # =========================================================================
+
+    def save_action_to_file(self, action: Action, file_path: str) -> None:
+        """Save an action to a JSON file."""
+        self._loader.save_to_file(action, file_path)
+
+    def save_action_to_library(self, action: Action, action_type: str = "attacks") -> str:
+        """Save an action to the library."""
+        return self._loader.save_to_library(action, category=action_type)
+
+    def save_actions_to_file(self, actions: dict[str, list[Action]], file_path: str) -> None:
+        """Save actions to a bundled JSON file."""
+        self._loader.save_as_bundle(actions, file_path)
 
     def save_actions(
         self,
-        attack_actions: List[Action],
-        defense_actions: List[Action],
-        file_path: str = None,
-    ):
+        attack_actions: list[Action],
+        defense_actions: list[Action],
+        file_path: str | None = None,
+    ) -> None:
+        """Save attack and defense actions."""
         if file_path:
             actions = {
                 "attack_actions": attack_actions,
                 "defense_actions": defense_actions,
             }
-            self.save_actions_to_file(actions, file_path)
+            self._loader.save_as_bundle(actions, file_path)
         else:
             for action in attack_actions:
-                self.save_action_to_library(action, "attacks")
+                self._loader.save_to_library(action, "attacks")
             for action in defense_actions:
-                self.save_action_to_library(action, "defenses")
+                self._loader.save_to_library(action, "defenses")
 
+    # =========================================================================
+    # Utility Methods
+    # =========================================================================
+
+    def reload(self) -> None:
+        """Reload all actions from the library."""
+        self._registry.clear()
+        self._loader.load_into_registry(self._registry)
+
+    def summary(self) -> dict[str, Any]:
+        """Get a summary of available actions."""
+        return self._registry.summary()
+
+
+# =============================================================================
+# Global Instance
+# =============================================================================
 
 action_manager = ActionManager()
 
 
-def analyze_action_access_impact(action, current_access: str) -> Optional[str]:
+# =============================================================================
+# Utility Functions (unchanged from original)
+# =============================================================================
+
+
+def analyze_action_access_impact(action: Action, current_access: str) -> str | None:
+    """
+    Analyze what access level an action would grant.
+
+    Args:
+        action: The action to analyze
+        current_access: Current access level string
+
+    Returns:
+        Predicted access level string, "NO_ACCESS_CHANGE", or None
+    """
     try:
-        if hasattr(action, "_json_data"):
+        if hasattr(action, "_json_data") and action._json_data is not None:
             postcondition = action._json_data.get("postcondition", {})
         else:
             return None
@@ -396,15 +291,19 @@ def analyze_action_access_impact(action, current_access: str) -> Optional[str]:
         return None
 
 
-def _analyze_postcondition_access(postcondition: Dict[str, Any]) -> Optional[str]:
-    if postcondition.get("type") == "compound":
-        actions = postcondition.get("actions", [])
-        for action in actions:
+def _analyze_postcondition_access(postcondition: dict[str, Any]) -> str | None:
+    """Extract access level changes from a postcondition spec."""
+    post_type = postcondition.get("type")
+
+    if post_type == "compound":
+        for action in postcondition.get("actions", []):
             if action.get("type") == "set_access":
                 return action.get("value")
-    elif postcondition.get("type") == "set_access":
+
+    elif post_type == "set_access":
         return postcondition.get("value")
-    elif postcondition.get("type") in [
+
+    elif post_type in [
         "set_links_access",
         "set_property",
         "clear_assets",
@@ -414,121 +313,127 @@ def _analyze_postcondition_access(postcondition: Dict[str, Any]) -> Optional[str
         "set_software",
     ]:
         return "NO_ACCESS_CHANGE"
+
     return None
 
 
-def would_action_improve_access(action, node, current_access, actor_id: str) -> bool:
+def would_action_improve_access(
+    action: Action,
+    node: Any,
+    current_access: Any,
+    actor_id: str,
+) -> bool:
+    """
+    Determine if an action would improve the actor's access level.
+
+    Args:
+        action: The action to evaluate
+        node: Target node
+        current_access: Current access level (string or NodeAccessLevel)
+        actor_id: ID of the acting entity
+
+    Returns:
+        True if the action would improve access
+    """
+    # Handle link actions
     if hasattr(action, "is_link_action") and action.is_link_action():
         if hasattr(node, "successful_actions_by_actor"):
             actor_actions = node.successful_actions_by_actor.get(actor_id, set())
             if action.name in actor_actions:
                 return False
         return True
+
     if not hasattr(node, "id") or not hasattr(node, "access"):
         return False
+
     try:
+        # Normalize access level
         if isinstance(current_access, str):
             current_level = NodeAccessLevel.from_string(current_access)
         else:
             current_level = current_access
+
         current_access_str = (
-            current_level.to_string()
-            if hasattr(current_level, "to_string")
-            else str(current_level)
+            current_level.to_string() if hasattr(current_level, "to_string") else str(current_level)
         )
+
         predicted_access = analyze_action_access_impact(action, current_access_str)
+
         if predicted_access == "NO_ACCESS_CHANGE":
-            if hasattr(node, "successful_actions_by_actor"):
-                actor_actions = node.successful_actions_by_actor.get(actor_id, set())
-                if action.name in actor_actions:
-                    logger.debug(
-                        f"{action.name} on {getattr(node, 'id', '?')}: Already executed, returning False"
-                    )
-                    return False
-                else:
-                    logger.debug(
-                        f"{action.name} on {getattr(node, 'id', '?')}: First time, returning True"
-                    )
-            else:
-                logger.debug(
-                    f"{action.name} on {getattr(node, 'id', '?')}: No history, returning True"
-                )
-            return True
+            return _check_non_access_action(action, node, actor_id)
+
         elif predicted_access:
             predicted_level = NodeAccessLevel.from_string(predicted_access)
             return predicted_level > current_level
-        action_name_lower = action.name.lower()
-        if any(
-            (
-                keyword in action_name_lower
-                for keyword in ["scan", "reconnaissance", "discovery"]
-            )
-        ):
-            if hasattr(node, "successful_actions_by_actor"):
-                actor_actions = node.successful_actions_by_actor.get(actor_id, set())
-                if action.name in actor_actions:
-                    return False
-            return True
-        if any(
-            (
-                keyword in action_name_lower
-                for keyword in ["phishing", "exploitation", "brute"]
-            )
-        ):
-            target_level = NodeAccessLevel.USER
-        elif any(
-            (
-                keyword in action_name_lower
-                for keyword in ["privilege", "escalation", "admin"]
-            )
-        ):
-            target_level = NodeAccessLevel.ADMIN
-        elif any(
-            (
-                keyword in action_name_lower
-                for keyword in ["exfiltration", "data", "steal"]
-            )
-        ):
-            return current_level >= NodeAccessLevel.USER and (
-                not _has_already_exfiltrated(node, actor_id)
-            )
-        elif current_level == NodeAccessLevel.VISIBLE:
-            target_level = NodeAccessLevel.USER
-        elif current_level == NodeAccessLevel.USER:
-            target_level = NodeAccessLevel.ADMIN
-        else:
-            return False
-        return target_level > current_level
+
+        # Heuristic based on action name
+        return _heuristic_access_improvement(action, node, current_level, actor_id)
+
     except Exception:
         current_level = NodeAccessLevel.from_string(current_access)
         return current_level < NodeAccessLevel.ADMIN
-    return False
 
 
-def _has_already_exfiltrated(node, actor_id: str) -> bool:
+def _check_non_access_action(action: Action, node: Any, actor_id: str) -> bool:
+    """Check if a non-access-changing action should still be executed."""
+    if hasattr(node, "successful_actions_by_actor"):
+        actor_actions = node.successful_actions_by_actor.get(actor_id, set())
+        if action.name in actor_actions:
+            logger.debug(f"{action.name} on {getattr(node, 'id', '?')}: Already executed")
+            return False
+    return True
+
+
+def _heuristic_access_improvement(
+    action: Action,
+    node: Any,
+    current_level: NodeAccessLevel,
+    actor_id: str,
+) -> bool:
+    """Use heuristics based on action name to determine access improvement."""
+    action_name_lower = action.name.lower()
+    target_level: NodeAccessLevel | None = None
+
+    # Reconnaissance actions
+    if any(kw in action_name_lower for kw in ["scan", "reconnaissance", "discovery"]):
+        if hasattr(node, "successful_actions_by_actor"):
+            if action.name in node.successful_actions_by_actor.get(actor_id, set()):
+                return False
+        return True
+
+    # Initial access actions
+    if any(kw in action_name_lower for kw in ["phishing", "exploitation", "brute"]):
+        target_level = NodeAccessLevel.USER
+
+    # Privilege escalation
+    elif any(kw in action_name_lower for kw in ["privilege", "escalation", "admin"]):
+        target_level = NodeAccessLevel.ADMIN
+
+    # Data exfiltration
+    elif any(kw in action_name_lower for kw in ["exfiltration", "data", "steal"]):
+        return current_level >= NodeAccessLevel.USER and not _has_already_exfiltrated(
+            node, actor_id
+        )
+
+    # Default progression
+    elif current_level == NodeAccessLevel.VISIBLE:
+        target_level = NodeAccessLevel.USER
+    elif current_level == NodeAccessLevel.USER:
+        target_level = NodeAccessLevel.ADMIN
+    else:
+        return False
+
+    return target_level > current_level
+
+
+def _has_already_exfiltrated(node: Any, actor_id: str) -> bool:
+    """Check if data has already been exfiltrated from a node."""
     if not hasattr(node, "assets") or len(node.assets) == 0:
         return True
+
     if hasattr(node, "successful_actions_by_actor"):
         actor_actions = node.successful_actions_by_actor.get(actor_id, set())
         if "Data Exfiltration" in actor_actions:
             return True
+
     return False
-
-
-all_actions = action_manager.load_all_actions()
-all_attack_actions = all_actions.get("attack_actions", [])
-all_defense_actions = all_actions.get("defense_actions", [])
-node_attack_actions = [
-    action for action in all_attack_actions if action.is_node_action()
-]
-link_attack_actions = [
-    action for action in all_attack_actions if action.is_link_action()
-]
-node_defense_actions = [
-    action for action in all_defense_actions if action.is_node_action()
-]
-link_defense_actions = [
-    action for action in all_defense_actions if action.is_link_action()
-]
-all_available_actions = action_manager.get_all_available_actions()
-action_registry = action_manager

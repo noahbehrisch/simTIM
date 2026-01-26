@@ -1,11 +1,12 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-from .base_tab import BaseTab
+from tkinter import ttk
+
 from src.utils.discovery import list_attacker_strategies, list_defender_strategies
+
+from .base_tab import BaseTab
 
 
 class VariablesTab(BaseTab):
-
     def __init__(self, parent, theme_colors):
         self.scenarios = []
         self.on_scenarios_changed = None
@@ -63,9 +64,7 @@ class VariablesTab(BaseTab):
             font=("Arial", 10),
         )
         self.variable_dropdown.pack(side=tk.LEFT)
-        self.variable_dropdown.bind(
-            "<<ComboboxSelected>>", self._on_variable_type_changed
-        )
+        self.variable_dropdown.bind("<<ComboboxSelected>>", self._on_variable_type_changed)
         self.description_label = tk.Label(
             self.pad_frame,
             text="",
@@ -78,12 +77,8 @@ class VariablesTab(BaseTab):
         self._update_description()
         self.config_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
         self.config_frame.pack(fill=tk.BOTH, expand=True, padx=50, pady=20)
-        canvas = tk.Canvas(
-            self.config_frame, bg=self.tab_color, highlightthickness=0, height=250
-        )
-        scrollbar = ttk.Scrollbar(
-            self.config_frame, orient="vertical", command=canvas.yview
-        )
+        canvas = tk.Canvas(self.config_frame, bg=self.tab_color, highlightthickness=0, height=250)
+        scrollbar = ttk.Scrollbar(self.config_frame, orient="vertical", command=canvas.yview)
         self.scenarios_frame = tk.Frame(canvas, bg=self.tab_color)
         self.scenarios_frame.bind(
             "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
@@ -201,9 +196,7 @@ class VariablesTab(BaseTab):
         elif var_type == "defense_duration":
             self._add_scenario_with_values(1.5, 20)
         elif var_type == "attacker_strategy":
-            default_strategy = (
-                self.attacker_strategies[0] if self.attacker_strategies else "greedy"
-            )
+            default_strategy = self.attacker_strategies[0] if self.attacker_strategies else "greedy"
             self._add_scenario_with_values(default_strategy, 20)
         elif var_type == "defender_strategy":
             default_strategy = (
@@ -238,9 +231,7 @@ class VariablesTab(BaseTab):
                 font=("Arial", 9),
             ).pack(side=tk.LEFT, padx=5)
             value_var = tk.StringVar(value=str(value))
-            value_entry = tk.Entry(
-                row_frame, textvariable=value_var, width=8, font=("Arial", 9)
-            )
+            value_entry = tk.Entry(row_frame, textvariable=value_var, width=8, font=("Arial", 9))
             value_entry.pack(side=tk.LEFT, padx=5)
         elif var_type == "attacker_strategy":
             tk.Label(
@@ -278,13 +269,11 @@ class VariablesTab(BaseTab):
                 font=("Arial", 9),
             )
             value_dropdown.pack(side=tk.LEFT, padx=5)
-        tk.Label(
-            row_frame, text="Runs:", bg="white", fg=self.button_fg, font=("Arial", 9)
-        ).pack(side=tk.LEFT, padx=(15, 5))
-        runs_var = tk.StringVar(value=str(runs))
-        runs_entry = tk.Entry(
-            row_frame, textvariable=runs_var, width=6, font=("Arial", 9)
+        tk.Label(row_frame, text="Runs:", bg="white", fg=self.button_fg, font=("Arial", 9)).pack(
+            side=tk.LEFT, padx=(15, 5)
         )
+        runs_var = tk.StringVar(value=str(runs))
+        runs_entry = tk.Entry(row_frame, textvariable=runs_var, width=6, font=("Arial", 9))
         runs_entry.pack(side=tk.LEFT, padx=5)
         remove_btn = tk.Button(
             row_frame,
@@ -384,9 +373,7 @@ class VariablesTab(BaseTab):
             if var_type in ["attack_duration", "defense_duration"]:
                 value_str = ", ".join((f"{v}h" for v, _ in scenarios))
                 label = (
-                    "attack duration(s)"
-                    if var_type == "attack_duration"
-                    else "defense duration(s)"
+                    "attack duration(s)" if var_type == "attack_duration" else "defense duration(s)"
                 )
             elif var_type == "attacker_strategy":
                 value_str = ", ".join((f"{v}" for v, _ in scenarios))
@@ -415,23 +402,17 @@ class VariablesTab(BaseTab):
         if var_type in ["attack_duration", "defense_duration"]:
             return {
                 "variable_type": var_type,
-                "scenarios": [
-                    {"duration": value, "runs": runs} for value, runs in scenarios
-                ],
+                "scenarios": [{"duration": value, "runs": runs} for value, runs in scenarios],
             }
         elif var_type == "attacker_strategy":
             return {
                 "variable_type": "attacker_strategy",
-                "scenarios": [
-                    {"strategy": value, "runs": runs} for value, runs in scenarios
-                ],
+                "scenarios": [{"strategy": value, "runs": runs} for value, runs in scenarios],
             }
         elif var_type == "defender_strategy":
             return {
                 "variable_type": "defender_strategy",
-                "scenarios": [
-                    {"strategy": value, "runs": runs} for value, runs in scenarios
-                ],
+                "scenarios": [{"strategy": value, "runs": runs} for value, runs in scenarios],
             }
         else:
             return {}

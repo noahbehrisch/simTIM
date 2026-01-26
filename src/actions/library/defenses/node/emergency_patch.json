@@ -1,7 +1,13 @@
 {
   "name": "Emergency Security Patch",
   "description": "Rapid deployment of critical security patches that can interrupt ongoing attacks",
-  "action_type": "node", 
+  "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-SU",
+    "technique_name": "Software Update",
+    "url": "https://d3fend.mitre.org/technique/d3f:SoftwareUpdate",
+    "tactic": "Harden"
+  },
   "cost": 150,
   "duration": 2.0,
   "success_probability": 0.95,
@@ -25,7 +31,7 @@
         "vulnerability": "CVE-2017-0144"
       },
       {
-        "type": "remove_vulnerability", 
+        "type": "remove_vulnerability",
         "vulnerability": "CVE-2021-41773"
       },
       {

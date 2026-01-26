@@ -1,7 +1,7 @@
-from .reactive import ReactiveDefenderStrategy
-from .proactive import ProactiveDefenderStrategy
-from .monitoring import MonitoringDefenderStrategy
 from .balanced import BalancedDefenderStrategy
+from .monitoring import MonitoringDefenderStrategy
+from .proactive import ProactiveDefenderStrategy
+from .reactive import ReactiveDefenderStrategy
 
 __all__ = [
     "ReactiveDefenderStrategy",

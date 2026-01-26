@@ -1,194 +1,242 @@
-import os
-import json
+"""
+Network loading module.
+
+Handles file I/O for network configurations. Uses NetworkValidator and
+NetworkFactory for validation and creation.
+"""
+
 import glob
+import json
 import logging
-from src.core.graph import Node, Link
-from typing import List, Dict
+import os
+from typing import Any
+
+from src.core.network import Network
+from src.networks.factory import NetworkFactory
+from src.networks.validation import NetworkValidator
 
 logger = logging.getLogger(__name__)
 
 
-class NetworkConfigError(Exception):
-    pass
+class NetworkLoadError(Exception):
+    """Raised when network loading fails."""
+
+    def __init__(self, message: str, path: str | None = None, cause: Exception | None = None):
+        self.path = path
+        self.cause = cause
+        super().__init__(message)
 
 
-def validate_network_config(config: dict) -> Dict[str, any]:
-    errors = []
-    warnings = []
-    if not isinstance(config, dict):
-        raise NetworkConfigError("Network configuration must be a dictionary")
-    if "nodes" not in config:
-        errors.append("Missing required 'nodes' key")
-    elif not isinstance(config["nodes"], list):
-        errors.append("'nodes' must be a list")
-    elif len(config["nodes"]) == 0:
-        warnings.append("Network has no nodes")
-    node_ids = set()
-    for i, node in enumerate(config.get("nodes", [])):
-        if not isinstance(node, dict):
-            errors.append(f"Node {i} must be a dictionary")
-            continue
-        if "id" not in node:
-            errors.append(f"Node {i} missing required 'id' field")
-        elif not isinstance(node["id"], str) or not node["id"]:
-            errors.append(f"Node {i} 'id' must be a non-empty string")
-        else:
-            if node["id"] in node_ids:
-                errors.append(f"Duplicate node ID: {node['id']}")
-            node_ids.add(node["id"])
-        if "software" in node and (not isinstance(node["software"], dict)):
-            errors.append(f"Node {node.get('id', i)}: 'software' must be a dictionary")
-        if "vulnerabilities" in node and (
-            not isinstance(node["vulnerabilities"], list)
-        ):
-            errors.append(f"Node {node.get('id', i)}: 'vulnerabilities' must be a list")
-        if "assets" in node and (not isinstance(node["assets"], list)):
-            errors.append(f"Node {node.get('id', i)}: 'assets' must be a list")
-        if "properties" in node and (not isinstance(node["properties"], dict)):
-            errors.append(
-                f"Node {node.get('id', i)}: 'properties' must be a dictionary"
+class NetworkLoader:
+    """
+    Handles loading and saving network configurations.
+
+    Responsibilities:
+    - File I/O operations
+    - Path resolution (library vs absolute)
+    - JSON parsing
+
+    Does NOT handle:
+    - Validation (see NetworkValidator)
+    - Network creation (see NetworkFactory)
+    """
+
+    DEFAULT_LIBRARY_PATH = os.path.join(os.path.dirname(__file__), "library")
+
+    def __init__(
+        self,
+        factory: NetworkFactory | None = None,
+        library_path: str | None = None,
+    ):
+        """
+        Initialize the loader.
+
+        Args:
+            factory: Optional NetworkFactory instance
+            library_path: Optional custom library path
+        """
+        self._factory = factory or NetworkFactory()
+        self._library_path = library_path or self.DEFAULT_LIBRARY_PATH
+
+    @property
+    def factory(self) -> NetworkFactory:
+        """Get the factory instance."""
+        return self._factory
+
+    @property
+    def validator(self) -> NetworkValidator:
+        """Get the validator instance (from factory)."""
+        return self._factory.validator
+
+    @property
+    def library_path(self) -> str:
+        """Get the network library path."""
+        return self._library_path
+
+    def list_available(self) -> list[str]:
+        """
+        List available networks in the library.
+
+        Returns:
+            List of network filenames
+        """
+        if not os.path.exists(self._library_path):
+            return []
+        json_files = glob.glob(os.path.join(self._library_path, "*.json"))
+        return [os.path.basename(f) for f in json_files]
+
+    def resolve_path(self, path: str) -> str:
+        """
+        Resolve a network path.
+
+        If path contains separators or is absolute, returns as-is.
+        Otherwise, tries to find in library.
+
+        Args:
+            path: Path or filename to resolve
+
+        Returns:
+            Resolved absolute path
+        """
+        if os.path.sep in path or os.path.isabs(path):
+            return path
+
+        # Try library
+        try:
+            return self.find_in_library(path)
+        except FileNotFoundError:
+            return path
+
+    def find_in_library(self, filename: str) -> str:
+        """
+        Find a network file in the library.
+
+        Args:
+            filename: Network filename (with or without .json)
+
+        Returns:
+            Full path to the network file
+
+        Raises:
+            FileNotFoundError: If file not found in library
+        """
+        if not filename.endswith(".json"):
+            filename += ".json"
+
+        full_path = os.path.join(self._library_path, filename)
+        if os.path.exists(full_path):
+            return full_path
+        raise FileNotFoundError(f"Network file '{filename}' not found in {self._library_path}")
+
+    def load_config(self, path: str, validate: bool = True) -> dict[str, Any]:
+        """
+        Load network configuration from file.
+
+        Args:
+            path: Path to network file (can be library name or full path)
+            validate: Whether to validate the configuration
+
+        Returns:
+            Network configuration dictionary
+
+        Raises:
+            NetworkLoadError: If loading or validation fails
+        """
+        resolved_path = self.resolve_path(path)
+
+        if not os.path.exists(resolved_path):
+            raise NetworkLoadError(
+                f"Network file not found: {resolved_path}",
+                path=resolved_path,
             )
-    if "links" in config:
-        if not isinstance(config["links"], list):
-            errors.append("'links' must be a list")
-        else:
-            for i, link in enumerate(config["links"]):
-                if not isinstance(link, dict):
-                    errors.append(f"Link {i} must be a dictionary")
-                    continue
-                if "node1" not in link:
-                    errors.append(f"Link {i} missing required 'node1' field")
-                elif link["node1"] not in node_ids:
-                    errors.append(f"Link {i} references unknown node: {link['node1']}")
-                if "node2" not in link:
-                    errors.append(f"Link {i} missing required 'node2' field")
-                elif link["node2"] not in node_ids:
-                    errors.append(f"Link {i} references unknown node: {link['node2']}")
 
-    has_exposed = any(
-        node.get("properties", {}).get("exposed_to_internet", False)
-        for node in config.get("nodes", [])
-    )
-    if not has_exposed:
-        warnings.append(
-            "Network has no Internet-exposed nodes - attackers will have no entry points! "
-            'At least one node should have "exposed_to_internet": true in its properties.'
-        )
+        try:
+            with open(resolved_path) as f:
+                if resolved_path.endswith(".json"):
+                    config = json.load(f)
+                else:
+                    raise NetworkLoadError(
+                        "Unsupported file format. Only .json files are supported",
+                        path=resolved_path,
+                    )
+        except json.JSONDecodeError as e:
+            raise NetworkLoadError(
+                f"Invalid JSON in {resolved_path}: {e}",
+                path=resolved_path,
+                cause=e,
+            ) from e
 
-    return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
+        if validate:
+            result = self.validator.validate(config)
+            if not result.valid:
+                error_msg = "Network configuration validation failed:\n"
+                error_msg += "\n".join(f"  - {err}" for err in result.errors)
+                logger.error(error_msg)
+                raise NetworkLoadError(error_msg, path=resolved_path)
 
+            for warning in result.warnings:
+                logger.warning(f"Network config warning: {warning}")
 
-def get_network_library_path() -> str:
-    return os.path.join(os.path.dirname(__file__), "library")
+        return config
 
+    def load(self, path: str) -> Network:
+        """
+        Load and create a Network from file.
 
-def find_network_file(filename: str) -> str:
-    if not filename.endswith(".json"):
-        filename += ".json"
-    library_path = get_network_library_path()
-    full_path = os.path.join(library_path, filename)
-    if os.path.exists(full_path):
+        Args:
+            path: Path to network file
+
+        Returns:
+            Configured Network instance
+
+        Raises:
+            NetworkLoadError: If loading fails
+            NetworkCreationError: If network creation fails
+        """
+        config = self.load_config(path, validate=False)
+        network = self._factory.create(config, validate=True)
+        network.metadata["source_file"] = self.resolve_path(path)
+        return network
+
+    def save(self, network: Network, path: str) -> None:
+        """
+        Save a network to file.
+
+        Args:
+            network: Network to save
+            path: Output file path
+        """
+        config = self._factory.to_config(network)
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+        with open(path, "w") as f:
+            json.dump(config, f, indent=2)
+
+        logger.info(f"Saved network to {path}")
+
+    def save_to_library(self, network: Network, filename: str) -> str:
+        """
+        Save a network to the library.
+
+        Args:
+            network: Network to save
+            filename: Filename (with or without .json)
+
+        Returns:
+            Full path to saved file
+        """
+        if not filename.endswith(".json"):
+            filename += ".json"
+
+        full_path = os.path.join(self._library_path, filename)
+        self.save(network, full_path)
         return full_path
-    else:
-        raise FileNotFoundError(
-            f"Network file '{filename}' not found in {library_path}"
-        )
 
 
-def list_available_networks() -> List[str]:
-    library_path = get_network_library_path()
-    if not os.path.exists(library_path):
-        return []
-    json_files = glob.glob(os.path.join(library_path, "*.json"))
-    return [os.path.basename(f) for f in json_files]
+# =============================================================================
+# Global Instance
+# =============================================================================
 
-
-def resolve_network_path(path: str) -> str:
-    if os.path.sep in path or os.path.isabs(path):
-        return path
-    try:
-        return find_network_file(path)
-    except FileNotFoundError:
-        return path
-
-
-def load_network_config(path: str) -> dict:
-    resolved_path = resolve_network_path(path)
-    if not os.path.exists(resolved_path):
-        raise FileNotFoundError(f"Network file not found: {resolved_path}")
-    try:
-        with open(resolved_path, "r") as f:
-            if resolved_path.endswith(".json"):
-                config = json.load(f)
-            else:
-                raise ValueError(
-                    f"Unsupported file format. Only .json files are supported"
-                )
-    except json.JSONDecodeError as e:
-        raise NetworkConfigError(f"Invalid JSON in {resolved_path}: {e}")
-    except Exception as e:
-        raise NetworkConfigError(f"Error loading network config: {e}")
-    validation = validate_network_config(config)
-    if not validation["valid"]:
-        error_msg = "Network configuration validation failed:\n"
-        error_msg += "\n".join((f"  - {err}" for err in validation["errors"]))
-        logger.error(error_msg)
-        raise NetworkConfigError(error_msg)
-    if validation["warnings"]:
-        for warning in validation["warnings"]:
-            logger.warning(f"Network config warning: {warning}")
-    return config
-
-
-def create_network_from_config(config: dict) -> Dict[str, Node]:
-    validation = validate_network_config(config)
-    if not validation["valid"]:
-        raise NetworkConfigError(f"Invalid configuration: {validation['errors']}")
-    nodes = {}
-    try:
-        for node_config in config.get("nodes", []):
-            node = Node(
-                id=node_config["id"],
-                software=node_config.get("software", {}),
-                vulnerabilities=node_config.get("vulnerabilities", []),
-                assets=node_config.get("assets", []),
-            )
-            properties = node_config.get("properties", {})
-            node.properties.update(properties)
-            node.exposed_to_internet = properties.get("exposed_to_internet", False)
-            node.exposed_services = node_config.get(
-                "exposed_services", properties.get("exposed_services", [])
-            )
-            node.access = {}
-            nodes[node.id] = node
-            logger.debug(f"Created node: {node.id}")
-    except KeyError as e:
-        raise NetworkConfigError(f"Missing required field in node configuration: {e}")
-    except Exception as e:
-        raise NetworkConfigError(f"Error creating nodes: {e}")
-    try:
-        for link_config in config.get("links", []):
-            node1_id = link_config["node1"]
-            node2_id = link_config["node2"]
-            if node1_id not in nodes:
-                raise NetworkConfigError(f"Link references unknown node: {node1_id}")
-            if node2_id not in nodes:
-                raise NetworkConfigError(f"Link references unknown node: {node2_id}")
-            node1 = nodes[node1_id]
-            node2 = nodes[node2_id]
-            link = Link(
-                node1=node1,
-                node2=node2,
-                bidirectional=link_config.get("bidirectional", True),
-                latency=link_config.get("latency", 0.0),
-            )
-            link.access = {}
-            logger.debug(f"Created link: {node1_id} <-> {node2_id}")
-    except KeyError as e:
-        raise NetworkConfigError(f"Missing required field in link configuration: {e}")
-    except Exception as e:
-        raise NetworkConfigError(f"Error creating links: {e}")
-    logger.info(
-        f"Created network with {len(nodes)} nodes and {len(config.get('links', []))} links"
-    )
-    return nodes
+network_loader = NetworkLoader()

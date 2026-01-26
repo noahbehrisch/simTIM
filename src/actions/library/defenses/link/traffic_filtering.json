@@ -1,0 +1,73 @@
+{
+  "name": "Traffic Filtering Rules",
+  "description": "Implement network traffic filtering rules to control inbound and outbound traffic. Blocks unauthorized protocols, ports, and connections while allowing legitimate business traffic.",
+  "action_type": "link",
+  "d3fend": {
+    "technique_id": "D3-NTF",
+    "technique_name": "Network Traffic Filtering",
+    "tactic": "Isolate",
+    "related_techniques": ["D3-ITF", "D3-OTF"],
+    "url": "https://d3fend.mitre.org/technique/d3f:NetworkTrafficFiltering/"
+  },
+  "cost": 1500,
+  "duration": 4.0,
+  "success_probability": 0.92,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "start_node_access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "link_property_check",
+        "property": "traffic_filtered",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_link_property",
+        "property": "traffic_filtered",
+        "value": true
+      },
+      {
+        "type": "set_link_property",
+        "property": "egress_filtered",
+        "value": true
+      },
+      {
+        "type": "set_link_property",
+        "property": "c2_blocked",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": -2000.0,
+    "one_off_gain": 0.0,
+    "time_damage": -50.0,
+    "time_gain": 0.0
+  },
+  "effectiveness": {
+    "blocks_c2": 0.60,
+    "blocks_exfiltration": 0.45,
+    "blocks_lateral_movement": 0.40
+  },
+  "references": [
+    "https://d3fend.mitre.org/technique/d3f:NetworkTrafficFiltering/",
+    "https://attack.mitre.org/mitigations/M1037/"
+  ],
+  "notes": "Egress filtering is critical for blocking C2 communication. Default-deny outbound policies significantly reduce exfiltration success. Requires allowlisting legitimate traffic."
+}

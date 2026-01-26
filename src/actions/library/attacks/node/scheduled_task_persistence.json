@@ -1,0 +1,69 @@
+{
+  "name": "Scheduled Task Persistence",
+  "description": "Create a scheduled task or cron job to maintain persistence on the compromised system. The task executes malicious code at specified intervals or system events.",
+  "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1053.005",
+    "technique_name": "Scheduled Task/Job: Scheduled Task",
+    "tactic": "persistence",
+    "tactic_id": "TA0003",
+    "url": "https://attack.mitre.org/techniques/T1053/005/"
+  },
+  "cost": 75,
+  "duration": 1.0,
+  "success_probability": 0.80,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "greater_equal",
+        "value": "USER"
+      },
+      {
+        "type": "property_check",
+        "property": "compromised",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "type": "property_check",
+        "property": "persistence_established",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "persistence_established",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "scheduled_task_active",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.35
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 800.0,
+    "time_damage": 0.0,
+    "time_gain": 50.0
+  },
+  "references": [
+    "https://attack.mitre.org/techniques/T1053/005/",
+    "https://www.verizon.com/business/resources/reports/dbir/"
+  ],
+  "notes": "Scheduled tasks are common persistence mechanism. Detection rate lower because legitimate scheduled tasks are ubiquitous."
+}

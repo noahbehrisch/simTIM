@@ -1,9 +1,21 @@
 {
   "name": "Incident Response",
   "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-CE",
+    "technique_name": "Credential Eviction",
+    "url": "https://d3fend.mitre.org/technique/d3f:CredentialEviction",
+    "related_techniques": [
+      "D3-CCSA"
+    ],
+    "tactic": "Evict",
+    "related_tactics": [
+      "Detect"
+    ]
+  },
   "cost": 5000,
   "duration": 72.0,
-  "success_probability": 0.70,
+  "success_probability": 0.7,
   "precondition": {
     "type": "compound",
     "operator": "AND",

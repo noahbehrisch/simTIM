@@ -1,16 +1,18 @@
 import logging
-from .actor import Actor
-from src.core.graph import Node, Link
-from .strategies import get_attacker_strategy
-from src.core.access_utils import get_node_access, set_node_access
+from typing import Any
+
 from src.core.access_levels import NodeAccessLevel
+from src.core.access_utils import get_node_access, set_node_access
 from src.core.economic_model import calculate_action_gain
+from src.core.graph import Node
+
+from .actor import Actor
+from .strategies import get_attacker_strategy
 
 logger = logging.getLogger(__name__)
 
 
 class Attacker(Actor):
-
     def __init__(
         self,
         id: str,
@@ -18,15 +20,13 @@ class Attacker(Actor):
         capacity: float = float("inf"),
         budget: float = float("inf"),
     ):
-        super().__init__(
-            id, "attacker", capacity=capacity, strategy=strategy, budget=budget
-        )
+        super().__init__(id, "attacker", capacity=capacity, strategy=strategy, budget=budget)
         self.is_attacker = True
-        self.visible_nodes = set()
-        self.compromised_nodes = set()
-        self.visible_links = set()
-        self.compromised_links = set()
-        self.available_actions = []
+        self.visible_nodes: set[Any] = set()
+        self.compromised_nodes: set[Any] = set()
+        self.visible_links: set[Any] = set()
+        self.compromised_links: set[Any] = set()
+        self.available_actions: list[Any] = []
         self.time_proportional_gain_rate = 0.0
         self._strategy_component = get_attacker_strategy(strategy)
 
@@ -63,7 +63,7 @@ class Attacker(Actor):
                 )
                 return True
         else:
-            logger.debug(f"  No valid action found!")
+            logger.debug("  No valid action found!")
         return False
 
     def choose_action(self, network_state):
@@ -99,7 +99,7 @@ class Attacker(Actor):
                     set_node_access(connected_node, self.id, NodeAccessLevel.VISIBLE)
 
     def on_successful_attack(self, action, target, timestamp):
-        actor_access = get_node_access(target, self.id)
+        get_node_access(target, self.id)
         one_off_gain = calculate_action_gain(action.name, target)
         self.total_gain += one_off_gain
         self.record_economic_event(

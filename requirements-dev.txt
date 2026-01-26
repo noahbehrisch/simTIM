@@ -1,0 +1,26 @@
+# Production dependencies - pinned versions
+matplotlib==3.10.1
+numpy==2.2.5
+
+# Testing
+pytest==8.0.0
+pytest-cov==4.1.0
+pytest-timeout==2.2.0
+
+# Linting and formatting
+ruff==0.3.0
+mypy==1.8.0
+
+# Security scanning
+pip-audit==2.7.0
+bandit==1.7.7
+
+# Pre-commit hooks
+pre-commit==3.6.0
+
+# Profiling and debugging
+snakeviz==2.2.0
+
+# Build tools
+build==1.0.3
+twine==4.0.2

@@ -1,26 +1,69 @@
-from .base import AttackerStrategy, DefenderStrategy
+"""
+Strategy module.
+
+Provides actor strategies for decision making during simulation.
+
+Main Classes:
+- AttackerStrategy: Abstract base class for attacker strategies
+- DefenderStrategy: Abstract base class for defender strategies
+- StrategyRegistry: Registry for strategy types
+
+Attacker Strategies:
+- GreedyAttackerStrategy: Prioritizes highest-value targets
+- RandomAttackerStrategy: Random target selection
+- EscalationAttackerStrategy: Follows MITRE ATT&CK progression
+
+Defender Strategies:
+- ReactiveDefenderStrategy: Responds to detected threats
+- ProactiveDefenderStrategy: Anticipates and prevents attacks
+- MonitoringDefenderStrategy: Focuses on detection
+- BalancedDefenderStrategy: Combination approach
+
+Convenience Functions:
+- get_attacker_strategy(): Create attacker strategy by name
+- get_defender_strategy(): Create defender strategy by name
+- list_attacker_strategies(): List available attacker strategies
+- list_defender_strategies(): List available defender strategies
+"""
+
+from .attackers.escalation import EscalationAttackerStrategy
 from .attackers.greedy import GreedyAttackerStrategy
 from .attackers.random import RandomAttackerStrategy
-from .defenders.reactive import ReactiveDefenderStrategy
-from .defenders.proactive import ProactiveDefenderStrategy
+from .base import AttackerStrategy, DefenderStrategy
+from .defenders.balanced import BalancedDefenderStrategy
 from .defenders.monitoring import MonitoringDefenderStrategy
+from .defenders.proactive import ProactiveDefenderStrategy
+from .defenders.reactive import ReactiveDefenderStrategy
+from .registry import (
+    StrategyError,
+    StrategyRegistry,
+    get_attacker_strategy,
+    get_defender_strategy,
+    get_strategy_registry,
+    list_attacker_strategies,
+    list_defender_strategies,
+)
 
-ATTACKER_STRATEGIES = {
-    "greedy": GreedyAttackerStrategy,
-    "random": RandomAttackerStrategy,
-}
-DEFENDER_STRATEGIES = {
-    "reactive": ReactiveDefenderStrategy,
-    "proactive": ProactiveDefenderStrategy,
-    "monitoring": MonitoringDefenderStrategy,
-}
-
-
-def get_attacker_strategy(name: str) -> AttackerStrategy:
-    strategy_class = ATTACKER_STRATEGIES.get(name, GreedyAttackerStrategy)
-    return strategy_class()
-
-
-def get_defender_strategy(name: str) -> DefenderStrategy:
-    strategy_class = DEFENDER_STRATEGIES.get(name, ReactiveDefenderStrategy)
-    return strategy_class()
+__all__ = [
+    # Base classes
+    "AttackerStrategy",
+    "DefenderStrategy",
+    # Attacker implementations
+    "GreedyAttackerStrategy",
+    "RandomAttackerStrategy",
+    "EscalationAttackerStrategy",
+    # Defender implementations
+    "ReactiveDefenderStrategy",
+    "ProactiveDefenderStrategy",
+    "MonitoringDefenderStrategy",
+    "BalancedDefenderStrategy",
+    # Registry
+    "StrategyRegistry",
+    "StrategyError",
+    "get_strategy_registry",
+    # Convenience functions
+    "get_attacker_strategy",
+    "get_defender_strategy",
+    "list_attacker_strategies",
+    "list_defender_strategies",
+]

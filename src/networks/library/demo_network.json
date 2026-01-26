@@ -1,69 +1,216 @@
 {
-  "name": "Demo Network",
-  "description": "Minimal 2-node demo network: Internet-facing web server → Internal data server. Perfect for demonstrations and tutorials showing basic attack progression from external compromise to valuable data access.",
+  "name": "Academic Demo Network",
+  "description": "A network designed to demonstrate and test all TIM simulator capabilities including attack chains, lateral movement, privilege escalation, detection, and defense mechanisms.",
+  "metadata": {
+    "purpose": "academic_demonstration",
+    "created": "2026-01-26",
+    "author": "simTIM Academic Demo"
+  },
   "nodes": [
     {
-      "id": "web_server",
-      "name": "Internet-Facing Web Server",
+      "id": "webserver",
+      "type": "server",
+      "zone": "dmz",
       "software": {
-        "os": "Ubuntu",
+        "os": "Ubuntu Server",
         "version": "20.04",
-        "services": ["apache", "php", "ssh"]
+        "web_server": "Apache",
+        "web_version": "2.4.41"
       },
-      "vulnerabilities": [
-        "CVE-2021-44228",
-        "CVE-2022-22965"
-      ],
-      "assets": [
-        "web_application",
-        "access_logs"
-      ],
+      "vulnerabilities": ["CVE-2021-41773", "CVE-2021-42013"],
+      "assets": ["public_website", "web_logs"],
+      "services": {
+        "HTTP": "running",
+        "HTTPS": "running",
+        "SSH": "running"
+      },
       "properties": {
         "exposed_to_internet": true,
-        "critical": false,
-        "category": "Web Server",
-        "network_segment": "DMZ",
-        "entry_point": true
+        "criticality": "high",
+        "data_sensitivity": "low",
+        "network_monitoring": false,
+        "endpoint_protection": false
       }
     },
     {
-      "id": "data_server",
-      "name": "Internal Data Server",
+      "id": "mailserver",
+      "type": "server",
+      "zone": "dmz",
+      "software": {
+        "os": "Debian",
+        "version": "11",
+        "mail_server": "Postfix"
+      },
+      "vulnerabilities": ["CVE-2020-28948"],
+      "assets": ["email_database", "user_credentials"],
+      "services": {
+        "SMTP": "running",
+        "SSH": "running"
+      },
+      "properties": {
+        "exposed_to_internet": true,
+        "criticality": "high",
+        "data_sensitivity": "medium",
+        "network_monitoring": true,
+        "endpoint_protection": false
+      }
+    },
+    {
+      "id": "workstation_win",
+      "type": "workstation",
+      "zone": "internal",
+      "software": {
+        "os": "Windows",
+        "version": "10 Pro",
+        "office": "Microsoft 365"
+      },
+      "vulnerabilities": ["CVE-2021-34527", "CVE-2022-21999"],
+      "assets": ["user_documents", "browser_credentials", "cached_passwords"],
+      "services": {
+        "RDP": "running",
+        "SMB": "running"
+      },
+      "properties": {
+        "exposed_to_internet": false,
+        "criticality": "medium",
+        "data_sensitivity": "medium",
+        "network_monitoring": false,
+        "endpoint_protection": true
+      }
+    },
+    {
+      "id": "domain_controller",
+      "type": "server",
+      "zone": "internal",
       "software": {
         "os": "Windows Server",
         "version": "2019",
-        "services": ["file_server", "sql_server", "rdp"]
+        "role": "Active Directory"
       },
-      "vulnerabilities": [
-        "CVE-2020-1472"
-      ],
-      "assets": [
-        "customer_database",
-        "financial_records",
-        "employee_data",
-        "company_secrets",
-        "intellectual_property"
-      ],
+      "vulnerabilities": ["CVE-2020-1472"],
+      "assets": ["domain_credentials", "gpo_policies", "user_database", "kerberos_keys"],
+      "services": {
+        "LDAP": "running",
+        "Kerberos": "running",
+        "SMB": "running",
+        "RDP": "running"
+      },
       "properties": {
         "exposed_to_internet": false,
-        "critical": true,
-        "category": "Data Server",
-        "network_segment": "Internal",
-        "high_value_target": true,
-        "contains_sensitive_data": true
+        "criticality": "critical",
+        "data_sensitivity": "high",
+        "network_monitoring": true,
+        "endpoint_protection": true
+      }
+    },
+    {
+      "id": "database_server",
+      "type": "server",
+      "zone": "backend",
+      "software": {
+        "os": "Ubuntu Server",
+        "version": "22.04",
+        "database": "PostgreSQL",
+        "db_version": "14.5"
+      },
+      "vulnerabilities": ["CVE-2022-1552"],
+      "assets": ["customer_pii", "financial_records", "transaction_logs", "backup_data"],
+      "services": {
+        "PostgreSQL": "running",
+        "SSH": "running"
+      },
+      "properties": {
+        "exposed_to_internet": false,
+        "criticality": "critical",
+        "data_sensitivity": "high",
+        "data_amount": 50000,
+        "network_monitoring": true,
+        "endpoint_protection": true
+      }
+    },
+    {
+      "id": "backup_server",
+      "type": "server",
+      "zone": "backend",
+      "software": {
+        "os": "Windows Server",
+        "version": "2016",
+        "backup_software": "Veeam"
+      },
+      "vulnerabilities": ["CVE-2022-26500", "CVE-2022-26501"],
+      "assets": ["backup_archives", "encryption_keys", "disaster_recovery_data"],
+      "services": {
+        "SMB": "running",
+        "RDP": "running"
+      },
+      "properties": {
+        "exposed_to_internet": false,
+        "criticality": "high",
+        "data_sensitivity": "high",
+        "network_monitoring": false,
+        "endpoint_protection": false
       }
     }
   ],
   "links": [
     {
-      "node1": "web_server",
-      "node2": "data_server",
+      "node1": "webserver",
+      "node2": "workstation_win",
       "bidirectional": true,
       "properties": {
-        "connection_type": "internal_network",
-        "bandwidth": 1000,
-        "secured": false,
-        "description": "Direct connection from DMZ to internal network"
+        "connection_type": "vlan",
+        "bandwidth": "1Gbps",
+        "firewall_filtered": false
+      }
+    },
+    {
+      "node1": "mailserver",
+      "node2": "workstation_win",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "vlan",
+        "bandwidth": "1Gbps",
+        "firewall_filtered": false
+      }
+    },
+    {
+      "node1": "workstation_win",
+      "node2": "domain_controller",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "vlan",
+        "bandwidth": "1Gbps",
+        "firewall_filtered": false
+      }
+    },
+    {
+      "node1": "domain_controller",
+      "node2": "database_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "vlan",
+        "bandwidth": "10Gbps",
+        "firewall_filtered": true
+      }
+    },
+    {
+      "node1": "domain_controller",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "vlan",
+        "bandwidth": "10Gbps",
+        "firewall_filtered": false
+      }
+    },
+    {
+      "node1": "database_server",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "dedicated",
+        "bandwidth": "10Gbps",
+        "firewall_filtered": false
       }
     }
   ]

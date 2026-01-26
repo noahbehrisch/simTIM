@@ -2,6 +2,13 @@
   "name": "RDP Lateral Movement",
   "description": "Move laterally to a connected Windows node via Remote Desktop Protocol. Requires RDP service running on target. Gains ADMIN access on success. Per TIM paper: link action postcondition applies to END node.",
   "action_type": "link",
+  "mitre_attack": {
+    "technique_id": "T1021.001",
+    "technique_name": "Remote Desktop Protocol",
+    "tactic": "lateral-movement",
+    "tactic_id": "TA0008",
+    "url": "https://attack.mitre.org/techniques/T1021/001"
+  },
   "cost": 350.0,
   "duration": 1.5,
   "success_probability": 0.65,

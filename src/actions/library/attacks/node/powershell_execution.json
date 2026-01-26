@@ -1,0 +1,69 @@
+{
+  "name": "PowerShell Execution",
+  "description": "Execute malicious PowerShell scripts or commands to run payloads, download tools, or perform reconnaissance. PowerShell is the most commonly abused living-off-the-land binary (LOLBin) in Windows environments.",
+  "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1059.001",
+    "technique_name": "Command and Scripting Interpreter: PowerShell",
+    "tactic": "execution",
+    "tactic_id": "TA0002",
+    "url": "https://attack.mitre.org/techniques/T1059/001/"
+  },
+  "cost": 50,
+  "duration": 0.5,
+  "success_probability": 0.75,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "software_check",
+        "software_key": "os",
+        "operator": "in",
+        "values": ["Windows Server", "Windows"]
+      },
+      {
+        "type": "access_check",
+        "operator": "greater_equal",
+        "value": "USER"
+      },
+      {
+        "type": "property_check",
+        "property": "payload_executed",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "payload_executed",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "compromised",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.45
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 500.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://attack.mitre.org/techniques/T1059/001/",
+    "https://www.mandiant.com/resources/reports/m-trends-2024"
+  ],
+  "notes": "PowerShell execution is detected by 45% of EDR solutions according to industry reports. Success rate high due to legitimate use making blocking difficult."
+}

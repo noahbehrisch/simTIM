@@ -1,9 +1,9 @@
 import math
+
 import matplotlib.pyplot as plt
 
 
 class NetworkVisualizer:
-
     def __init__(self, network):
         self.network = network
         self.node_positions = {}

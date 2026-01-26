@@ -1,26 +1,25 @@
-import sys
-import os
 import json
+import os
+import sys
 import tkinter as tk
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from src.core.simulation_main import simtim_main
-from src.gui.enhanced_results_window import EnhancedResultsWindow
+from src.gui.help_window import HelpWindow
+from src.gui.results_window import ResultsWindow
+from src.gui.sidebar import Sidebar
 from src.gui.tabs import (
-    SimulationTab,
-    NetworkTab,
+    ActionTab,
     AttackerTab,
     DefenderTab,
-    ActionTab,
+    NetworkTab,
+    SimulationTab,
     VariablesTab,
 )
-from src.gui.sidebar import Sidebar
 from src.gui.theme import Theme
-from src.gui.help_window import HelpWindow
 
 
 class App(tk.Tk):
-
     def __init__(self):
         super().__init__()
         self.theme = Theme()
@@ -131,9 +130,7 @@ class App(tk.Tk):
         overview_frame.grid(row=1, column=1, sticky="nswe")
         overview_frame.grid_remove()
         overview_frame.grid_propagate(False)
-        overview_pad_frame = tk.Frame(
-            overview_frame, padx=50, pady=50, bg=self.tab_color
-        )
+        overview_pad_frame = tk.Frame(overview_frame, padx=50, pady=50, bg=self.tab_color)
         overview_pad_frame.pack(expand=True, fill="both")
         self.overview_text = tk.Text(
             overview_pad_frame,
@@ -152,13 +149,13 @@ class App(tk.Tk):
         self.node_options = []
         default_network_path = self.network_tab.network_file_var.get()
         try:
-            with open(default_network_path, "r") as f:
+            with open(default_network_path) as f:
                 data = json.load(f)
             if "nodes" in data:
                 self.node_options = [n["id"] for n in data["nodes"] if "id" in n]
             else:
                 self.node_options = []
-        except Exception as e:
+        except Exception:
             self.node_options = []
 
     def browse_network_file(self):
@@ -201,9 +198,7 @@ class App(tk.Tk):
             self.results_button.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
             self.start_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
             self.next_button.grid_remove()
-            self.results_button.config(
-                command=lambda: self.open_results_window(self.all_histories)
-            )
+            self.results_button.config(command=lambda: self.open_results_window(self.all_histories))
         else:
             self.results_button.grid_remove()
             self.start_button.grid_remove()
@@ -218,14 +213,10 @@ class App(tk.Tk):
         overview = "SIMULATION CONFIGURATION\n"
         overview += "=" * 50 + "\n\n"
         overview += "Simulation Parameters:\n"
-        if (
-            variables_config
-            and "scenarios" in variables_config
-            and variables_config["scenarios"]
-        ):
+        if variables_config and "scenarios" in variables_config and variables_config["scenarios"]:
             scenarios = variables_config["scenarios"]
             var_type = variables_config.get("variable_type", "action_duration")
-            total_runs = sum((s["runs"] for s in scenarios))
+            total_runs = sum(s["runs"] for s in scenarios)
             if var_type == "attack_duration":
                 mode_desc = "ATTACK DURATION COMPARISON"
             elif var_type == "defense_duration":
@@ -240,42 +231,42 @@ class App(tk.Tk):
             overview += f"   • Scenarios: {len(scenarios)}\n"
             overview += f"   • Total Runs: {total_runs}\n"
             overview += f"   • Time per run: {sim_config['time']} seconds\n"
-            overview += (
-                f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
-            )
+            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
             overview += "   Scenario Details:\n"
             for idx, scenario in enumerate(scenarios, 1):
                 runs = scenario["runs"]
                 if var_type == "attack_duration":
-                    overview += f"      {idx}. Attack Duration: {scenario['duration']}h → {runs} runs\n"
+                    overview += (
+                        f"      {idx}. Attack Duration: {scenario['duration']}h → {runs} runs\n"
+                    )
                 elif var_type == "defense_duration":
-                    overview += f"      {idx}. Defense Duration: {scenario['duration']}h → {runs} runs\n"
+                    overview += (
+                        f"      {idx}. Defense Duration: {scenario['duration']}h → {runs} runs\n"
+                    )
                 elif var_type == "attacker_strategy":
-                    overview += f"      {idx}. Attacker Strategy: {scenario['strategy']} → {runs} runs\n"
+                    overview += (
+                        f"      {idx}. Attacker Strategy: {scenario['strategy']} → {runs} runs\n"
+                    )
                 elif var_type == "defender_strategy":
-                    overview += f"      {idx}. Defender Strategy: {scenario['strategy']} → {runs} runs\n"
+                    overview += (
+                        f"      {idx}. Defender Strategy: {scenario['strategy']} → {runs} runs\n"
+                    )
                 else:
                     overview += f"      {idx}. Scenario → {runs} runs\n"
             overview += "\n"
         else:
             overview += f"   • Runs: {sim_config['runs']}\n"
             overview += f"   • Time: {sim_config['time']} seconds\n"
-            overview += (
-                f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
-            )
+            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
         overview += "Network Configuration:\n"
         network_file = network_config["file_path"]
-        network_name = (
-            network_file.split("/")[-1] if "/" in network_file else network_file
-        )
+        network_name = network_file.split("/")[-1] if "/" in network_file else network_file
         overview += f"   • File: {network_name}\n"
         overview += f"   • Path: {network_file}\n\n"
         overview += f"Attackers ({len(attackers)}):\n"
         for idx, attacker in enumerate(attackers, 1):
             capacity_text = (
-                "∞"
-                if attacker["capacity"] == float("inf")
-                else str(attacker["capacity"])
+                "∞" if attacker["capacity"] == float("inf") else str(attacker["capacity"])
             )
             overview += f"   {idx}. {attacker['id']}\n"
             overview += f"      Strategy: {attacker['strategy']}\n"
@@ -325,16 +316,14 @@ class App(tk.Tk):
 
     def open_results_window(self, all_histories):
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
-        results_window = EnhancedResultsWindow(self, all_histories, theme_colors)
+        ResultsWindow(self, all_histories, theme_colors)
 
     def open_results_window_scenarios(self, scenario_results):
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
         all_histories = []
         for scenario in scenario_results["scenarios"]:
             all_histories.extend(scenario["histories"])
-        results_window = EnhancedResultsWindow(
-            self, all_histories, theme_colors, scenario_results=scenario_results
-        )
+        ResultsWindow(self, all_histories, theme_colors, scenario_results=scenario_results)
 
     def open_help_window(self):
         HelpWindow(self, self.current_tab)
@@ -365,7 +354,7 @@ class App(tk.Tk):
 
                 scenarios = variables_config["scenarios"]
                 variable_type = variables_config.get("variable_type", "action_duration")
-                total_runs = sum((s["runs"] for s in scenarios))
+                total_runs = sum(s["runs"] for s in scenarios)
                 results = run_variable_scenarios(
                     path_to_network_config=path_to_network_config,
                     scenarios=scenarios,
@@ -387,9 +376,7 @@ class App(tk.Tk):
                 custom_messagebox.title("Scenario Comparison Complete")
                 custom_messagebox.geometry("800x400")
                 custom_messagebox.configure(bg=self.bg_color)
-                summary = (
-                    f"Completed {len(scenarios)} scenarios\nTotal runs: {total_runs}"
-                )
+                summary = f"Completed {len(scenarios)} scenarios\nTotal runs: {total_runs}"
                 tk.Label(
                     custom_messagebox,
                     text=summary,

@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-from .base_tab import BaseTab
+
 from src.utils.discovery import list_defender_strategies
+
+from .base_tab import BaseTab
 
 
 class DefenderTab(BaseTab):
-
     def __init__(self, parent, theme_colors):
         self.defender_entries = []
         self.defender_list = []
@@ -19,7 +20,7 @@ class DefenderTab(BaseTab):
         )
         self.create_info_label(
             strategy_info,
-            f'Available: {", ".join(self.available_strategies)}',
+            f"Available: {', '.join(self.available_strategies)}",
             bg_color=self.theme.COLORS["section_actors"],
         ).pack(anchor="w", padx=15)
         self.defender_entries_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
@@ -32,17 +33,13 @@ class DefenderTab(BaseTab):
         headers = ["ID", "Strategy", "Capacity", "Budget ($)", "Actions"]
         for i, text in enumerate(headers):
             label_style = self.theme.get_label_style("subheading")
-            label_style.update(
-                {"bg": self.sidebar_color, **self.theme.BORDERS["light"]}
-            )
-            header_label = tk.Label(
-                self.defender_entries_frame, text=text, **label_style
-            )
+            label_style.update({"bg": self.sidebar_color, **self.theme.BORDERS["light"]})
+            header_label = tk.Label(self.defender_entries_frame, text=text, **label_style)
             header_label.grid(row=0, column=i, padx=2, pady=2, sticky="ew")
         self.add_defender_entry()
-        self.create_styled_button(
-            self.pad_frame, "Add Defender", self.add_defender_entry
-        ).pack(padx=10, pady=10, anchor="w")
+        self.create_styled_button(self.pad_frame, "Add Defender", self.add_defender_entry).pack(
+            padx=10, pady=10, anchor="w"
+        )
 
     def add_defender_entry(self):
         defender_id = len(self.defender_entries) + 1
@@ -56,7 +53,9 @@ class DefenderTab(BaseTab):
         )
         id_label.grid(row=row, column=0, padx=2, pady=2, sticky="ew")
         default_strategy = (
-            self.available_strategies[0] if self.available_strategies else "reactive"
+            "balanced"
+            if "balanced" in self.available_strategies
+            else (self.available_strategies[0] if self.available_strategies else "reactive")
         )
         strategy_var = tk.StringVar(value=default_strategy)
         strategy_dropdown = ttk.Combobox(
@@ -66,12 +65,10 @@ class DefenderTab(BaseTab):
             state="readonly",
         )
         strategy_dropdown.grid(row=row, column=1, padx=2, pady=2, sticky="ew")
-        capacity_var = tk.StringVar(value="3")
-        capacity_entry = self.create_styled_entry(
-            self.defender_entries_frame, capacity_var
-        )
+        capacity_var = tk.StringVar(value="2")
+        capacity_entry = self.create_styled_entry(self.defender_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
-        budget_var = tk.StringVar(value="10000")
+        budget_var = tk.StringVar(value="100000")
         budget_entry = self.create_styled_entry(self.defender_entries_frame, budget_var)
         budget_entry.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
         remove_btn = self.create_styled_button(
@@ -142,9 +139,7 @@ class DefenderTab(BaseTab):
         )
         strategy_dropdown.grid(row=row, column=1, padx=2, pady=2, sticky="ew")
         capacity_var = tk.StringVar(value=config["capacity"])
-        capacity_entry = self.create_styled_entry(
-            self.defender_entries_frame, capacity_var
-        )
+        capacity_entry = self.create_styled_entry(self.defender_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
         budget_var = tk.StringVar(value=config["budget"])
         budget_entry = self.create_styled_entry(self.defender_entries_frame, budget_var)

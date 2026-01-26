@@ -1,0 +1,68 @@
+{
+  "name": "Data Backup Restore",
+  "description": "Restore data from verified clean backups after a security incident. Essential for ransomware recovery and data integrity restoration.",
+  "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-DBER",
+    "technique_name": "Data Backup Execution Restore",
+    "tactic": "Restore",
+    "url": "https://d3fend.mitre.org/technique/d3f:DataBackupExecutionRestore/"
+  },
+  "cost": 2000,
+  "duration": 12.0,
+  "success_probability": 0.90,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "property_check",
+        "property": "data_encrypted",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "data_encrypted",
+        "value": false
+      },
+      {
+        "type": "set_property",
+        "property": "system_unusable",
+        "value": false
+      },
+      {
+        "type": "set_property",
+        "property": "data_restored",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": -10000.0,
+    "one_off_gain": 0.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://d3fend.mitre.org/technique/d3f:DataBackupExecutionRestore/",
+    "https://www.ibm.com/reports/data-breach",
+    "https://www.cisa.gov/stopransomware"
+  ],
+  "notes": "Cost and duration vary significantly based on data volume. Organizations with tested backup procedures recover faster. RPO determines potential data loss."
+}

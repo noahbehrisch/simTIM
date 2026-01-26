@@ -1,19 +1,28 @@
 import heapq
-import random
 import logging
-from typing import Any, Dict, List, Optional, Union
-from .economic_model import (
-    economic_model,
-    calculate_action_damage,
-    calculate_action_gain,
-)
+import random
+from typing import Any
+
 from .access_utils import (
     get_node_access,
-    get_link_access,
-    validate_node,
     validate_actor,
+    validate_node,
 )
-from .graph import Node, Link
+from .action_index import OngoingActionsIndex
+from .economic_model import (
+    calculate_action_damage,
+    calculate_action_gain,
+    economic_model,
+)
+from .events import EventBus, EventType, HistoryRecorder, SimulationEvent
+from .exceptions import (
+    ActorValidationError,
+    CapacityError,
+    NodeValidationError,
+    PreconditionError,
+)
+from .graph import Link
+from .network import Network
 
 logger = logging.getLogger(__name__)
 infinity = float("inf")
@@ -32,7 +41,7 @@ class Event:
         "complete_action": 9,
     }
 
-    def __init__(self, time: float, event_type: str, data: Dict[str, Any]):
+    def __init__(self, time: float, event_type: str, data: dict[str, Any]):
         self.time = time
         self.event_type = event_type
         self.data = data
@@ -48,19 +57,22 @@ class Event:
 
 
 class Simulator:
-
     def __init__(
         self,
         network=None,
         detection_engine_type="exponential",
         economic_model_instance=None,
         detection_engine=None,
+        event_bus: EventBus | None = None,
     ):
         self.current_time = 0.0
-        self.event_queue: List[Event] = []
-        self.history: List[Event] = []
-        self.network = network if network is not None else {}
-        self.ongoing_actions = []
+        self.event_queue: list[Event] = []
+        self.network = network if network is not None else Network()
+        self._ongoing_actions_index = OngoingActionsIndex()
+
+        self._event_bus = event_bus or EventBus()
+        self._history_recorder = HistoryRecorder(self._event_bus)
+        self._history_recorder.register()
 
         if economic_model_instance is not None:
             self._economic_model = economic_model_instance
@@ -73,9 +85,9 @@ class Simulator:
             logger.info(f"Using custom detection engine: {config['engine_type']}")
         else:
             from ..detection import (
-                UniformDetectionEngine,
                 ExponentialDetectionEngine,
                 LinearDetectionEngine,
+                UniformDetectionEngine,
             )
 
             engine_map = {
@@ -102,10 +114,33 @@ class Simulator:
         condition_evaluator.set_simulator(self)
 
     @property
+    def event_bus(self) -> EventBus:
+        return self._event_bus
+
+    @property
+    def history(self) -> list:
+        return self._history_recorder.history
+
+    @property
+    def ongoing_actions(self) -> list:
+        return self._ongoing_actions_index.to_list()
+
+    @ongoing_actions.setter
+    def ongoing_actions(self, value: list):
+        self._ongoing_actions_index.clear()
+        for action_data in value:
+            self._ongoing_actions_index.add(action_data)
+
+    @property
     def economic_model(self):
         return self._economic_model
 
+    def _publish_event(self, event_type: EventType, data: dict[str, Any]) -> None:
+        event = SimulationEvent(event_type=event_type, time=self.current_time, data=data)
+        self._event_bus.publish(event)
+
     def run(self, until: float):
+        self._publish_event(EventType.SIMULATION_STARTED, {"until": until})
         for actor in self.get_all_actors():
             actor.simulator = self
             actor.running = True
@@ -116,6 +151,14 @@ class Simulator:
             self.current_time = event.time
             self.process_event((event.time, event.event_type, event.data))
         self._accumulate_time_proportional_impact()
+        economic_summary = self.get_tim_economic_summary()
+        self._publish_event(
+            EventType.SIMULATION_ENDED,
+            {
+                "final_time": self.current_time,
+                "economic_summary": economic_summary,
+            },
+        )
 
     def _schedule_periodic_accumulation(self, until: float):
         accumulation_interval = 0.5
@@ -128,7 +171,7 @@ class Simulator:
         self._accumulate_time_proportional_impact()
 
     def _accumulate_time_proportional_impact(self):
-        all_nodes = self.network.get("nodes", self.network.get("nodes_list", []))
+        all_nodes = self.network.nodes_list
         attackers = [
             actor
             for actor in self.get_all_actors()
@@ -138,13 +181,11 @@ class Simulator:
             self.current_time, all_nodes, attackers
         )
 
-    def schedule_event(self, time: float, event_type: str, data: Dict[str, Any]):
+    def schedule_event(self, time: float, event_type: str, data: dict[str, Any]):
         if event_type == "action":
             actor = data["actor"]
             if not actor.can_schedule_action():
-                self.history.append(
-                    (self.current_time, "action_capacity_exceeded", data)
-                )
+                self.history.append((self.current_time, "action_capacity_exceeded", data))
                 return
             precond = data["action"].precondition(
                 data["target"],
@@ -162,33 +203,24 @@ class Simulator:
             heapq.heappush(self.event_queue, Event(time, event_type, data))
 
     def timeout(self, delay: float, event_type: str, data: dict):
-        self.schedule_event(
-            time=self.current_time + delay, event_type=event_type, data=data
-        )
+        self.schedule_event(time=self.current_time + delay, event_type=event_type, data=data)
 
     def print_event_queue(self):
-        for event in sorted(self.event_queue, key=lambda e: e[0]):
+        for _event in sorted(self.event_queue, key=lambda e: e[0]):
             pass
 
     def get_all_actors(self):
-        actors = self.network.get("actors", [])
-        return actors
+        return self.network.actors
 
     def interrupt(self, actor=None, target=None, action_type=None):
-        to_interrupt = []
-        for a in self.ongoing_actions:
-            if (
-                (actor is None or a.get("actor") == actor)
-                and (target is None or a.get("target") == target)
-                and (
-                    action_type is None
-                    or (a.get("action") and a["action"].name == action_type)
-                )
-            ):
-                to_interrupt.append(a)
+        to_interrupt = self._ongoing_actions_index.find_all(
+            actor=actor,
+            target=target,
+            action_name=action_type,
+        )
         for a in to_interrupt:
-            self.ongoing_actions.remove(a)
-            self.history.append((self.current_time, "action_interrupted", a))
+            self._ongoing_actions_index.remove(a)
+            self._publish_event(EventType.ACTION_INTERRUPTED, a)
 
     def process_event(self, event):
         time, event_type, data = event
@@ -196,7 +228,7 @@ class Simulator:
         if handler:
             handler(time, data)
         else:
-            self.history.append((time, event_type, data))
+            self._publish_event(EventType.STATE_CHANGED, {"event_type": event_type, **data})
 
     def handle_actor_run(self, time, data):
         actor = data["actor"]
@@ -204,33 +236,24 @@ class Simulator:
             actor.run()
 
     def handle_start_action(self, time, event_data):
-        """
-        Handle the start of an action (node or link action).
-
-        Per TIM paper Section 4.4:
-        - Node actions: target is a Node, precondition/postcondition apply to that node
-        - Link actions: target is a Link (n1→n2), precondition uses both nodes' properties,
-                        postcondition applies to the END node (n2) and actor's access to n2
-        """
         action = event_data["action"]
         actor = event_data["actor"]
         target = event_data["target"]
 
         actor_validation = validate_actor(actor)
         if not actor_validation["valid"]:
-            logger.error(f"Invalid actor: {actor_validation['errors']}")
-            self.history.append(
-                (
-                    self.current_time,
-                    "action_error",
-                    {"reason": "invalid_actor", "errors": actor_validation["errors"]},
-                )
+            error = ActorValidationError(
+                actor_id=getattr(actor, "id", None),
+                errors=actor_validation["errors"],
+            )
+            logger.error(str(error))
+            self._publish_event(
+                EventType.ACTION_ERROR,
+                {"error": error.to_dict() if hasattr(error, "to_dict") else str(error)},
             )
             return
 
-        is_link_action = (
-            action.is_link_action() if hasattr(action, "is_link_action") else False
-        )
+        is_link_action = action.is_link_action() if hasattr(action, "is_link_action") else False
 
         if is_link_action:
             if isinstance(target, Link):
@@ -238,7 +261,7 @@ class Simulator:
                 end_node = link.node2
                 start_node = link.node1
                 start_access = get_node_access(start_node, actor.id)
-                end_access = get_node_access(end_node, actor.id)
+                get_node_access(end_node, actor.id)
                 current_access = start_access
                 precondition_target = link
                 postcondition_target = end_node
@@ -253,59 +276,55 @@ class Simulator:
         else:
             target_validation = validate_node(target)
             if not target_validation["valid"]:
-                logger.error(f"Invalid target node: {target_validation['errors']}")
-                self.history.append(
-                    (
-                        self.current_time,
-                        "action_error",
-                        {
-                            "reason": "invalid_target",
-                            "errors": target_validation["errors"],
-                        },
-                    )
+                error = NodeValidationError(
+                    node_id=getattr(target, "id", None),
+                    errors=target_validation["errors"],
                 )
+                logger.error(str(error))
+                self._publish_event(EventType.ACTION_ERROR, {"error": str(error)})
                 return
             current_access = get_node_access(target, actor.id)
             precondition_target = target
             postcondition_target = target
 
         if not actor.can_schedule_action():
-            logger.warning(f"Actor {actor.id} capacity exceeded")
-            if (
-                hasattr(actor, "pending_action_count")
-                and actor.pending_action_count > 0
-            ):
+            error = CapacityError(
+                actor_id=actor.id,
+                current_capacity=len(actor.ongoing_actions)
+                + getattr(actor, "pending_action_count", 0),
+                max_capacity=actor.capacity,
+            )
+            logger.debug(str(error))
+            if hasattr(actor, "pending_action_count") and actor.pending_action_count > 0:
                 actor.pending_action_count -= 1
-            self.history.append(
-                (self.current_time, "action_capacity_exceeded", event_data)
+            self._publish_event(
+                EventType.ACTION_CAPACITY_EXCEEDED, {**event_data, "error": error.to_dict()}
             )
             return
 
         if not action.precondition(precondition_target, current_access, actor.id):
-            logger.debug(
-                f"Action {action.name} precondition failed at start for actor {actor.id}"
+            error = PreconditionError(
+                action_name=action.name,
+                reason="precondition_false_at_start",
+                target=getattr(target, "id", str(target)),
+                actor=actor.id,
             )
-            if (
-                hasattr(actor, "pending_action_count")
-                and actor.pending_action_count > 0
-            ):
+            logger.debug(str(error))
+            if hasattr(actor, "pending_action_count") and actor.pending_action_count > 0:
                 actor.pending_action_count -= 1
-            self.history.append(
-                (
-                    self.current_time,
-                    "action_aborted_start",
-                    {
-                        "actor": actor,
-                        "action": action,
-                        "target": target,
-                        "reason": "precondition_false_at_start",
-                    },
-                )
+            self._publish_event(
+                EventType.ACTION_ABORTED,
+                {
+                    "actor": actor,
+                    "action": action,
+                    "target": target,
+                    "error": error.to_dict(),
+                },
             )
             return
 
         action_instance_id = (
-            id(action) + int(self.current_time * 1000000) + len(self.ongoing_actions)
+            id(action) + int(self.current_time * 1000000) + len(self._ongoing_actions_index)
         )
 
         ongoing_action = {
@@ -319,7 +338,7 @@ class Simulator:
             "actor_access": current_access,
             "action_instance_id": action_instance_id,
         }
-        self.ongoing_actions.append(ongoing_action)
+        self._ongoing_actions_index.add(ongoing_action)
 
         actor.record_action_cost(action, self.current_time)
 
@@ -329,24 +348,17 @@ class Simulator:
         event_data["postcondition_target"] = postcondition_target
         event_data["is_link_action"] = is_link_action
 
-        self.schedule_event(
-            self.current_time + action.duration, "action_finished", event_data
-        )
+        self.schedule_event(self.current_time + action.duration, "action_finished", event_data)
         if hasattr(actor, "is_attacker") and actor.is_attacker:
             self._schedule_detection_check(event_data)
-        self.history.append((self.current_time, "start_action", event_data))
+        self._publish_event(EventType.ACTION_STARTED, event_data)
         actor.schedule_action(action)
 
     def handle_action_finished(self, time, data):
-        ongoing = next(
-            (
-                a
-                for a in self.ongoing_actions
-                if a["actor"] == data["actor"]
-                and a["action"] == data["action"]
-                and (a["target"] == data["target"])
-            ),
-            None,
+        ongoing = self._ongoing_actions_index.find(
+            actor=data["actor"],
+            action=data["action"],
+            target=data["target"],
         )
         if ongoing:
             precond = data["action"].precondition(
@@ -354,10 +366,8 @@ class Simulator:
             )
             if precond:
                 if random.random() < data["action"].success_probability:
-                    postcondition_target = data.get(
-                        "postcondition_target", data["target"]
-                    )
-                    is_link_action = data.get("is_link_action", False)
+                    postcondition_target = data.get("postcondition_target", data["target"])
+                    data.get("is_link_action", False)
 
                     data["action"].postcondition(
                         postcondition_target, data.get("actor_access"), data["actor"].id
@@ -386,21 +396,16 @@ class Simulator:
                         data["actor"].on_action_finished(
                             data["action"], "success", postcondition_target
                         )
-                    self.history.append((self.current_time, "action_succeeded", data))
+                    self._publish_event(EventType.ACTION_SUCCEEDED, data)
                 else:
                     if hasattr(data["actor"], "on_action_finished"):
-                        data["actor"].on_action_finished(
-                            data["action"], "failure", data["target"]
-                        )
-                    self.history.append((self.current_time, "action_failed", data))
+                        data["actor"].on_action_finished(data["action"], "failure", data["target"])
+                    self._publish_event(EventType.ACTION_FAILED, data)
             else:
                 if hasattr(data["actor"], "on_action_finished"):
-                    data["actor"].on_action_finished(
-                        data["action"], "aborted", data["target"]
-                    )
-                self.history.append((self.current_time, "action_aborted", data))
-            if ongoing in self.ongoing_actions:
-                self.ongoing_actions.remove(ongoing)
+                    data["actor"].on_action_finished(data["action"], "aborted", data["target"])
+                self._publish_event(EventType.ACTION_ABORTED, data)
+            self._ongoing_actions_index.remove(ongoing)
 
     def _record_state_change(self, node, actor_id: str, action):
         self._accumulate_time_proportional_impact()
@@ -411,11 +416,7 @@ class Simulator:
             node.id if hasattr(node, "id") else str(node),
             actor_id,
             "CHANGED",  # Previous access
-            (
-                current_access.name
-                if hasattr(current_access, "name")
-                else str(current_access)
-            ),
+            (current_access.name if hasattr(current_access, "name") else str(current_access)),
         )
 
     def _schedule_detection_check(self, action_data):
@@ -442,7 +443,7 @@ class Simulator:
             )
 
     def handle_attack_detected(self, time, data):
-        self.history.append((self.current_time, "attack_detected", data))
+        self._publish_event(EventType.ATTACK_DETECTED, data)
 
         logger.info(
             f"Attack detected: {data['detected_action'].name} by {data['detected_actor'].id} on {data['detected_target']}"
@@ -461,38 +462,33 @@ class Simulator:
         action = action_data["action"]
         actor = action_data["actor"]
         target = action_data["target"]
-        if action_data in self.ongoing_actions:
-            self.ongoing_actions.remove(action_data)
+        self._ongoing_actions_index.remove(action_data)
         if hasattr(actor, "on_action_finished"):
             actor.on_action_finished(action, "interrupted", target)
         if hasattr(actor, "ongoing_actions") and action in actor.ongoing_actions:
             actor.ongoing_actions.remove(action)
-        self.history.append(
-            (
-                self.current_time,
-                "action_interrupted",
-                {
-                    "actor": actor,
-                    "action": action,
-                    "target": target,
-                    "reason": reason,
-                    "interrupted_at": self.current_time,
-                },
-            )
+        self._publish_event(
+            EventType.ACTION_INTERRUPTED,
+            {
+                "actor": actor,
+                "action": action,
+                "target": target,
+                "reason": reason,
+                "interrupted_at": self.current_time,
+            },
         )
 
     def _check_ongoing_actions_for_node(self, node):
-        for ongoing in list(self.ongoing_actions):
-            if ongoing["target"] == node or ongoing.get("postcondition_target") == node:
-                action = ongoing["action"]
-                target = ongoing["target"]
-                actor = ongoing["actor"]
-                current_access = get_node_access(target, actor.id)
-                if not action.precondition(target, current_access, actor.id):
-                    self._interrupt_action(ongoing, "precondition_failed")
+        ongoing_for_node = self._ongoing_actions_index.find_all(target=node)
+        for ongoing in ongoing_for_node:
+            action = ongoing["action"]
+            target = ongoing["target"]
+            actor = ongoing["actor"]
+            current_access = get_node_access(target, actor.id)
+            if not action.precondition(target, current_access, actor.id):
+                self._interrupt_action(ongoing, "precondition_failed")
 
     def _calculate_economic_impact(self, action_data):
-        """Record economic impact of a successful action (cost already recorded at start)."""
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
@@ -500,16 +496,14 @@ class Simulator:
         gain = calculate_action_gain(action.name, target)
         if hasattr(actor, "is_attacker") and actor.is_attacker:
             self._economic_model.record_action_outcome(
-                self.current_time, actor.id, action.name, 0, gain
+                self.current_time, actor.id, action.name, damage, gain
             )
         else:
             self._economic_model.record_action_outcome(
-                self.current_time, actor.id, action.name, damage, 0
+                self.current_time, actor.id, action.name, 0, 0
             )
 
-    def record_access_change(
-        self, node, actor_id: str, old_access: str, new_access: str
-    ):
+    def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
         node_id = node.id if hasattr(node, "id") else str(node)
         self._economic_model.record_access_change(
             self.current_time, node_id, actor_id, old_access, new_access
@@ -534,28 +528,20 @@ class Simulator:
             time_interval = (0.0, self.current_time)
         all_actors = self.get_all_actors()
         attackers = [
-            actor
-            for actor in all_actors
-            if hasattr(actor, "is_attacker") and actor.is_attacker
+            actor for actor in all_actors if hasattr(actor, "is_attacker") and actor.is_attacker
         ]
         defenders = [
-            actor
-            for actor in all_actors
-            if hasattr(actor, "is_defender") and actor.is_defender
+            actor for actor in all_actors if hasattr(actor, "is_defender") and actor.is_defender
         ]
         attacker_objectives = {}
         for attacker in attackers:
-            attacker_objectives[attacker.id] = (
-                self._economic_model.get_attacker_objective(
-                    attacker.id, attacker.incurredCost
-                )
+            attacker_objectives[attacker.id] = self._economic_model.get_attacker_objective(
+                attacker.id, attacker.incurredCost
             )
         defender_objectives = {}
         for defender in defenders:
-            defender_objectives[defender.id] = (
-                self._economic_model.get_defender_objective(
-                    defender.id, defender.incurredCost
-                )
+            defender_objectives[defender.id] = self._economic_model.get_defender_objective(
+                defender.id, defender.incurredCost
             )
         summary = self._economic_model.get_summary(all_actors)
         return {
@@ -579,22 +565,18 @@ class Simulator:
                     if node not in actor.visible_nodes:
                         actor.visible_nodes.add(node)
                         logger.debug(f"Added {node.id} to {actor_id}'s visible_nodes")
-                        from src.core.access_utils import (
-                            set_node_access,
-                            get_node_access,
-                        )
                         from src.core.access_levels import NodeAccessLevel
+                        from src.core.access_utils import (
+                            get_node_access,
+                            set_node_access,
+                        )
 
                         current_access = get_node_access(node, actor_id)
                         if current_access == NodeAccessLevel.NONE:
                             set_node_access(node, actor_id, NodeAccessLevel.VISIBLE)
-                            logger.debug(
-                                f"Set {node.id} access to VISIBLE for {actor_id}"
-                            )
+                            logger.debug(f"Set {node.id} access to VISIBLE for {actor_id}")
                 after_count = len(actor.visible_nodes)
-                logger.debug(
-                    f"{actor_id} visible_nodes: {before_count} → {after_count}"
-                )
+                logger.debug(f"{actor_id} visible_nodes: {before_count} → {after_count}")
 
     def notify_links_discovered(self, actor_id: str, discovered_links: list):
         for actor in self.get_all_actors():

@@ -1,6 +1,16 @@
 {
   "name": "Comprehensive Security Audit",
-  "action_type": "node", 
+  "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-AI",
+    "technique_name": "Asset Inventory",
+    "url": "https://d3fend.mitre.org/technique/d3f:AssetInventory",
+    "related_techniques": [
+      "D3-CI",
+      "D3-SWI"
+    ],
+    "tactic": "Model"
+  },
   "cost": 500,
   "duration": 5.0,
   "success_probability": 0.95,
@@ -24,7 +34,7 @@
           "condition": {
             "type": "variable_ref",
             "variable": "vuln",
-            "property": "severity", 
+            "property": "severity",
             "operator": "equals",
             "value": "critical"
           }
@@ -57,7 +67,7 @@
   },
   "postcondition": {
     "type": "compound",
-    "operator": "AND", 
+    "operator": "AND",
     "actions": [
       {
         "type": "remove_vulnerability",

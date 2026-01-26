@@ -2,17 +2,47 @@
   "name": "Active Network Scan",
   "description": "Nmap-style port scanning and service discovery",
   "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1046",
+    "technique_name": "Network Service Discovery",
+    "tactic": "discovery",
+    "tactic_id": "TA0007",
+    "url": "https://attack.mitre.org/techniques/T1046"
+  },
   "cost": 75,
   "duration": 1.0,
   "success_probability": 0.95,
   "precondition": {
-    "type": "access_check",
-    "operator": "greater_equal",
-    "value": "VISIBLE"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "greater_equal",
+        "value": "VISIBLE"
+      },
+      {
+        "type": "property_check",
+        "property": "network_scanned",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
   },
   "postcondition": {
-    "type": "set_links_access",
-    "access_value": "VISIBLE"
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_links_access",
+        "access_value": "VISIBLE"
+      },
+      {
+        "type": "set_property",
+        "property": "network_scanned",
+        "value": true
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",

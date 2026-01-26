@@ -1,6 +1,16 @@
 {
   "name": "Firewall Rule Update",
   "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-NTF",
+    "technique_name": "Network Traffic Filtering",
+    "url": "https://d3fend.mitre.org/technique/d3f:NetworkTrafficFiltering",
+    "related_techniques": [
+      "D3-ITF",
+      "D3-OTF"
+    ],
+    "tactic": "Isolate"
+  },
   "cost": 100,
   "duration": 1.0,
   "success_probability": 0.9,

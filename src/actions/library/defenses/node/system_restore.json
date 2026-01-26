@@ -1,0 +1,76 @@
+{
+  "name": "System Baseline Restore",
+  "description": "Restore compromised system to known good baseline state using golden images, snapshots, or system recovery. Removes all attacker modifications and malware.",
+  "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-SBR",
+    "technique_name": "System Baseline Restore",
+    "tactic": "Restore",
+    "url": "https://d3fend.mitre.org/technique/d3f:SystemBaselineRestore/"
+  },
+  "cost": 1000,
+  "duration": 4.0,
+  "success_probability": 0.95,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "property_check",
+        "property": "compromised",
+        "operator": "equals",
+        "value": true
+      }
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "compromised",
+        "value": false
+      },
+      {
+        "type": "set_property",
+        "property": "persistence_established",
+        "value": false
+      },
+      {
+        "type": "set_property",
+        "property": "c2_established",
+        "value": false
+      },
+      {
+        "type": "set_property",
+        "property": "data_encrypted",
+        "value": false
+      },
+      {
+        "type": "set_access",
+        "value": "NONE"
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": -5000.0,
+    "one_off_gain": 0.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://d3fend.mitre.org/technique/d3f:SystemBaselineRestore/",
+    "https://www.cisa.gov/stopransomware"
+  ],
+  "notes": "System restore is the most effective remediation but may cause data loss since last backup. Critical for ransomware recovery. Duration depends on system complexity."
+}

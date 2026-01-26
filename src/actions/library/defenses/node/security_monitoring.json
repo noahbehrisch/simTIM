@@ -1,13 +1,26 @@
 {
   "name": "Security Monitoring",
   "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-PM",
+    "technique_name": "Platform Monitoring",
+    "url": "https://d3fend.mitre.org/technique/d3f:PlatformMonitoring",
+    "related_techniques": [
+      "D3-LAM",
+      "D3-DAM"
+    ],
+    "tactic": "Detect"
+  },
   "cost": 150,
   "duration": 1.0,
   "success_probability": 0.9,
   "precondition": {
-    "type": "access_check",
-    "operator": "equals",
-    "value": "ADMIN"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {"type": "access_check", "operator": "equals", "value": "ADMIN"},
+      {"type": "property_check", "property": "monitoring_enabled", "operator": "not_equals", "value": true}
+    ]
   },
   "postcondition": {
     "type": "compound",

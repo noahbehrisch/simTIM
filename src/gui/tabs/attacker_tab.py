@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-from .base_tab import BaseTab
+
 from src.utils.discovery import list_attacker_strategies
+
+from .base_tab import BaseTab
 
 
 class AttackerTab(BaseTab):
-
     def __init__(self, parent, theme_colors):
         self.attacker_entries = []
         self.attacker_list = []
@@ -19,7 +20,7 @@ class AttackerTab(BaseTab):
         )
         self.create_info_label(
             strategy_info,
-            f'Available: {", ".join(self.available_strategies)}',
+            f"Available: {', '.join(self.available_strategies)}",
             bg_color=self.theme.COLORS["section_actors"],
         ).pack(anchor="w", padx=15)
         self.attacker_entries_frame = tk.Frame(self.pad_frame, bg=self.tab_color)
@@ -33,18 +34,14 @@ class AttackerTab(BaseTab):
         headers = ["ID", "Strategy", "Capacity", "∞", "Budget ($)", "Actions"]
         for i, text in enumerate(headers):
             label_style = self.theme.get_label_style("subheading")
-            label_style.update(
-                {"bg": self.sidebar_color, **self.theme.BORDERS["light"]}
-            )
-            header_label = tk.Label(
-                self.attacker_entries_frame, text=text, **label_style
-            )
+            label_style.update({"bg": self.sidebar_color, **self.theme.BORDERS["light"]})
+            header_label = tk.Label(self.attacker_entries_frame, text=text, **label_style)
             header_label.grid(row=0, column=i, padx=2, pady=2, sticky="ew")
         self.attacker_entries_frame.grid_columnconfigure(5, weight=1, minsize=80)
         self.add_attacker_entry()
-        self.create_styled_button(
-            self.pad_frame, "Add Attacker", self.add_attacker_entry
-        ).pack(padx=10, pady=10, anchor="w")
+        self.create_styled_button(self.pad_frame, "Add Attacker", self.add_attacker_entry).pack(
+            padx=10, pady=10, anchor="w"
+        )
 
     def add_attacker_entry(self):
         attacker_id = len(self.attacker_entries) + 1
@@ -58,7 +55,9 @@ class AttackerTab(BaseTab):
         )
         id_label.grid(row=row, column=0, padx=2, pady=2, sticky="ew")
         default_strategy = (
-            self.available_strategies[0] if self.available_strategies else "greedy"
+            "escalation"
+            if "escalation" in self.available_strategies
+            else (self.available_strategies[0] if self.available_strategies else "greedy")
         )
         strategy_var = tk.StringVar(value=default_strategy)
         strategy_dropdown = ttk.Combobox(
@@ -69,9 +68,7 @@ class AttackerTab(BaseTab):
         )
         strategy_dropdown.grid(row=row, column=1, padx=2, pady=2, sticky="ew")
         capacity_var = tk.StringVar(value="3")
-        capacity_entry = self.create_styled_entry(
-            self.attacker_entries_frame, capacity_var
-        )
+        capacity_entry = self.create_styled_entry(self.attacker_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
         infinite_var = tk.BooleanVar(value=True)
         infinite_check = tk.Checkbutton(
@@ -84,7 +81,7 @@ class AttackerTab(BaseTab):
         )
         infinite_check.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
         capacity_entry.config(state="disabled")
-        budget_var = tk.StringVar(value="1000")
+        budget_var = tk.StringVar(value="100000")
         budget_entry = self.create_styled_entry(self.attacker_entries_frame, budget_var)
         budget_entry.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
         remove_btn = self.create_styled_button(
@@ -171,9 +168,7 @@ class AttackerTab(BaseTab):
         )
         strategy_dropdown.grid(row=row, column=1, padx=2, pady=2, sticky="ew")
         capacity_var = tk.StringVar(value=config["capacity"])
-        capacity_entry = self.create_styled_entry(
-            self.attacker_entries_frame, capacity_var
-        )
+        capacity_entry = self.create_styled_entry(self.attacker_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
         infinite_var = tk.BooleanVar(value=config["infinite"])
         infinite_check = tk.Checkbutton(
@@ -226,9 +221,7 @@ class AttackerTab(BaseTab):
     def get_attacker_config(self):
         attackers = []
         for entry in self.attacker_entries:
-            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, frame = (
-                entry
-            )
+            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, frame = entry
             if infinite_var.get():
                 capacity = float("inf")
             else:

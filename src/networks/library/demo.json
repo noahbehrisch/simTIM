@@ -1,0 +1,301 @@
+{
+  "name": "Enterprise Demo Network",
+  "description": "Comprehensive enterprise network demonstrating full attack lifecycle from initial reconnaissance through lateral movement to data exfiltration and impact.",
+  "nodes": [
+    {
+      "id": "external_webserver",
+      "name": "Public Web Server",
+      "software": {
+        "os": "Ubuntu",
+        "version": "22.04",
+        "services": ["apache", "php", "ssh"]
+      },
+      "vulnerabilities": [
+        "CVE-2021-44228",
+        "CVE-2022-22965"
+      ],
+      "assets": [
+        "web_application",
+        "access_logs"
+      ],
+      "properties": {
+        "exposed_to_internet": true,
+        "critical": false,
+        "category": "Web Server",
+        "network_segment": "DMZ",
+        "entry_point": true
+      }
+    },
+    {
+      "id": "mail_server",
+      "name": "Corporate Mail Server",
+      "software": {
+        "os": "Windows Server",
+        "version": "2019",
+        "services": ["exchange", "rdp", "smb"]
+      },
+      "vulnerabilities": [
+        "CVE-2021-26855",
+        "CVE-2021-27065"
+      ],
+      "assets": [
+        "email_archive",
+        "user_credentials",
+        "contact_lists"
+      ],
+      "properties": {
+        "exposed_to_internet": true,
+        "critical": true,
+        "category": "Mail Server",
+        "network_segment": "DMZ",
+        "entry_point": true,
+        "contains_sensitive_data": true
+      }
+    },
+    {
+      "id": "jump_host",
+      "name": "Administrative Jump Host",
+      "software": {
+        "os": "Linux",
+        "version": "CentOS 8",
+        "services": ["ssh", "rdp_gateway"]
+      },
+      "vulnerabilities": [
+        "CVE-2021-4034"
+      ],
+      "assets": [
+        "ssh_keys",
+        "admin_credentials"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true,
+        "category": "Jump Host",
+        "network_segment": "Management",
+        "high_value_target": true
+      }
+    },
+    {
+      "id": "workstation_1",
+      "name": "Developer Workstation",
+      "software": {
+        "os": "Windows",
+        "version": "11",
+        "services": ["rdp", "smb", "powershell"]
+      },
+      "vulnerabilities": [
+        "CVE-2022-26134",
+        "CVE-2021-34527"
+      ],
+      "assets": [
+        "source_code",
+        "api_keys",
+        "developer_credentials"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": false,
+        "category": "Workstation",
+        "network_segment": "Corporate",
+        "contains_sensitive_data": true
+      }
+    },
+    {
+      "id": "database_server",
+      "name": "Production Database Server",
+      "software": {
+        "os": "Linux",
+        "version": "Ubuntu 20.04",
+        "services": ["postgresql", "ssh"]
+      },
+      "vulnerabilities": [
+        "CVE-2021-3156"
+      ],
+      "assets": [
+        "customer_database",
+        "financial_records",
+        "personal_data",
+        "transaction_history"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true,
+        "category": "Database Server",
+        "network_segment": "Data",
+        "high_value_target": true,
+        "contains_sensitive_data": true
+      }
+    },
+    {
+      "id": "file_server",
+      "name": "Corporate File Server",
+      "software": {
+        "os": "Windows Server",
+        "version": "2022",
+        "services": ["smb", "rdp", "file_server"]
+      },
+      "vulnerabilities": [
+        "CVE-2020-1472",
+        "CVE-2017-0144"
+      ],
+      "assets": [
+        "company_documents",
+        "hr_records",
+        "contracts",
+        "intellectual_property"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true,
+        "category": "File Server",
+        "network_segment": "Corporate",
+        "high_value_target": true,
+        "contains_sensitive_data": true
+      }
+    },
+    {
+      "id": "domain_controller",
+      "name": "Active Directory Domain Controller",
+      "software": {
+        "os": "Windows Server",
+        "version": "2019",
+        "services": ["ldap", "kerberos", "dns", "rdp", "smb"]
+      },
+      "vulnerabilities": [
+        "CVE-2020-1472",
+        "CVE-2021-42287"
+      ],
+      "assets": [
+        "domain_credentials",
+        "group_policies",
+        "security_certificates",
+        "user_directory"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true,
+        "category": "Domain Controller",
+        "network_segment": "Core",
+        "high_value_target": true,
+        "contains_sensitive_data": true
+      }
+    },
+    {
+      "id": "backup_server",
+      "name": "Backup and Recovery Server",
+      "software": {
+        "os": "Linux",
+        "version": "RedHat 8",
+        "services": ["ssh", "backup_agent"]
+      },
+      "vulnerabilities": [
+        "CVE-2021-4034"
+      ],
+      "assets": [
+        "backup_archives",
+        "recovery_keys",
+        "system_snapshots"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "critical": true,
+        "category": "Backup Server",
+        "network_segment": "Data",
+        "high_value_target": true
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "external_webserver",
+      "node2": "jump_host",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "dmz_to_management",
+        "firewall_protected": true
+      }
+    },
+    {
+      "node1": "mail_server",
+      "node2": "jump_host",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "dmz_to_management",
+        "firewall_protected": true
+      }
+    },
+    {
+      "node1": "mail_server",
+      "node2": "domain_controller",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "authentication",
+        "firewall_protected": true
+      }
+    },
+    {
+      "node1": "jump_host",
+      "node2": "workstation_1",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "admin_access"
+      }
+    },
+    {
+      "node1": "jump_host",
+      "node2": "domain_controller",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "admin_access"
+      }
+    },
+    {
+      "node1": "workstation_1",
+      "node2": "file_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "corporate_network"
+      }
+    },
+    {
+      "node1": "workstation_1",
+      "node2": "domain_controller",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "authentication"
+      }
+    },
+    {
+      "node1": "domain_controller",
+      "node2": "file_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "domain_services"
+      }
+    },
+    {
+      "node1": "domain_controller",
+      "node2": "database_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "domain_services"
+      }
+    },
+    {
+      "node1": "file_server",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "backup_network"
+      }
+    },
+    {
+      "node1": "database_server",
+      "node2": "backup_server",
+      "bidirectional": true,
+      "properties": {
+        "connection_type": "backup_network"
+      }
+    }
+  ]
+}

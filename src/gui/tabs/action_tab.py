@@ -1,12 +1,12 @@
+import json
+import os
 import tkinter as tk
 from tkinter import ttk
-import os
-import json
+
 from .base_tab import BaseTab
 
 
 class ActionTab(BaseTab):
-
     def __init__(self, parent, theme_colors):
         self.action_states = {}
         self.attack_actions = []
@@ -36,54 +36,57 @@ class ActionTab(BaseTab):
     def _create_attack_section(self, parent):
         attack_frame = tk.Frame(parent, bg=self.tab_color)
         attack_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-        header = self.create_section_header(
-            attack_frame, "Attack Actions", section_type="attacker"
-        )
+        self.create_section_header(attack_frame, "Attack Actions", section_type="attacker")
         self.attack_actions = self._scan_actions("attacks")
         scroll_frame, canvas = self._create_scrollable_frame(attack_frame)
         self.attack_canvas = canvas
         for action_name, action_data in self.attack_actions:
-            self._create_action_checkbox(
-                scroll_frame, action_name, action_data, "attack"
-            )
+            self._create_action_checkbox(scroll_frame, action_name, action_data, "attack")
 
     def _create_defense_section(self, parent):
         defense_frame = tk.Frame(parent, bg=self.tab_color)
         defense_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
-        header = self.create_section_header(
-            defense_frame, "Defense Actions", section_type="defender"
-        )
+        self.create_section_header(defense_frame, "Defense Actions", section_type="defender")
         self.defense_actions = self._scan_actions("defenses")
         scroll_frame, canvas = self._create_scrollable_frame(defense_frame)
         self.defense_canvas = canvas
         for action_name, action_data in self.defense_actions:
-            self._create_action_checkbox(
-                scroll_frame, action_name, action_data, "defense"
-            )
+            self._create_action_checkbox(scroll_frame, action_name, action_data, "defense")
 
     def _scan_actions(self, action_type):
         actions = []
         actions_dir = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), "..", "..", "actions", "library", action_type
-            )
+            os.path.join(os.path.dirname(__file__), "..", "..", "actions", "library", action_type)
         )
         if not os.path.exists(actions_dir):
             return actions
+
         try:
-            json_files = [f for f in os.listdir(actions_dir) if f.endswith(".json")]
-            for json_file in sorted(json_files):
-                file_path = os.path.join(actions_dir, json_file)
-                try:
-                    with open(file_path, "r") as f:
-                        action_data = json.load(f)
-                        action_name = action_data.get("name", json_file[:-5])
-                        actions.append((action_name, action_data))
-                except Exception as e:
-                    print(f"Warning: Could not load action from {json_file}: {e}")
+            for subdir in os.listdir(actions_dir):
+                subdir_path = os.path.join(actions_dir, subdir)
+
+                if os.path.isdir(subdir_path):
+                    json_files = [f for f in os.listdir(subdir_path) if f.endswith(".json")]
+                    for json_file in sorted(json_files):
+                        file_path = os.path.join(subdir_path, json_file)
+                        self._load_action_file(file_path, json_file, actions)
+                elif subdir.endswith(".json"):
+                    file_path = os.path.join(actions_dir, subdir)
+                    self._load_action_file(file_path, subdir, actions)
+
         except Exception as e:
             print(f"Error scanning {action_type} directory: {e}")
-        return actions
+
+        return sorted(actions, key=lambda x: x[0])
+
+    def _load_action_file(self, file_path, json_file, actions):
+        try:
+            with open(file_path) as f:
+                action_data = json.load(f)
+                action_name = action_data.get("name", json_file[:-5])
+                actions.append((action_name, action_data))
+        except Exception as e:
+            print(f"Warning: Could not load action from {json_file}: {e}")
 
     def _create_scrollable_frame(self, parent):
         canvas = tk.Canvas(parent, bg=self.tab_color, highlightthickness=0)
@@ -121,7 +124,6 @@ class ActionTab(BaseTab):
         return (scrollable_frame, canvas)
 
     def _bind_to_mousewheel(self, widget, canvas):
-
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
@@ -129,9 +131,7 @@ class ActionTab(BaseTab):
         for child in widget.winfo_children():
             self._bind_to_mousewheel(child, canvas)
 
-    def _create_action_checkbox(
-        self, parent, action_name, action_data, action_category
-    ):
+    def _create_action_checkbox(self, parent, action_name, action_data, action_category):
         action_frame = tk.Frame(parent, bg=self.tab_color)
         action_frame.pack(fill="x", padx=5, pady=3)
         if action_name not in self.action_states:
@@ -202,9 +202,7 @@ class ActionTab(BaseTab):
         disable_defenses_btn.pack(side="left", padx=5)
 
     def _set_all_actions(self, enabled, action_category):
-        actions_list = (
-            self.attack_actions if action_category == "attack" else self.defense_actions
-        )
+        actions_list = self.attack_actions if action_category == "attack" else self.defense_actions
         for action_name, _ in actions_list:
             if action_name in self.action_states:
                 self.action_states[action_name].set(enabled)

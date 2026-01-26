@@ -1,14 +1,15 @@
 import logging
-from .actor import Actor
-from src.core.graph import Node
-from .strategies import get_defender_strategy
+from typing import Any
+
 from src.core.access_utils import get_node_access
+
+from .actor import Actor
+from .strategies import get_defender_strategy
 
 logger = logging.getLogger(__name__)
 
 
 class Defender(Actor):
-
     def __init__(
         self,
         id: str,
@@ -16,18 +17,16 @@ class Defender(Actor):
         capacity: int = 2,
         budget: float = float("inf"),
     ):
-        super().__init__(
-            id, "defender", capacity=capacity, strategy=strategy, budget=budget
-        )
+        super().__init__(id, "defender", capacity=capacity, strategy=strategy, budget=budget)
         self.is_defender = True
         self.is_attacker = False
-        self.visible_nodes = set()
-        self.compromised_nodes = set()
-        self.visible_links = set()
-        self.compromised_links = set()
-        self.available_actions = []
+        self.visible_nodes: set[Any] = set()
+        self.compromised_nodes: set[Any] = set()
+        self.visible_links: set[Any] = set()
+        self.compromised_links: set[Any] = set()
+        self.available_actions: list[Any] = []
         self.system_damage_prevented = 0.0
-        self.detected_attacks = []
+        self.detected_attacks: list[Any] = []
         self._strategy_component = get_defender_strategy(strategy)
 
     def make_decision(self, network_state):
@@ -60,7 +59,7 @@ class Defender(Actor):
                 )
         return False
 
-    def choose_best_action(self, network_state) -> tuple:
+    def choose_best_action(self, network_state) -> tuple[Any, Any] | None:
         return self._strategy_component.choose_action(self, network_state)
 
     def change_strategy(self, new_strategy: str):
@@ -101,9 +100,7 @@ class Defender(Actor):
                 response_action = defensive_actions[0]
                 self._execute_defensive_action(response_action, detected_target)
 
-    def record_detection_economics(
-        self, attack_source, damage_prevented=0.0, detection_cost=0.0
-    ):
+    def record_detection_economics(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
         timestamp = getattr(self.simulator, "current_time", 0.0)
         if detection_cost > 0:
             self.incurredCost += detection_cost
@@ -129,9 +126,7 @@ class Defender(Actor):
                 "target": target,
                 "actor_access": get_node_access(target, self.id),
             }
-            self.simulator.schedule_event(
-                self.simulator.current_time, "action", action_data
-            )
+            self.simulator.schedule_event(self.simulator.current_time, "action", action_data)
             self.ongoing_actions.add(action)
 
     def _calculate_total_system_damage(self, time_interval=None):
@@ -145,7 +140,7 @@ class Defender(Actor):
             ):
                 estimated_damage += 5000.0
         if hasattr(self.simulator, "network") and self.simulator.network:
-            nodes = self.simulator.network.get("nodes", {}).values()
+            nodes = self.simulator.network.nodes_list
             for node in nodes:
                 if getattr(node, "compromised", False):
                     assets = getattr(node, "assets", [])

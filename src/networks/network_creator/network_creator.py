@@ -1,16 +1,12 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-import json
-import random
-import math
-import os
-import glob
+
 from src.gui.theme import Theme
-from .network_generator import NetworkGenerator
-from .node_dialog import NodeDialog
+
+from .canvas_handlers import CanvasHandlers
 from .data_loaders import DataLoaders
 from .file_operations import FileOperations
-from .canvas_handlers import CanvasHandlers
+from .network_generator import NetworkGenerator
+from .node_dialog import NodeDialog
 
 
 class NetworkCreator(
@@ -21,7 +17,6 @@ class NetworkCreator(
     FileOperations,
     CanvasHandlers,
 ):
-
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -184,7 +179,9 @@ class NetworkCreator(
         )
         self.help_text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         help_scroll.config(command=self.help_text_widget.yview)
-        help_content = "Network Creator Help\n\nVisual Indicators:\n  • Red node = Exposed to Internet\n"
+        help_content = (
+            "Network Creator Help\n\nVisual Indicators:\n  • Red node = Exposed to Internet\n"
+        )
         self.help_text_widget.insert("1.0", help_content)
         self.help_text_widget.config(state=tk.DISABLED)
         self.canvas_frame = tk.Frame(

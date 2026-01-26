@@ -1,15 +1,12 @@
-from typing import Optional, Any, Dict, Union
+from typing import Any
+
 from src.core.access_levels import (
-    NodeAccessLevel,
     LinkAccessLevel,
-    validate_node_access,
-    validate_link_access,
+    NodeAccessLevel,
 )
 
 
-def get_node_access(
-    node, actor_id: str, default: NodeAccessLevel = None
-) -> NodeAccessLevel:
+def get_node_access(node, actor_id: str, default: NodeAccessLevel | None = None) -> NodeAccessLevel:
     if default is None:
         default = NodeAccessLevel.NONE
     if not hasattr(node, "access"):
@@ -26,7 +23,7 @@ def get_node_access_string(node, actor_id: str, default: str = "NONE") -> str:
     return access.to_string()
 
 
-def set_node_access(node, actor_id: str, access_level: Union[NodeAccessLevel, str]):
+def set_node_access(node, actor_id: str, access_level: NodeAccessLevel | str):
     if not hasattr(node, "access"):
         node.access = {}
     if isinstance(access_level, str):
@@ -36,7 +33,7 @@ def set_node_access(node, actor_id: str, access_level: Union[NodeAccessLevel, st
     node.access[actor_id] = access_level
 
 
-def get_node_property(node, property_name: str, default: Any = None) -> Any:
+def get_node_property(node, property_name: str, default: Any | None = None) -> Any:
     if not hasattr(node, "properties"):
         return default
     return node.properties.get(property_name, default)
@@ -48,7 +45,7 @@ def set_node_property(node, property_name: str, value: Any):
     node.properties[property_name] = value
 
 
-def get_node_software(node, software_key: str, default: Any = None) -> Any:
+def get_node_software(node, software_key: str, default: Any | None = None) -> Any:
     if not hasattr(node, "software"):
         return default
     return node.software.get(software_key, default)
@@ -72,7 +69,7 @@ def get_node_assets(node) -> list:
     return list(node.assets) if node.assets else []
 
 
-def validate_actor(actor) -> Dict[str, Any]:
+def validate_actor(actor) -> dict[str, Any]:
     errors = []
     if not hasattr(actor, "id") or not actor.id:
         errors.append("Actor missing required 'id' attribute")
@@ -83,7 +80,7 @@ def validate_actor(actor) -> Dict[str, Any]:
     return {"valid": len(errors) == 0, "errors": errors}
 
 
-def validate_node(node) -> Dict[str, Any]:
+def validate_node(node) -> dict[str, Any]:
     errors = []
     if not hasattr(node, "id") or not node.id:
         errors.append("Node missing required 'id' attribute")
@@ -100,9 +97,7 @@ def validate_node(node) -> Dict[str, Any]:
     return {"valid": len(errors) == 0, "errors": errors, "warnings": []}
 
 
-def get_link_access(
-    link, actor_id: str, default: LinkAccessLevel = None
-) -> LinkAccessLevel:
+def get_link_access(link, actor_id: str, default: LinkAccessLevel | None = None) -> LinkAccessLevel:
     if default is None:
         default = LinkAccessLevel.NONE
     if not hasattr(link, "access"):
@@ -119,7 +114,7 @@ def get_link_access_string(link, actor_id: str, default: str = "NONE") -> str:
     return access.to_string()
 
 
-def set_link_access(link, actor_id: str, access_level: Union[LinkAccessLevel, str]):
+def set_link_access(link, actor_id: str, access_level: LinkAccessLevel | str):
     if not hasattr(link, "access"):
         link.access = {}
     if isinstance(access_level, str):

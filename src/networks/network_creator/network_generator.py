@@ -1,12 +1,10 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-import json
-import random
 import math
+import random
+import tkinter as tk
+from tkinter import messagebox
 
 
 class NetworkGenerator:
-
     def generate_scale_free_network(self, num_nodes, exposed_percent):
         self.nodes = {}
         self.links = []
@@ -36,9 +34,7 @@ class NetworkGenerator:
                 chosen_version = "1.0"
                 chosen_vulns = []
             num_services = random.randint(1, min(4, len(services))) if services else 0
-            chosen_services = (
-                random.sample(services, num_services) if num_services > 0 else []
-            )
+            chosen_services = random.sample(services, num_services) if num_services > 0 else []
             num_assets = random.randint(0, min(2, len(assets))) if assets else 0
             chosen_assets = random.sample(assets, num_assets) if num_assets > 0 else []
             chosen_category = random.choice(categories) if categories else "Server"
@@ -78,11 +74,7 @@ class NetworkGenerator:
             for _ in range(min(edges_per_node, len(self.nodes) - 1)):
                 if total_degree == 0:
                     target = random.choice(
-                        [
-                            n
-                            for n in node_degrees.keys()
-                            if n != node_id and n not in targets
-                        ]
+                        [n for n in node_degrees.keys() if n != node_id and n not in targets]
                     )
                 else:
                     r = random.uniform(0, total_degree)
@@ -96,17 +88,13 @@ class NetworkGenerator:
                                 break
                     if target is None:
                         available = [
-                            n
-                            for n in node_degrees.keys()
-                            if n != node_id and n not in targets
+                            n for n in node_degrees.keys() if n != node_id and n not in targets
                         ]
                         if available:
                             target = random.choice(available)
                 if target:
                     targets.append(target)
-                    self.links.append(
-                        {"node1": node_id, "node2": target, "bidirectional": True}
-                    )
+                    self.links.append({"node1": node_id, "node2": target, "bidirectional": True})
                     node_degrees[node_id] += 1
                     node_degrees[target] += 1
                     total_degree += 2
@@ -123,9 +111,7 @@ class NetworkGenerator:
             fg=self.theme.COLORS["text_primary"],
         )
 
-    def generate_random_network(
-        self, num_nodes, exposed_percent, connection_probability
-    ):
+    def generate_random_network(self, num_nodes, exposed_percent, connection_probability):
         self.nodes = {}
         self.links = []
         os_list = self.load_operating_systems()
@@ -152,9 +138,7 @@ class NetworkGenerator:
                 chosen_version = "1.0"
                 chosen_vulns = []
             num_services = random.randint(1, min(4, len(services))) if services else 0
-            chosen_services = (
-                random.sample(services, num_services) if num_services > 0 else []
-            )
+            chosen_services = random.sample(services, num_services) if num_services > 0 else []
             num_assets = random.randint(0, min(2, len(assets))) if assets else 0
             chosen_assets = random.sample(assets, num_assets) if num_assets > 0 else []
             chosen_category = random.choice(categories) if categories else "Server"
@@ -316,9 +300,7 @@ class NetworkGenerator:
                             "Error", "Connection probability must be between 0 and 1"
                         )
                         return
-                    self.generate_random_network(
-                        num_nodes, exposed_percent, connection_prob
-                    )
+                    self.generate_random_network(num_nodes, exposed_percent, connection_prob)
                 dialog.destroy()
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to generate network: {str(e)}")

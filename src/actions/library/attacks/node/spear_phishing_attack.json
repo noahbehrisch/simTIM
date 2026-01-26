@@ -2,6 +2,13 @@
   "name": "Spear Phishing Attack",
   "description": "Targeted phishing email with malicious attachment or link - most common initial access vector. Realistic duration accounts for email delivery, user reading, and click-through.",
   "action_type": "node",
+  "mitre_attack": {
+    "technique_id": "T1566.001",
+    "technique_name": "Spearphishing Attachment",
+    "tactic": "initial-access",
+    "tactic_id": "TA0001",
+    "url": "https://attack.mitre.org/techniques/T1566/001"
+  },
   "cost": 100,
   "duration": 12.0,
   "success_probability": 0.25,
