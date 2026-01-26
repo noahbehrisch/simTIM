@@ -1,3 +1,6 @@
 # Core dependencies
 matplotlib==3.10.1
 numpy==2.2.5
+
+# Build dependency (security fix for CVE-2026-24049)
+wheel>=0.46.2

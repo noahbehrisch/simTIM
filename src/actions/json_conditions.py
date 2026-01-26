@@ -603,6 +603,8 @@ class ActionExecutor:
 
     def _execute_set_access(self, action: dict[str, Any], node: Node, actor_id: str) -> None:
         access_level = action.get("access_value", action.get("value"))
+        if access_level is None:
+            return
         old_access = get_node_access(node, actor_id)
         set_node_access(node, actor_id, access_level)
         if isinstance(access_level, str):
