@@ -6,6 +6,7 @@
 
 - Python 3.10+
 - pip
+- make
 
 ### Installation
 
@@ -13,29 +14,64 @@
 # Clone the repository
 git clone https://github.com/noahbehrisch/simTIM.git
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install production dependencies (creates venv automatically)
+make install
 
-# Install dependencies
-pip install -r requirements.txt
+# Or install development dependencies (includes testing, linting tools)
+make install-dev
 ```
 
 ### Running the GUI
 
 ```bash
-python main.py
+make run
 ```
 
-### Basic Usage
+### Running a Demo
 
-## Key Concepts
+```bash
+make demo
+```
+
+## Available Make Commands
+
+Run `make help` to see all available commands:
+
+| Command | Description |
+|---------|-------------|
+| `make install` | Install production dependencies |
+| `make install-dev` | Install development dependencies |
+| `make run` | Run the GUI application |
+| `make demo` | Run demo simulation |
+| `make test` | Run tests |
+| `make test-cov` | Run tests with coverage report |
+| `make lint` | Run linting checks |
+| `make format` | Format code with ruff |
+| `make security` | Run security scans |
+| `make docker` | Build Docker image |
+| `make clean` | Clean build artifacts and caches |
 
 ## Running Tests
 
 ```bash
-source venv/bin/activate
-python -m pytest tests/ -v
+# Run all tests
+make test
+
+# Run tests with coverage report
+make test-cov
+```
+
+## Code Quality
+
+```bash
+# Run linting
+make lint
+
+# Format code
+make format
+
+# Type checking
+make type-check
 ```
 
 ## Acknowledgments
