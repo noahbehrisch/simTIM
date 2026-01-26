@@ -3,7 +3,7 @@ matplotlib==3.10.1
 numpy==2.2.5
 
 # Testing
-pytest==8.0.0
+pytest==9.0.2
 pytest-cov==4.1.0
 pytest-timeout==2.2.0
 
