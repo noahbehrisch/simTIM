@@ -32,7 +32,7 @@ EVENT_TYPES = [
 def _get_max_time(history: list) -> float:
     max_time: float = 0
     for entry in history:
-        if len(entry) >= 1 and isinstance(entry[0], (int, float)):
+        if len(entry) >= 1 and isinstance(entry[0], int | float):
             max_time = max(max_time, float(entry[0]))
     return max_time
 
@@ -168,9 +168,9 @@ class TimeSeriesPlotEngine:
         plt.style.use("default")
         self.colors = COLORS
 
-    def create_events_over_time_plot(self, history, title="Events Over Time"):
+    def create_events_over_time_plot(self, history, title="Events Over Time", sim_time=None):
         events = _extract_events(history)
-        max_time = _get_max_time(history)
+        max_time = sim_time if sim_time else _get_max_time(history)
 
         fig, ax = plt.subplots(figsize=(12, 6))
         y_pos = {"attacker": 1, "defender": 0}

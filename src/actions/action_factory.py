@@ -290,7 +290,7 @@ class ActionFactory:
         # Try to get a constant value
         try:
             result = func(None, None, None)
-            if isinstance(result, (int, float)):
+            if isinstance(result, int | float):
                 return {"type": "constant", "value": result}
         except (TypeError, AttributeError, ValueError):
             pass

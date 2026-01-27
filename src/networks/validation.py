@@ -178,7 +178,7 @@ class NetworkValidator:
             errors.append(f"Link {index}: 'bidirectional' must be a boolean")
 
         if "latency" in link:
-            if not isinstance(link["latency"], (int, float)):
+            if not isinstance(link["latency"], int | float):
                 errors.append(f"Link {index}: 'latency' must be a number")
             elif link["latency"] < 0:
                 errors.append(f"Link {index}: 'latency' must be non-negative")

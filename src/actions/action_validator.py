@@ -155,7 +155,7 @@ class ActionValidator:
             return ValidationResult(valid=True)
 
         cost = action_data["cost"]
-        if not isinstance(cost, (int, float)):
+        if not isinstance(cost, int | float):
             return ValidationResult(valid=False, errors=["'cost' must be a number"])
 
         if cost < 0:
@@ -169,7 +169,7 @@ class ActionValidator:
             return ValidationResult(valid=True)
 
         duration = action_data["duration"]
-        if not isinstance(duration, (int, float)):
+        if not isinstance(duration, int | float):
             return ValidationResult(valid=False, errors=["'duration' must be a number"])
 
         if duration <= 0:
@@ -183,7 +183,7 @@ class ActionValidator:
             return ValidationResult(valid=True)
 
         prob = action_data["success_probability"]
-        if not isinstance(prob, (int, float)):
+        if not isinstance(prob, int | float):
             return ValidationResult(valid=False, errors=["'success_probability' must be a number"])
 
         if not 0 <= prob <= 1:
@@ -206,7 +206,7 @@ class ActionValidator:
         for field_name in self.DAMAGE_GAIN_FIELDS:
             if field_name not in dg:
                 errors.append(f"'damage_gain' missing required field: {field_name}")
-            elif not isinstance(dg[field_name], (int, float)):
+            elif not isinstance(dg[field_name], int | float):
                 errors.append(f"'damage_gain.{field_name}' must be a number")
 
         return ValidationResult(valid=len(errors) == 0, errors=errors)

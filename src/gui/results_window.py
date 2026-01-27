@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class ResultsWindow:
-    def __init__(self, parent, all_histories, theme_colors, scenario_results=None):
+    def __init__(self, parent, all_histories, theme_colors, scenario_results=None, sim_time=None):
         self.parent = parent
         self.all_histories = all_histories
         self.scenario_results = scenario_results
+        self.sim_time = sim_time  # Store simulation duration for consistent X-axis
         self.bg_color = theme_colors["bg_color"]
         self.button_fg = theme_colors["button_fg"]
         self.runs_data = []
@@ -427,7 +428,7 @@ class ResultsWindow:
 
         engine = TimeSeriesPlotEngine()
         fig = engine.create_events_over_time_plot(
-            history, title=f"Events Over Time - Run {run_id + 1}"
+            history, title=f"Events Over Time - Run {run_id + 1}", sim_time=self.sim_time
         )
 
         canvas = FigureCanvasTkAgg(fig, self.events_plot_frame)
@@ -495,6 +496,13 @@ class ResultsWindow:
                 cum_damage.append(total_damage)
 
             if times:
+                # Extend data to simulation end time for consistent X-axis
+                if self.sim_time and times[-1] < self.sim_time:
+                    times.append(self.sim_time)
+                    cum_cost.append(cum_cost[-1])
+                    cum_gain.append(cum_gain[-1])
+                    cum_damage.append(cum_damage[-1])
+
                 ax.step(
                     times,
                     cum_cost,
@@ -524,6 +532,10 @@ class ResultsWindow:
                 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
                 ax.legend(loc="upper left")
                 ax.grid(True, alpha=0.3)
+
+                # Set X-axis to full simulation time
+                if self.sim_time:
+                    ax.set_xlim(0, self.sim_time * 1.02)
 
         ax.set_title(f"Economic Impact Over Time - Run {run_id + 1}")
 
@@ -619,11 +631,24 @@ class ResultsWindow:
                         visible_counts.append(visible)
 
         if times:
-            max_time = max(
-                entry[0]
-                for entry in history
-                if len(entry) >= 1 and isinstance(entry[0], (int, float))
+            # Use simulation time for consistent X-axis, fall back to max event time
+            plot_max_time = (
+                self.sim_time
+                if self.sim_time
+                else max(
+                    entry[0]
+                    for entry in history
+                    if len(entry) >= 1 and isinstance(entry[0], int | float)
+                )
             )
+
+            # Extend data to simulation end time to avoid whitespace
+            if self.sim_time and times[-1] < self.sim_time:
+                times.append(self.sim_time)
+                admin_counts.append(admin_counts[-1])
+                user_counts.append(user_counts[-1])
+                visible_counts.append(visible_counts[-1])
+
             ax.fill_between(
                 times,
                 0,
@@ -655,7 +680,7 @@ class ResultsWindow:
                 step="post",
             )
             ax.legend(loc="upper left")
-            ax.set_xlim(0, max_time * 1.05)
+            ax.set_xlim(0, plot_max_time * 1.02)
         else:
             ax.text(
                 0.5,

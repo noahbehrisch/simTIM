@@ -52,6 +52,7 @@ class App(tk.Tk):
         ]
         self.tabs = {}
         self.current_tab = None
+        self.last_sim_time = None  # Store last simulation time for results window
         self.theme_colors = self.theme.get_theme_colors()
         self.create_tabs()
         self.sidebar = Sidebar(
@@ -316,14 +317,20 @@ class App(tk.Tk):
 
     def open_results_window(self, all_histories):
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
-        ResultsWindow(self, all_histories, theme_colors)
+        ResultsWindow(self, all_histories, theme_colors, sim_time=self.last_sim_time)
 
     def open_results_window_scenarios(self, scenario_results):
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
         all_histories = []
         for scenario in scenario_results["scenarios"]:
             all_histories.extend(scenario["histories"])
-        ResultsWindow(self, all_histories, theme_colors, scenario_results=scenario_results)
+        ResultsWindow(
+            self,
+            all_histories,
+            theme_colors,
+            scenario_results=scenario_results,
+            sim_time=self.last_sim_time,
+        )
 
     def open_help_window(self):
         HelpWindow(self, self.current_tab)
@@ -336,6 +343,7 @@ class App(tk.Tk):
         variables_config = self.variables_tab.get_variables_config()
         sim_runs = sim_config["runs"]
         sim_time = sim_config["time"]
+        self.last_sim_time = sim_time  # Store for results window
         detection_engine_type = sim_config["detection_engine_type"]
         path_to_network_config = network_config["file_path"]
         if not attackers:

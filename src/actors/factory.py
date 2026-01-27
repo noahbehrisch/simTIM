@@ -96,7 +96,7 @@ class ActorValidator:
         capacity = config.get("capacity")
         if capacity is not None:
             if capacity != float("inf"):
-                if not isinstance(capacity, (int, float)):
+                if not isinstance(capacity, int | float):
                     errors.append("'capacity' must be a number or infinity")
                 elif capacity < 1:
                     warnings.append("'capacity' less than 1 may prevent actions")
@@ -111,7 +111,7 @@ class ActorValidator:
         budget = config.get("budget")
         if budget is not None:
             if budget != float("inf"):
-                if not isinstance(budget, (int, float)):
+                if not isinstance(budget, int | float):
                     errors.append("'budget' must be a number or infinity")
                 elif budget <= 0:
                     warnings.append("'budget' <= 0 will prevent actions")

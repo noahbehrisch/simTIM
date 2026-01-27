@@ -169,7 +169,7 @@ class VariablesTab(BaseTab):
 
     def _set_config_state(self, state):
         for widget in self.config_frame.winfo_children():
-            if isinstance(widget, (tk.Frame, tk.Canvas)):
+            if isinstance(widget, tk.Frame | tk.Canvas):
                 self._set_widget_state_recursive(widget, state)
             else:
                 try:
@@ -180,7 +180,7 @@ class VariablesTab(BaseTab):
 
     def _set_widget_state_recursive(self, widget, state):
         for child in widget.winfo_children():
-            if isinstance(child, (tk.Frame, tk.Canvas)):
+            if isinstance(child, tk.Frame | tk.Canvas):
                 self._set_widget_state_recursive(child, state)
             else:
                 try:

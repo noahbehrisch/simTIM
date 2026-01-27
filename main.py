@@ -107,7 +107,7 @@ def run_demo():
             "bg_color": Theme.COLORS["bg_primary"],
             "button_fg": Theme.COLORS["text_primary"],
         }
-        results_window = ResultsWindow(root, histories, theme_colors)
+        results_window = ResultsWindow(root, histories, theme_colors, sim_time=168)
         results_window.window.protocol("WM_DELETE_WINDOW", root.quit)
         root.mainloop()
     else:

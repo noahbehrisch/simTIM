@@ -654,21 +654,21 @@ class ActionExecutor:
                 setattr(node, property_name, None)
         current_value = getattr(node, property_name)
         if operation == "add":
-            if isinstance(current_value, (int, float)):
+            if isinstance(current_value, int | float):
                 setattr(node, property_name, current_value + value)
             elif isinstance(current_value, list):
                 if not isinstance(value, list):
                     value = [value]
                 setattr(node, property_name, current_value + value)
         elif operation == "subtract":
-            if isinstance(current_value, (int, float)):
+            if isinstance(current_value, int | float):
                 setattr(node, property_name, max(0, current_value - value))
             elif isinstance(current_value, list):
                 new_list = current_value[:]
                 items_to_remove = min(value, len(new_list))
                 setattr(node, property_name, new_list[items_to_remove:])
         elif operation == "multiply":
-            if isinstance(current_value, (int, float)):
+            if isinstance(current_value, int | float):
                 setattr(node, property_name, current_value * value)
         else:
             setattr(node, property_name, value)
