@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Demo mode and CLI extension to `main.py`
 - Logging system
 
+### Fixed
+
+- X-axis now maps to simulation time
+
 ### Changed
 
 - Refactored codebase using design patterns
