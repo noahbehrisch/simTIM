@@ -16,14 +16,7 @@ class AttackerStrategy(ABC):
         visible_nodes = list(attacker.visible_nodes)
 
         for node in list(visible_nodes):
-            access_level_raw = get_node_access(node, attacker.id)
-            access_level: NodeAccessLevel
-            if isinstance(access_level_raw, str):
-                access_level = NodeAccessLevel.from_string(access_level_raw)
-            elif isinstance(access_level_raw, NodeAccessLevel):
-                access_level = access_level_raw
-            else:
-                access_level = NodeAccessLevel.NONE
+            access_level = get_node_access(node, attacker.id)
             if access_level >= NodeAccessLevel.USER:
                 for link in getattr(node, "links", []):
                     connected = link.node1 if link.node2.id == node.id else link.node2
@@ -74,7 +67,7 @@ class AttackerStrategy(ABC):
         return "unknown"
 
     @abstractmethod
-    def get_priority(self, action: Any, node: Any, access: Any, attacker: Any) -> float:
+    def get_priority(self, action: Any, node: Any, access: NodeAccessLevel, attacker: Any) -> float:
         pass
 
 

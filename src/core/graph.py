@@ -1,5 +1,8 @@
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.core.access_levels import LinkAccessLevel, NodeAccessLevel
 
 
 class Node:
@@ -17,7 +20,7 @@ class Node:
         self.compromised = False
         self.repaired = False
         self.links: list[Link] = []
-        self.access: dict[str, str] = {}
+        self.access: dict[str, NodeAccessLevel] = {}
         self.properties: dict[str, Any] = {}
         self.exposed_services: list[str] = []
         self.services: dict[str, str] = {}
@@ -49,7 +52,7 @@ class Link:
         self.node2 = node2
         self.bidirectional = bidirectional
         self.latency = latency
-        self.access: dict[str, str] = {}
+        self.access: dict[str, LinkAccessLevel] = {}
         node1.add_link(self)
         if bidirectional:
             node2.add_link(self)

@@ -95,14 +95,14 @@ def simtim_main(
                 if hasattr(node, "properties") and node.properties.get(
                     "exposed_to_internet", False
                 ):
-                    node.access[attacker.id] = NodeAccessLevel.VISIBLE.to_string()
+                    node.access[attacker.id] = NodeAccessLevel.VISIBLE
                     attacker.visible_nodes.add(node)
                 else:
-                    node.access[attacker.id] = NodeAccessLevel.NONE.to_string()
+                    node.access[attacker.id] = NodeAccessLevel.NONE
             for link in network.links_list:
                 if not hasattr(link, "access"):
                     link.access = {}
-                link.access[attacker.id] = LinkAccessLevel.NONE.to_string()
+                link.access[attacker.id] = LinkAccessLevel.NONE
 
         for attacker in attacker_objs:
             if not attacker.visible_nodes:
@@ -116,12 +116,12 @@ def simtim_main(
             for node in network.nodes_list:
                 if not hasattr(node, "access"):
                     node.access = {}
-                node.access[defender.id] = NodeAccessLevel.ADMIN.to_string()
+                node.access[defender.id] = NodeAccessLevel.ADMIN
                 defender.visible_nodes.add(node)
             for link in network.links_list:
                 if not hasattr(link, "access"):
                     link.access = {}
-                link.access[defender.id] = LinkAccessLevel.VISIBLE.to_string()
+                link.access[defender.id] = LinkAccessLevel.VISIBLE
                 defender.visible_links.add(link)
         simulator.network = network
         simulator.run(until=sim_time)

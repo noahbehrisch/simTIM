@@ -24,24 +24,28 @@ from typing import TYPE_CHECKING, Any
 # Use TYPE_CHECKING to avoid circular imports
 # Node is only needed for type hints, not at runtime
 if TYPE_CHECKING:
+    from src.core.access_levels import NodeAccessLevel
     from src.core.graph import Node
+
+# Type alias for the callback signature used in preconditions/postconditions
+AccessCallback = Callable[["Node", "NodeAccessLevel", str], Any]
 
 
 class Action:
     def __init__(
         self,
         name: str,
-        precondition: Callable[[Node, str, str], bool],
-        postcondition: Callable[[Node, str, str], None],
+        precondition: Callable[[Node, NodeAccessLevel, str], bool],
+        postcondition: Callable[[Node, NodeAccessLevel, str], None],
         cost: float,
         duration: float,
         success_probability: float,
         action_type: str,
-        detection_probability: Callable[[Node, str, str], float],
-        one_off_damage: Callable[[Node, str, str], float],
-        one_off_gain: Callable[[Node, str, str], float],
-        time_damage: Callable[[Node, str, str], float],
-        time_gain: Callable[[Node, str, str], float],
+        detection_probability: Callable[[Node, NodeAccessLevel, str], float],
+        one_off_damage: Callable[[Node, NodeAccessLevel, str], float],
+        one_off_gain: Callable[[Node, NodeAccessLevel, str], float],
+        time_damage: Callable[[Node, NodeAccessLevel, str], float],
+        time_gain: Callable[[Node, NodeAccessLevel, str], float],
     ):
         self.name = name
         self.precondition = precondition
@@ -57,19 +61,21 @@ class Action:
         self.time_gain = time_gain
         self._json_data: dict[str, Any] | None = None
 
-    def get_detection_probability(self, node, actor_access, actor_id) -> float:
+    def get_detection_probability(
+        self, node: Node, actor_access: NodeAccessLevel, actor_id: str
+    ) -> float:
         return self.detection_probability(node, actor_access, actor_id)
 
-    def get_one_off_damage(self, node, actor_access, actor_id) -> float:
+    def get_one_off_damage(self, node: Node, actor_access: NodeAccessLevel, actor_id: str) -> float:
         return self.one_off_damage(node, actor_access, actor_id)
 
-    def get_one_off_gain(self, node, actor_access, actor_id) -> float:
+    def get_one_off_gain(self, node: Node, actor_access: NodeAccessLevel, actor_id: str) -> float:
         return self.one_off_gain(node, actor_access, actor_id)
 
-    def get_time_damage(self, node, actor_access, actor_id) -> float:
+    def get_time_damage(self, node: Node, actor_access: NodeAccessLevel, actor_id: str) -> float:
         return self.time_damage(node, actor_access, actor_id)
 
-    def get_time_gain(self, node, actor_access, actor_id) -> float:
+    def get_time_gain(self, node: Node, actor_access: NodeAccessLevel, actor_id: str) -> float:
         return self.time_gain(node, actor_access, actor_id)
 
     def is_node_action(self) -> bool:
@@ -79,38 +85,21 @@ class Action:
         return self.action_type == "link"
 
     def to_json(self) -> dict[str, Any]:
-        """Convert action to JSON-serializable dict."""
-        # Return original JSON data if available
+        """Convert action to JSON-serializable dict.
+
+        Returns:
+            Dictionary containing action configuration.
+
+        Raises:
+            ValueError: If action was created programmatically without JSON source data.
+        """
         if hasattr(self, "_json_data") and self._json_data:
             return self._json_data.copy()
 
-        # Fallback for programmatically created actions
-        return {
-            "name": self.name,
-            "action_type": self.action_type,
-            "cost": self.cost,
-            "duration": self.duration,
-            "success_probability": self.success_probability,
-            "precondition": {"type": "constant", "value": True},
-            "postcondition": {"type": "constant", "value": True},
-            "detection_probability": {"type": "constant", "value": 0.0},
-            "damage_gain": {
-                "one_off_damage": (
-                    self.get_one_off_damage(None, None, None)
-                    if callable(self.one_off_damage)
-                    else 0.0
-                ),
-                "one_off_gain": (
-                    self.get_one_off_gain(None, None, None) if callable(self.one_off_gain) else 0.0
-                ),
-                "time_damage": (
-                    self.get_time_damage(None, None, None) if callable(self.time_damage) else 0.0
-                ),
-                "time_gain": (
-                    self.get_time_gain(None, None, None) if callable(self.time_gain) else 0.0
-                ),
-            },
-        }
+        raise ValueError(
+            f"Action '{self.name}' was created programmatically and cannot be serialized. "
+            "Only actions loaded from JSON support to_json()."
+        )
 
     @classmethod
     def from_json(

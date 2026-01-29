@@ -2,7 +2,10 @@ import logging
 import random
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.core.access_levels import NodeAccessLevel
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +15,9 @@ class BaseDetectionEngine(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.default_detection_probability = default_detection_probability
 
-    def calculate_detection_probability(self, action, target, actor_access: str, actor) -> float:
+    def calculate_detection_probability(
+        self, action, target, actor_access: "NodeAccessLevel", actor
+    ) -> float:
         try:
             probability = action.get_detection_probability(target, actor_access, actor or "unknown")
             return max(0.0, min(1.0, probability))
@@ -33,7 +38,7 @@ class BaseDetectionEngine(ABC):
         pass
 
     def calculate_detection_time(
-        self, action, target, actor_access: str, actor, duration: float
+        self, action, target, actor_access: "NodeAccessLevel", actor, duration: float
     ) -> float | None:
         detection_prob = self.calculate_detection_probability(action, target, actor_access, actor)
         if random.random() >= detection_prob:

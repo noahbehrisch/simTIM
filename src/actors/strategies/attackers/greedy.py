@@ -1,6 +1,7 @@
 from typing import Any
 
 from src.actors.strategies.base import AttackerStrategy
+from src.core.access_levels import NodeAccessLevel
 
 
 class GreedyAttackerStrategy(AttackerStrategy):
@@ -9,7 +10,7 @@ class GreedyAttackerStrategy(AttackerStrategy):
         self.consider_cost = consider_cost
         self.consider_time_gain = consider_time_gain
 
-    def get_priority(self, action: Any, node: Any, access: Any, attacker: Any) -> float:
+    def get_priority(self, action: Any, node: Any, access: NodeAccessLevel, attacker: Any) -> float:
         one_off_gain = action.get_one_off_gain(node, access, attacker.id)
 
         if self.consider_time_gain:

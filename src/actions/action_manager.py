@@ -347,15 +347,10 @@ def would_action_improve_access(
         return False
 
     try:
-        # Normalize access level
-        if isinstance(current_access, str):
-            current_level = NodeAccessLevel.from_string(current_access)
-        else:
-            current_level = current_access
+        # current_access should already be NodeAccessLevel
+        current_level = current_access
 
-        current_access_str = (
-            current_level.to_string() if hasattr(current_level, "to_string") else str(current_level)
-        )
+        current_access_str = current_level.to_string()
 
         predicted_access = analyze_action_access_impact(action, current_access_str)
 

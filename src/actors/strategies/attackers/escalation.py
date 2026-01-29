@@ -8,12 +8,9 @@ class EscalationAttackerStrategy(AttackerStrategy):
     def __init__(self):
         super().__init__("escalation")
 
-    def get_priority(self, action: Any, node: Any, access: Any, attacker: Any) -> float:
+    def get_priority(self, action: Any, node: Any, access: NodeAccessLevel, attacker: Any) -> float:
         tactic = self.get_mitre_tactic(action)
         priority = 1.0
-
-        if isinstance(access, str):
-            access = NodeAccessLevel.from_string(access)
 
         tactic_priorities = {
             "privilege-escalation": 500,

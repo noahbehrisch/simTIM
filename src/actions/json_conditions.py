@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.core.access_levels import (
     LinkAccessLevel,
@@ -17,6 +17,9 @@ from src.core.access_utils import (
 )
 from src.core.graph import Link, Node
 from src.utils.version import Version
+
+if TYPE_CHECKING:
+    pass  # NodeAccessLevel already imported above
 
 # Import directly from modules to avoid circular imports through src.core.__init__
 
@@ -36,7 +39,7 @@ class ConditionEvaluator:
         self,
         condition: dict[str, Any],
         node: Node,
-        actor_access: str,
+        actor_access: NodeAccessLevel,
         actor_id: str,
         network_context: dict | None = None,
     ) -> bool:
@@ -91,7 +94,7 @@ class ConditionEvaluator:
         self,
         condition: dict[str, Any],
         node: Node,
-        actor_access: str,
+        actor_access: NodeAccessLevel,
         actor_id: str,
         network_context: dict | None = None,
     ) -> bool:
@@ -130,7 +133,7 @@ class ConditionEvaluator:
         self,
         condition: dict[str, Any],
         node: Node,
-        actor_access: str,
+        actor_access: NodeAccessLevel,
         actor_id: str,
         network_context: dict | None = None,
     ) -> bool:
@@ -150,7 +153,7 @@ class ConditionEvaluator:
         self,
         condition: dict[str, Any],
         node: Node,
-        actor_access: str,
+        actor_access: NodeAccessLevel,
         actor_id: str,
         network_context: dict | None = None,
     ) -> bool:
@@ -165,7 +168,7 @@ class ConditionEvaluator:
         self,
         condition: dict[str, Any],
         node: Node,
-        actor_access: str,
+        actor_access: NodeAccessLevel,
         actor_id: str,
         network_context: dict | None = None,
     ) -> bool:
@@ -199,7 +202,7 @@ class ConditionEvaluator:
         self,
         condition: dict[str, Any],
         node: Node,
-        actor_access: str,
+        actor_access: NodeAccessLevel,
         actor_id: str,
         network_context: dict | None = None,
     ) -> bool:
@@ -253,7 +256,7 @@ class ConditionEvaluator:
             raise ValueError(f"Unknown domain type: {domain_type}")
 
     def _evaluate_variable_ref(
-        self, condition: dict[str, Any], node: Node, actor_access: str, actor_id: str
+        self, condition: dict[str, Any], node: Node, actor_access: NodeAccessLevel, actor_id: str
     ) -> bool:
         variable = condition.get("variable")
         property_name = condition.get("property")
@@ -344,12 +347,8 @@ class ConditionEvaluator:
             raise ValueError(f"Unknown version check operator: {operator}")
 
     def _evaluate_access_check(
-        self, condition: dict[str, Any], actor_access, actor_id: str
+        self, condition: dict[str, Any], actor_access: NodeAccessLevel, actor_id: str
     ) -> bool:
-        if isinstance(actor_access, str):
-            actor_access = validate_node_access(actor_access)
-        elif not isinstance(actor_access, NodeAccessLevel):
-            actor_access = validate_node_access(actor_access)
         operator = condition["operator"]
         if operator == "equals":
             expected_access = validate_node_access(condition["value"])
@@ -606,9 +605,10 @@ class ActionExecutor:
         if access_level is None:
             return
         old_access = get_node_access(node, actor_id)
-        set_node_access(node, actor_id, access_level)
+        # Convert string from JSON to NodeAccessLevel
         if isinstance(access_level, str):
             access_level = validate_node_access(access_level)
+        set_node_access(node, actor_id, access_level)
         if access_level >= NodeAccessLevel.USER and old_access < NodeAccessLevel.USER:
             node.compromised = True
             if hasattr(self, "_simulator") and self._simulator:
@@ -730,16 +730,16 @@ class ActionExecutor:
         logger.debug(f"set_links_access on node {node.id} by {actor_id}")
         logger.debug(f"  Node has {len(node.links)} links")
         access_value = action["access_value"]
+        # Convert string from JSON to LinkAccessLevel
+        if isinstance(access_value, str):
+            access_value = validate_link_access(access_value)
         discovered_nodes = []
         discovered_links = []
         for link in node.links:
             old_access = get_link_access(link, actor_id)
             set_link_access(link, actor_id, access_value)
             logger.debug(f"  Link access: {old_access} → {access_value}")
-            if (
-                old_access == LinkAccessLevel.NONE
-                and validate_link_access(access_value) == LinkAccessLevel.VISIBLE
-            ):
+            if old_access == LinkAccessLevel.NONE and access_value == LinkAccessLevel.VISIBLE:
                 discovered_links.append(link)
                 other_node = link.get_other_node(node)
                 if other_node and other_node not in discovered_nodes:
@@ -772,7 +772,7 @@ class ActionExecutor:
                 compromised_neighbors.append(other_node)
                 if not hasattr(link, "access"):
                     link.access = {}
-                link.access[actor_id] = "VISIBLE"
+                link.access[actor_id] = LinkAccessLevel.VISIBLE
         if compromised_neighbors and hasattr(self, "_simulator") and self._simulator:
             self._simulator.notify_nodes_discovered(actor_id, compromised_neighbors)
             for actor in self._simulator.get_all_actors():

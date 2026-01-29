@@ -149,11 +149,7 @@ class SimpleEconomicModel:
             "num_property_changes": len(self.property_state_changes),
         }
 
-    def calculate_delta(self, access: str | NodeAccessLevel, node: Node) -> float:
-        if isinstance(access, str):
-            from src.core.access_levels import validate_node_access
-
-            access = validate_node_access(access)
+    def calculate_delta(self, access: NodeAccessLevel, node: Node) -> float:
         if access < NodeAccessLevel.USER:
             return 0.0
         if access == NodeAccessLevel.ADMIN:
@@ -177,7 +173,7 @@ class SimpleEconomicModel:
             base_rate *= 1 + math.log10(data_amount + 1) * 0.1
         return base_rate
 
-    def calculate_gamma(self, access: str | NodeAccessLevel, node: Node) -> float:
+    def calculate_gamma(self, access: NodeAccessLevel, node: Node) -> float:
         damage_rate = self.calculate_delta(access, node)
         return damage_rate * self.parameters.attacker_gain_ratio
 
@@ -194,7 +190,7 @@ class SimpleEconomicModel:
 
 
 def calculate_delta(
-    access: str | NodeAccessLevel, node: Node, parameters: EconomicParameters | None = None
+    access: NodeAccessLevel, node: Node, parameters: EconomicParameters | None = None
 ) -> float:
     if parameters is not None:
         temp_model = SimpleEconomicModel(parameters)
@@ -203,7 +199,7 @@ def calculate_delta(
 
 
 def calculate_gamma(
-    access: str | NodeAccessLevel, node: Node, parameters: EconomicParameters | None = None
+    access: NodeAccessLevel, node: Node, parameters: EconomicParameters | None = None
 ) -> float:
     if parameters is not None:
         temp_model = SimpleEconomicModel(parameters)

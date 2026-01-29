@@ -23,13 +23,11 @@ def get_node_access_string(node, actor_id: str, default: str = "NONE") -> str:
     return access.to_string()
 
 
-def set_node_access(node, actor_id: str, access_level: NodeAccessLevel | str):
+def set_node_access(node, actor_id: str, access_level: NodeAccessLevel):
     if not hasattr(node, "access"):
         node.access = {}
-    if isinstance(access_level, str):
-        access_level = NodeAccessLevel.from_string(access_level)
-    elif not isinstance(access_level, NodeAccessLevel):
-        raise TypeError(f"Expected NodeAccessLevel or str, got {type(access_level)}")
+    if not isinstance(access_level, NodeAccessLevel):
+        raise TypeError(f"Expected NodeAccessLevel, got {type(access_level)}")
     node.access[actor_id] = access_level
 
 
@@ -114,11 +112,9 @@ def get_link_access_string(link, actor_id: str, default: str = "NONE") -> str:
     return access.to_string()
 
 
-def set_link_access(link, actor_id: str, access_level: LinkAccessLevel | str):
+def set_link_access(link, actor_id: str, access_level: LinkAccessLevel):
     if not hasattr(link, "access"):
         link.access = {}
-    if isinstance(access_level, str):
-        access_level = LinkAccessLevel.from_string(access_level)
-    elif not isinstance(access_level, LinkAccessLevel):
-        raise TypeError(f"Expected LinkAccessLevel or str, got {type(access_level)}")
+    if not isinstance(access_level, LinkAccessLevel):
+        raise TypeError(f"Expected LinkAccessLevel, got {type(access_level)}")
     link.access[actor_id] = access_level
