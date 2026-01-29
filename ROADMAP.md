@@ -26,19 +26,22 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 - Progress Bar for simulation
 - Renaming the variables tab
 - Help
-
-## Network
-
-- Implement the ability to change node properties in the network creator
-- Change Properties in the GUI
-- Make the canvas of the network creator scrollable and zoomable
-- Dynamic Behavior
-- saving network layout -> Coordinates of nodes -> 10 grid snap
+- Enforcing the use of theme
+- Colorblind friendly colors
 
 ## Visualization
 
 - Path through network visualizer
 - export visualizations
+
+## Network
+
+- Implement the ability to change node properties in the network creator
+- Change Properties in the GUI
+- mapping versions to vulnerabilities
+- Make the canvas of the network creator scrollable and zoomable
+- Dynamic Behavior
+- saving network layout -> Coordinates of nodes -> 10 grid snap
 
 ## Software Architecture
 
@@ -64,4 +67,4 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Performance
 
-- Multithreading with diables GIL or Multiprocessing
+- Multithreading with diables GIL or Multiprocessing -> one simulation per thread with its own instances (no global instances)
