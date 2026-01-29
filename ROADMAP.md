@@ -61,3 +61,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 - more demo/test networks
 - Test the app on different operating systems (Arch, Ubuntu, Windows, MacOS)
 - Test compatibility of different versions (Python, Numpy, Matpotlib) -> already found a deepcopy compatability issue with Python 3.14 and an older matplotlib version
+
+## Performance
+
+- Multithreading with diables GIL or Multiprocessing
