@@ -14,7 +14,7 @@
 # Clone the repository
 git clone https://github.com/noahbehrisch/simTIM.git
 
-# Install production dependencies (creates venv automatically)
+# Install core dependencies (creates venv automatically)
 make install
 
 # Or install development dependencies (includes testing, linting tools)
