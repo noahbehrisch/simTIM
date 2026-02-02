@@ -14,8 +14,8 @@ from src.gui.tabs import (
     AttackerTab,
     DefenderTab,
     NetworkTab,
+    ScenarioTab,
     SimulationTab,
-    VariablesTab,
 )
 from src.gui.theme import Theme
 
@@ -122,14 +122,14 @@ class App(tk.Tk):
         self.attacker_tab = AttackerTab(self, self.theme_colors)
         self.defender_tab = DefenderTab(self, self.theme_colors)
         self.action_tab = ActionTab(self, self.theme_colors)
-        self.variables_tab = VariablesTab(self, self.theme_colors)
-        self.variables_tab.on_scenarios_changed = self._on_variable_scenarios_changed
+        self.scenario_tab = ScenarioTab(self, self.theme_colors)
+        self.scenario_tab.on_scenarios_changed = self._on_variable_scenarios_changed
         self.tabs["Simulation"] = self.simulation_tab.frame
         self.tabs["Network"] = self.network_tab.frame
         self.tabs["Attackers"] = self.attacker_tab.frame
         self.tabs["Defenders"] = self.defender_tab.frame
         self.tabs["Actions"] = self.action_tab.frame
-        self.tabs["Variables"] = self.variables_tab.frame
+        self.tabs["Scenarios"] = self.scenario_tab.frame
         overview_frame = tk.Frame(self, bg=self.tab_color)
         overview_frame.grid(row=1, column=1, sticky="nswe")
         overview_frame.grid_remove()
@@ -219,13 +219,13 @@ class App(tk.Tk):
         network_config = self.network_tab.get_network_config()
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
-        variables_config = self.variables_tab.get_variables_config()
+        scenario_config = self.scenario_tab.get_variables_config()
         overview = "SIMULATION CONFIGURATION\n"
         overview += "=" * 50 + "\n\n"
         overview += "Simulation Parameters:\n"
-        if variables_config and "scenarios" in variables_config and variables_config["scenarios"]:
-            scenarios = variables_config["scenarios"]
-            var_type = variables_config.get("variable_type", "action_duration")
+        if scenario_config and "scenarios" in scenario_config and scenario_config["scenarios"]:
+            scenarios = scenario_config["scenarios"]
+            var_type = scenario_config.get("variable_type", "action_duration")
             total_runs = sum(s["runs"] for s in scenarios)
             if var_type == "attack_duration":
                 mode_desc = "ATTACK DURATION COMPARISON"
@@ -349,7 +349,7 @@ class App(tk.Tk):
         network_config = self.network_tab.get_network_config()
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
-        variables_config = self.variables_tab.get_variables_config()
+        scenario_config = self.scenario_tab.get_variables_config()
         sim_runs = sim_config["runs"]
         sim_time = sim_config["time"]
         self.last_sim_time = sim_time
@@ -362,13 +362,9 @@ class App(tk.Tk):
             tk.messagebox.showerror("Error", "At least one defender is required!")
             return
         try:
-            if (
-                variables_config
-                and "scenarios" in variables_config
-                and variables_config["scenarios"]
-            ):
-                scenarios = variables_config["scenarios"]
-                variable_type = variables_config.get("variable_type", "action_duration")
+            if scenario_config and "scenarios" in scenario_config and scenario_config["scenarios"]:
+                scenarios = scenario_config["scenarios"]
+                variable_type = scenario_config.get("variable_type", "action_duration")
                 total_runs = sum(s.get("runs", 1) for s in scenarios)
 
                 progress_window = ProgressWindow(self, total_runs=total_runs)

@@ -28,7 +28,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## GUI
 
-- Progress Bar for simulation
 - Renaming the variables tab
 - Help
 - Enforcing the use of theme

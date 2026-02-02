@@ -10,10 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - ROADMAP.md
+- Progress Bar
+- Simulation Runner with threads
 
 ### Fixed
 
 - Replaced access str with access level enums
+
+## Changed
+
+- simulation_main got refactored into simulation_orchestrator
 
 ## [0.6.0] - 2026-01-26
 

@@ -6,7 +6,7 @@ from src.utils.discovery import list_attacker_strategies, list_defender_strategi
 from .base_tab import BaseTab
 
 
-class VariablesTab(BaseTab):
+class ScenarioTab(BaseTab):
     def __init__(self, parent, theme_colors):
         self.scenarios = []
         self.on_scenarios_changed = None
