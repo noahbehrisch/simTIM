@@ -22,7 +22,7 @@ class ProgressWindow(tk.Toplevel):
 
     def _setup_window(self):
         self.title("Simulation Running...")
-        self.geometry("500x250")
+        self.geometry("500x280")
         self.configure(bg=self.bg_color)
         self.resizable(False, False)
 
@@ -32,7 +32,7 @@ class ProgressWindow(tk.Toplevel):
 
         self.update_idletasks()
         x = self.parent.winfo_x() + (self.parent.winfo_width() - 500) // 2
-        y = self.parent.winfo_y() + (self.parent.winfo_height() - 250) // 2
+        y = self.parent.winfo_y() + (self.parent.winfo_height() - 280) // 2
         self.geometry(f"+{x}+{y}")
 
     def _create_progress_ui(self):
