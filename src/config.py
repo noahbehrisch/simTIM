@@ -75,7 +75,7 @@ class DetectionConfig:
 
 @dataclass
 class GUIConfig:
-    window_title: str = "simTIM - Temporal Information Management Simulator"
+    window_title: str = "simTIM"
     min_window_width: int = 800
     min_window_height: int = 600
     default_theme: str = field(default_factory=lambda: _get_env("GUI_THEME", "dark"))
@@ -91,7 +91,6 @@ gui_config = GUIConfig()
 
 
 def load_config_from_file(filepath: str) -> dict:
-    """Load configuration from JSON file."""
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {filepath}")
@@ -101,7 +100,6 @@ def load_config_from_file(filepath: str) -> dict:
 
 
 def save_config_to_file(filepath: str) -> None:
-    """Save current configuration to JSON file."""
     config = {
         "simulation": asdict(sim_config),
         "paths": asdict(path_config),
@@ -122,7 +120,6 @@ def save_config_to_file(filepath: str) -> None:
 
 
 def get_config_summary() -> dict:
-    """Get a summary of all configuration values."""
     return {
         "simulation": asdict(sim_config),
         "paths": asdict(path_config),

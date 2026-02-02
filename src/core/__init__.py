@@ -40,22 +40,15 @@ from .exceptions import (
 )
 from .graph import Link, Node
 from .network import Network
+from .simulation_orchestrator import SimulationOrchestrator, run_variable_scenarios
+from .simulation_runner import SimulationRunner
 from .simulator import Event, Simulator
-
-
-def get_simtim_main():
-    from .simulation_main import simtim_main
-
-    return simtim_main
-
-
-try:
-    from .simulation_main import simtim_main
-except ImportError:
-    simtim_main = None  # type: ignore[assignment]
 
 __all__ = [
     "Simulator",
+    "SimulationRunner",
+    "SimulationOrchestrator",
+    "run_variable_scenarios",
     "Event",
     "Node",
     "Link",
@@ -69,8 +62,6 @@ __all__ = [
     "economic_model",
     "calculate_action_damage",
     "calculate_action_gain",
-    "simtim_main",
-    "get_simtim_main",
     "OngoingActionsIndex",
     "EventBus",
     "EventType",

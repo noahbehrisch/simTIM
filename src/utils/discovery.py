@@ -4,6 +4,8 @@ import os
 
 logger = logging.getLogger(__name__)
 
+# Discovery utilities used by the GUI
+
 
 def get_src_path() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -68,6 +68,7 @@ class Simulator:
         self.current_time = 0.0
         self.event_queue: list[Event] = []
         self.network = network if network is not None else Network()
+        self.actors: list[Any] = []
         self._ongoing_actions_index = OngoingActionsIndex()
 
         self._event_bus = event_bus or EventBus()
@@ -210,7 +211,7 @@ class Simulator:
             pass
 
     def get_all_actors(self):
-        return self.network.actors
+        return self.actors
 
     def interrupt(self, actor=None, target=None, action_type=None):
         to_interrupt = self._ongoing_actions_index.find_all(

@@ -9,6 +9,7 @@ Main Classes:
 - ResultsWindow: Simulation results display
 - HelpWindow: Help and documentation window
 - Theme: UI theme configuration
+- ProgressWindow: Progress bar during simulation
 
 Tabs:
 - SimulationTab: Simulation configuration
@@ -21,6 +22,7 @@ Tabs:
 
 from .app import App
 from .help_window import HelpWindow, ToolTip
+from .progress_window import ProgressWindow
 from .results_window import ResultsWindow
 from .sidebar import Sidebar
 from .theme import Theme
@@ -32,4 +34,5 @@ __all__ = [
     "HelpWindow",
     "ToolTip",
     "Theme",
+    "ProgressWindow",
 ]

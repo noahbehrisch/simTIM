@@ -21,6 +21,11 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 - User Documentation -> README.md and Help in the GUI suffices
 - Developer Documenation -> Comments/Docstrings in tricky parts of the code, Document that explains the bigger pictures
 
+## Core
+
+- Better implementation of scenario comparison -> see simulation_main.py
+- simtim_main method return types? nothing, history, network state end, economics?
+
 ## GUI
 
 - Progress Bar for simulation

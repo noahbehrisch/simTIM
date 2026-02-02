@@ -45,7 +45,7 @@ For more information, see README.md
 def run_demo():
     import tkinter as tk
 
-    from src.core.simulation_main import simtim_main
+    from src.core.simulation_runner import SimulationRunner
     from src.gui.results_window import ResultsWindow
     from src.gui.theme import Theme
     from src.utils.results_printer import print_event_history, print_quick_summary
@@ -65,7 +65,8 @@ def run_demo():
     print("=" * 70)
     print()
 
-    histories = simtim_main(
+    runner = SimulationRunner()
+    histories = runner.run_sync(
         path_to_network_config=demo_network,
         attackers=[
             {
@@ -118,7 +119,7 @@ def run_demo():
 
 def run_cli():
     """Run an interactive CLI simulation."""
-    from src.core.simulation_main import simtim_main
+    from src.core.simulation_runner import SimulationRunner
     from src.networks import NetworkLoader
     from src.utils.results_printer import (
         export_to_csv,
@@ -179,7 +180,8 @@ def run_cli():
     print("=" * 70)
 
     network_path = loader.get_path(network_name)
-    histories = simtim_main(
+    runner = SimulationRunner()
+    histories = runner.run_sync(
         path_to_network_config=str(network_path),
         attackers=[
             {

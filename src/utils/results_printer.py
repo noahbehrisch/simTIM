@@ -250,14 +250,6 @@ def export_to_csv(
     output_path: str | Path,
     include_details: bool = True,
 ) -> None:
-    """
-    Export simulation results to a CSV file.
-
-    Args:
-        histories: List of simulation run histories
-        output_path: Path to the output CSV file
-        include_details: If True, include detailed event information
-    """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -308,14 +300,6 @@ def export_to_json(
     output_path: str | Path,
     include_summary: bool = True,
 ) -> None:
-    """
-    Export simulation results to a JSON file.
-
-    Args:
-        histories: List of simulation run histories
-        output_path: Path to the output JSON file
-        include_summary: If True, include summary statistics
-    """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -408,12 +392,6 @@ def export_to_json(
 
 
 def print_quick_summary(histories: list[list]) -> None:
-    """
-    Print a quick one-line summary per run (useful for batch analysis).
-
-    Args:
-        histories: List of simulation run histories
-    """
     print("\n📋 QUICK SUMMARY:")
     print("-" * 70)
     print(f"{'Run':<5} {'Attacks':<10} {'Defenses':<10} {'Detections':<12} {'Damage':<15}")

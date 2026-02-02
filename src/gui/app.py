@@ -4,8 +4,9 @@ import sys
 import tkinter as tk
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.core.simulation_main import simtim_main
+from src.core.simulation_runner import SimulationRunner
 from src.gui.help_window import HelpWindow
+from src.gui.progress_window import ProgressWindow
 from src.gui.results_window import ResultsWindow
 from src.gui.sidebar import Sidebar
 from src.gui.tabs import (
@@ -343,7 +344,7 @@ class App(tk.Tk):
         variables_config = self.variables_tab.get_variables_config()
         sim_runs = sim_config["runs"]
         sim_time = sim_config["time"]
-        self.last_sim_time = sim_time  # Store for results window
+        self.last_sim_time = sim_time
         detection_engine_type = sim_config["detection_engine_type"]
         path_to_network_config = network_config["file_path"]
         if not attackers:
@@ -358,12 +359,27 @@ class App(tk.Tk):
                 and "scenarios" in variables_config
                 and variables_config["scenarios"]
             ):
-                from src.core.simulation_main import run_variable_scenarios
-
                 scenarios = variables_config["scenarios"]
                 variable_type = variables_config.get("variable_type", "action_duration")
-                total_runs = sum(s["runs"] for s in scenarios)
-                results = run_variable_scenarios(
+                total_runs = sum(s.get("runs", 1) for s in scenarios)
+
+                progress_window = ProgressWindow(self, total_runs=total_runs)
+
+                def on_progress(current, total):
+                    self.after(0, lambda: progress_window.update_progress(current, total))
+
+                def on_complete(results):
+                    self.after(0, lambda: self._handle_scenario_complete(results, progress_window))
+
+                def on_error(msg):
+                    self.after(0, lambda: progress_window.show_error(msg))
+
+                runner = SimulationRunner(
+                    on_progress=on_progress,
+                    on_complete=on_complete,
+                    on_error=on_error,
+                )
+                runner.run_scenarios_async(
                     path_to_network_config=path_to_network_config,
                     scenarios=scenarios,
                     variable_type=variable_type,
@@ -372,36 +388,26 @@ class App(tk.Tk):
                     sim_time=sim_time,
                     detection_engine_type=detection_engine_type,
                 )
-                self.scenario_results = results
-                self.all_histories = []
-                for scenario in results["scenarios"]:
-                    self.all_histories.extend(scenario["histories"])
-                self.results_button.config(
-                    state=tk.NORMAL,
-                    command=lambda: self.open_results_window_scenarios(results),
-                )
-                custom_messagebox = tk.Toplevel(self)
-                custom_messagebox.title("Scenario Comparison Complete")
-                custom_messagebox.geometry("800x400")
-                custom_messagebox.configure(bg=self.bg_color)
-                summary = f"Completed {len(scenarios)} scenarios\nTotal runs: {total_runs}"
-                tk.Label(
-                    custom_messagebox,
-                    text=summary,
-                    bg=self.bg_color,
-                    fg=self.button_fg,
-                    font=("Arial", 14),
-                    justify=tk.CENTER,
-                ).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-                tk.Button(
-                    custom_messagebox,
-                    text="OK",
-                    command=custom_messagebox.destroy,
-                    bg=self.button_color,
-                    fg=self.button_fg,
-                ).pack(pady=10)
             else:
-                all_histories = simtim_main(
+                progress_window = ProgressWindow(self, total_runs=sim_runs)
+
+                def on_progress(current, total):
+                    self.after(0, lambda: progress_window.update_progress(current, total))
+
+                def on_complete(all_histories):
+                    self.after(
+                        0, lambda: self._handle_simulation_complete(all_histories, progress_window)
+                    )
+
+                def on_error(msg):
+                    self.after(0, lambda: progress_window.show_error(msg))
+
+                runner = SimulationRunner(
+                    on_progress=on_progress,
+                    on_complete=on_complete,
+                    on_error=on_error,
+                )
+                runner.run_async(
                     path_to_network_config=path_to_network_config,
                     sim_runs=sim_runs,
                     sim_time=sim_time,
@@ -409,29 +415,6 @@ class App(tk.Tk):
                     defenders=defenders,
                     detection_engine_type=detection_engine_type,
                 )
-                self.all_histories = all_histories
-                self.results_button.config(
-                    state=tk.NORMAL,
-                    command=lambda: self.open_results_window(all_histories),
-                )
-                custom_messagebox = tk.Toplevel(self)
-                custom_messagebox.title("Simulation Complete")
-                custom_messagebox.geometry("800x400")
-                custom_messagebox.configure(bg=self.bg_color)
-                tk.Label(
-                    custom_messagebox,
-                    text="Simulation Complete",
-                    bg=self.bg_color,
-                    fg=self.button_fg,
-                    font=("Arial", 16),
-                ).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-                tk.Button(
-                    custom_messagebox,
-                    text="OK",
-                    command=custom_messagebox.destroy,
-                    bg=self.button_color,
-                    fg=self.button_fg,
-                ).pack(pady=10)
         except Exception as e:
             import traceback
 
@@ -440,6 +423,25 @@ class App(tk.Tk):
             print("Full traceback:")
             traceback.print_exc()
             tk.messagebox.showerror("Simulation Error", error_msg)
+
+    def _handle_simulation_complete(self, all_histories, progress_window):
+        self.all_histories = all_histories
+        self.results_button.config(
+            state=tk.NORMAL,
+            command=lambda: self.open_results_window(all_histories),
+        )
+        progress_window.show_completion()
+
+    def _handle_scenario_complete(self, results, progress_window):
+        self.scenario_results = results
+        self.all_histories = []
+        for scenario in results["scenarios"]:
+            self.all_histories.extend(scenario["histories"])
+        self.results_button.config(
+            state=tk.NORMAL,
+            command=lambda: self.open_results_window_scenarios(results),
+        )
+        progress_window.show_completion()
 
     def launch_visualizer(self):
         self.network_tab.launch_visualizer()
