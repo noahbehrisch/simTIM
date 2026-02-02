@@ -103,14 +103,14 @@ class ProgressWindow(tk.Toplevel):
         if summary_text:
             self.status_label.config(
                 text=summary_text,
-                fg=self.success_color,
-                font=("Arial", 14, "bold"),
+                fg=self.text_color,
+                font=("Arial", 12),
             )
         else:
             self.status_label.config(
                 text="✓ Simulation Complete",
-                fg=self.success_color,
-                font=("Arial", 16, "bold"),
+                fg=self.text_color,
+                font=("Arial", 14),
             )
 
         self.progress_bar["value"] = self.total_runs
