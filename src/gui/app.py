@@ -23,6 +23,7 @@ from src.gui.theme import Theme
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self._is_closing = False
         self.theme = Theme()
         self.title("simTIM GUI")
         self.geometry("1400x800")
@@ -37,6 +38,7 @@ class App(tk.Tk):
         self.fullscreen_state = False
         self.bind("<Escape>", self.exit_fullscreen)
         self.bind("<F11>", self.toggle_fullscreen)
+        self.protocol("WM_DELETE_WINDOW", self._on_closing)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_rowconfigure(2, weight=0)
@@ -159,6 +161,12 @@ class App(tk.Tk):
                 self.node_options = []
         except Exception:
             self.node_options = []
+
+    def _on_closing(self):
+        """Handle window close event to prevent Tkinter thread errors."""
+        self._is_closing = True
+        self.quit()
+        self.destroy()
 
     def browse_network_file(self):
         self.network_tab.browse_network_file()
@@ -366,13 +374,20 @@ class App(tk.Tk):
                 progress_window = ProgressWindow(self, total_runs=total_runs)
 
                 def on_progress(current, total):
-                    self.after(0, lambda: progress_window.update_progress(current, total))
+                    if not self._is_closing:
+                        self.after(
+                            0, lambda c=current, t=total: progress_window.update_progress(c, t)
+                        )
 
                 def on_complete(results):
-                    self.after(0, lambda: self._handle_scenario_complete(results, progress_window))
+                    if not self._is_closing:
+                        self.after(
+                            0, lambda: self._handle_scenario_complete(results, progress_window)
+                        )
 
                 def on_error(msg):
-                    self.after(0, lambda: progress_window.show_error(msg))
+                    if not self._is_closing:
+                        self.after(0, lambda: progress_window.show_error(msg))
 
                 runner = SimulationRunner(
                     on_progress=on_progress,
@@ -392,15 +407,23 @@ class App(tk.Tk):
                 progress_window = ProgressWindow(self, total_runs=sim_runs)
 
                 def on_progress(current, total):
-                    self.after(0, lambda: progress_window.update_progress(current, total))
+                    if not self._is_closing:
+                        self.after(
+                            0, lambda c=current, t=total: progress_window.update_progress(c, t)
+                        )
 
                 def on_complete(all_histories):
-                    self.after(
-                        0, lambda: self._handle_simulation_complete(all_histories, progress_window)
-                    )
+                    if not self._is_closing:
+                        self.after(
+                            0,
+                            lambda: self._handle_simulation_complete(
+                                all_histories, progress_window
+                            ),
+                        )
 
                 def on_error(msg):
-                    self.after(0, lambda: progress_window.show_error(msg))
+                    if not self._is_closing:
+                        self.after(0, lambda: progress_window.show_error(msg))
 
                 runner = SimulationRunner(
                     on_progress=on_progress,
