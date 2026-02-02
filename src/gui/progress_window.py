@@ -22,7 +22,7 @@ class ProgressWindow(tk.Toplevel):
 
     def _setup_window(self):
         self.title("Simulation Running...")
-        self.geometry("500x280")
+        self.geometry("600x300")
         self.configure(bg=self.bg_color)
         self.resizable(False, False)
 
