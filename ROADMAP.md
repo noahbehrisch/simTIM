@@ -24,7 +24,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Core
 
 - Better implementation of scenario comparison -> see simulation_main.py
-- simtim_main method return types? nothing, history, network state end, economics?
 
 ## GUI
 

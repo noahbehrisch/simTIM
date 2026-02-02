@@ -14,6 +14,7 @@ from src.gui.tabs import (
     AttackerTab,
     DefenderTab,
     NetworkTab,
+    OverviewTab,
     ScenarioTab,
     SimulationTab,
 )
@@ -50,7 +51,7 @@ class App(tk.Tk):
             "Attackers",
             "Defenders",
             "Actions",
-            "Variables",
+            "Scenarios",
             "Overview",
         ]
         self.tabs = {}
@@ -124,29 +125,14 @@ class App(tk.Tk):
         self.action_tab = ActionTab(self, self.theme_colors)
         self.scenario_tab = ScenarioTab(self, self.theme_colors)
         self.scenario_tab.on_scenarios_changed = self._on_variable_scenarios_changed
+        self.overview_tab = OverviewTab(self, self.theme_colors)
         self.tabs["Simulation"] = self.simulation_tab.frame
         self.tabs["Network"] = self.network_tab.frame
         self.tabs["Attackers"] = self.attacker_tab.frame
         self.tabs["Defenders"] = self.defender_tab.frame
         self.tabs["Actions"] = self.action_tab.frame
         self.tabs["Scenarios"] = self.scenario_tab.frame
-        overview_frame = tk.Frame(self, bg=self.tab_color)
-        overview_frame.grid(row=1, column=1, sticky="nswe")
-        overview_frame.grid_remove()
-        overview_frame.grid_propagate(False)
-        overview_pad_frame = tk.Frame(overview_frame, padx=50, pady=50, bg=self.tab_color)
-        overview_pad_frame.pack(expand=True, fill="both")
-        self.overview_text = tk.Text(
-            overview_pad_frame,
-            width=60,
-            height=30,
-            state=tk.DISABLED,
-            bg="#eaf1fb",
-            fg=self.button_fg,
-            insertbackground=self.button_fg,
-        )
-        self.overview_text.pack(expand=True, fill="both", padx=10, pady=10)
-        self.tabs["Overview"] = overview_frame
+        self.tabs["Overview"] = self.overview_tab.frame
         self._load_default_network_nodes()
 
     def _load_default_network_nodes(self):
@@ -220,81 +206,7 @@ class App(tk.Tk):
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
         scenario_config = self.scenario_tab.get_variables_config()
-        overview = "SIMULATION CONFIGURATION\n"
-        overview += "=" * 50 + "\n\n"
-        overview += "Simulation Parameters:\n"
-        if scenario_config and "scenarios" in scenario_config and scenario_config["scenarios"]:
-            scenarios = scenario_config["scenarios"]
-            var_type = scenario_config.get("variable_type", "action_duration")
-            total_runs = sum(s["runs"] for s in scenarios)
-            if var_type == "attack_duration":
-                mode_desc = "ATTACK DURATION COMPARISON"
-            elif var_type == "defense_duration":
-                mode_desc = "DEFENSE DURATION COMPARISON"
-            elif var_type == "attacker_strategy":
-                mode_desc = "ATTACKER STRATEGY COMPARISON"
-            elif var_type == "defender_strategy":
-                mode_desc = "DEFENDER STRATEGY COMPARISON"
-            else:
-                mode_desc = "SCENARIO COMPARISON"
-            overview += f"   • Mode: {mode_desc}\n"
-            overview += f"   • Scenarios: {len(scenarios)}\n"
-            overview += f"   • Total Runs: {total_runs}\n"
-            overview += f"   • Time per run: {sim_config['time']} seconds\n"
-            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
-            overview += "   Scenario Details:\n"
-            for idx, scenario in enumerate(scenarios, 1):
-                runs = scenario["runs"]
-                if var_type == "attack_duration":
-                    overview += (
-                        f"      {idx}. Attack Duration: {scenario['duration']}h → {runs} runs\n"
-                    )
-                elif var_type == "defense_duration":
-                    overview += (
-                        f"      {idx}. Defense Duration: {scenario['duration']}h → {runs} runs\n"
-                    )
-                elif var_type == "attacker_strategy":
-                    overview += (
-                        f"      {idx}. Attacker Strategy: {scenario['strategy']} → {runs} runs\n"
-                    )
-                elif var_type == "defender_strategy":
-                    overview += (
-                        f"      {idx}. Defender Strategy: {scenario['strategy']} → {runs} runs\n"
-                    )
-                else:
-                    overview += f"      {idx}. Scenario → {runs} runs\n"
-            overview += "\n"
-        else:
-            overview += f"   • Runs: {sim_config['runs']}\n"
-            overview += f"   • Time: {sim_config['time']} seconds\n"
-            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
-        overview += "Network Configuration:\n"
-        network_file = network_config["file_path"]
-        network_name = network_file.split("/")[-1] if "/" in network_file else network_file
-        overview += f"   • File: {network_name}\n"
-        overview += f"   • Path: {network_file}\n\n"
-        overview += f"Attackers ({len(attackers)}):\n"
-        for idx, attacker in enumerate(attackers, 1):
-            capacity_text = (
-                "∞" if attacker["capacity"] == float("inf") else str(attacker["capacity"])
-            )
-            overview += f"   {idx}. {attacker['id']}\n"
-            overview += f"      Strategy: {attacker['strategy']}\n"
-            overview += f"      Capacity: {capacity_text}\n"
-            overview += f"      Budget: ${attacker['budget']}\n"
-        overview += "\n"
-        overview += f"Defenders ({len(defenders)}):\n"
-        for idx, defender in enumerate(defenders, 1):
-            overview += f"   {idx}. {defender['id']}\n"
-            overview += f"      Strategy: {defender['strategy']}\n"
-            overview += f"      Capacity: {defender['capacity']}\n"
-            overview += f"      Budget: ${defender['budget']}\n"
-        overview += "\n" + "=" * 50 + "\n"
-        overview += "Ready to run simulation!"
-        self.overview_text.config(state=tk.NORMAL)
-        self.overview_text.delete(1.0, tk.END)
-        self.overview_text.insert(tk.END, overview)
-        self.overview_text.config(state=tk.DISABLED)
+        self.overview_tab.update(sim_config, network_config, attackers, defenders, scenario_config)
 
     def set_attacker_info(self):
         self.attacker_info_var.set("Attacker created")
