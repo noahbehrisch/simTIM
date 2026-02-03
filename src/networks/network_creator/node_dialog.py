@@ -292,6 +292,7 @@ class NodeDialog:
             assets = [asset for asset, var in fields["assets_vars"].items() if var.get()]
             x = random.randint(50, 750)
             y = random.randint(50, 550)
+            x, y = self.snap_to_grid(x, y)
             self.nodes[node_id] = {
                 "id": node_id,
                 "name": fields["name"].get() or node_id,

@@ -129,8 +129,9 @@ class CanvasHandlers:
             dx = event.x - self.drag_start_x
             dy = event.y - self.drag_start_y
             if abs(dx) > 3 or abs(dy) > 3:
-                self.nodes[self.dragging_node]["x"] = event.x
-                self.nodes[self.dragging_node]["y"] = event.y
+                snapped_x, snapped_y = self.snap_to_grid(event.x, event.y)
+                self.nodes[self.dragging_node]["x"] = snapped_x
+                self.nodes[self.dragging_node]["y"] = snapped_y
                 self.draw_network()
                 self.drag_start_x = event.x
                 self.drag_start_y = event.y
@@ -161,11 +162,12 @@ class CanvasHandlers:
                     fg=self.theme.COLORS["text_primary"],
                 )
         elif self.dragging_node and (not self.link_mode):
-            self.nodes[self.dragging_node]["x"] = event.x
-            self.nodes[self.dragging_node]["y"] = event.y
+            snapped_x, snapped_y = self.snap_to_grid(event.x, event.y)
+            self.nodes[self.dragging_node]["x"] = snapped_x
+            self.nodes[self.dragging_node]["y"] = snapped_y
             self.draw_network()
             self.status_label.config(
-                text=f"Node '{self.dragging_node}' moved to ({event.x}, {event.y})",
+                text=f"Node '{self.dragging_node}' moved to ({snapped_x}, {snapped_y})",
                 bg="#d1ecf1",
                 fg="#0c5460",
             )

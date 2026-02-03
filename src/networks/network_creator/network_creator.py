@@ -37,6 +37,7 @@ class NetworkCreator(
         self.drag_start_y = 0
         self.selection_box_active = False
         self.selection_box_start = None
+        self.snap_size = 60
         self.create_widgets()
         self.transient(parent)
 
@@ -45,6 +46,13 @@ class NetworkCreator(
             self.add_link_button.config(state=tk.DISABLED)
         else:
             self.add_link_button.config(state=tk.NORMAL)
+
+    def snap_to_grid(self, x: int, y: int) -> tuple[int, int]:
+        if self.snap_size <= 0:
+            return x, y
+        snapped_x = round(x / self.snap_size) * self.snap_size
+        snapped_y = round(y / self.snap_size) * self.snap_size
+        return snapped_x, snapped_y
 
     def show_help(self):
         if self.help_visible:
