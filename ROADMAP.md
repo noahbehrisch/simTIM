@@ -23,11 +23,12 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Core
 
-- Better implementation of scenario comparison -> see simulation_main.py
+- Better implementation of scenario comparison -> see simulation_orchestrator.py
+- Simulation Behavior
+- Different instances for every run -> check economic model especially
 
 ## GUI
 
-- Renaming the variables tab
 - Help
 - Enforcing the use of theme
 - Colorblind friendly colors
