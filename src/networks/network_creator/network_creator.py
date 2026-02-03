@@ -87,10 +87,11 @@ class NetworkCreator(
         for node_id, node in self.nodes.items():
             self.properties_text.insert(tk.END, f"• {node_id}\n")
             self.properties_text.insert(tk.END, f"  Name: {node['name']}\n")
-            self.properties_text.insert(tk.END, f"  OS: {node['software']['os']}\n")
+            os_name = node.get("software", {}).get("os", "Unknown")
+            self.properties_text.insert(tk.END, f"  OS: {os_name}\n")
             if node.get("category"):
                 self.properties_text.insert(tk.END, f"  Category: {node['category']}\n")
-            if node["properties"].get("exposed_to_internet"):
+            if node.get("properties", {}).get("exposed_to_internet"):
                 self.properties_text.insert(tk.END, "  [EXPOSED]\n")
             self.properties_text.insert(tk.END, "\n")
 

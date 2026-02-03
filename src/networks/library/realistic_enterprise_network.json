@@ -1,25 +1,27 @@
 {
-  "name": "Realistic Enterprise Network",
-  "description": "A multi-zone enterprise network with proper segmentation, security controls, and realistic attack paths",
-  "metadata": {
-    "organization": "TechCorp Inc.",
-    "network_size": "medium_enterprise",
-    "compliance": ["PCI-DSS", "GDPR"],
-    "created": "2024-09-27"
-  },
+  "name": "Custom Network",
+  "description": "Custom network with 12 nodes and 14 links",
   "nodes": [
     {
       "id": "internet_gateway",
-      "type": "network_device",
-      "zone": "perimeter",
+      "name": "internet_gateway",
+      "x": 720,
+      "y": 360,
       "software": {
         "vendor": "Cisco",
         "model": "ASA 5516-X",
         "firmware": "9.16.1",
         "management": "ASDM 7.16"
       },
-      "vulnerabilities": ["CVE-2020-3259", "CVE-2020-3187"],
-      "assets": ["internet_access", "vpn_gateway", "firewall_logs"],
+      "vulnerabilities": [
+        "CVE-2020-3259",
+        "CVE-2020-3187"
+      ],
+      "assets": [
+        "internet_access",
+        "vpn_gateway",
+        "firewall_logs"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -31,8 +33,9 @@
     },
     {
       "id": "dmz_web_server",
-      "type": "server",
-      "zone": "dmz",
+      "name": "dmz_web_server",
+      "x": 720,
+      "y": 240,
       "software": {
         "os": "Ubuntu Server",
         "version": "20.04.6",
@@ -41,22 +44,36 @@
         "php": "7.4.33",
         "ssl_cert": "Let's Encrypt"
       },
-      "vulnerabilities": ["CVE-2021-41773", "CVE-2021-42013", "CVE-2022-22720"],
-      "assets": ["corporate_website", "customer_portal", "web_logs", "ssl_certificates"],
+      "vulnerabilities": [
+        "CVE-2021-41773",
+        "CVE-2021-42013",
+        "CVE-2022-22720"
+      ],
+      "assets": [
+        "corporate_website",
+        "customer_portal",
+        "web_logs",
+        "ssl_certificates"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "medium",
         "network_segment": "172.16.10.0/24",
         "ip_address": "172.16.10.10",
-        "exposed_services": ["80", "443", "22"],
+        "exposed_services": [
+          "80",
+          "443",
+          "22"
+        ],
         "exposed_to_internet": true,
         "backup_frequency": "daily"
       }
     },
     {
       "id": "dmz_mail_server",
-      "type": "server", 
-      "zone": "dmz",
+      "name": "dmz_mail_server",
+      "x": 720,
+      "y": 420,
       "software": {
         "os": "Debian",
         "version": "11.7",
@@ -65,28 +82,48 @@
         "webmail": "Roundcube",
         "antivirus": "ClamAV"
       },
-      "vulnerabilities": ["CVE-2020-28948", "CVE-2021-38562"],
-      "assets": ["email_database", "user_mailboxes", "spam_filter", "mail_logs"],
+      "vulnerabilities": [
+        "CVE-2020-28948",
+        "CVE-2021-38562"
+      ],
+      "assets": [
+        "email_database",
+        "user_mailboxes",
+        "spam_filter",
+        "mail_logs"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "medium",
         "network_segment": "172.16.10.0/24",
         "ip_address": "172.16.10.20",
-        "exposed_services": ["25", "587", "993", "443"],
+        "exposed_services": [
+          "25",
+          "587",
+          "993",
+          "443"
+        ],
         "encryption": "TLS 1.3"
       }
     },
     {
       "id": "internal_firewall",
-      "type": "network_device",
-      "zone": "internal_perimeter", 
+      "name": "internal_firewall",
+      "x": 420,
+      "y": 300,
       "software": {
         "vendor": "pfSense",
         "version": "2.6.0",
         "base_os": "FreeBSD 12.3"
       },
-      "vulnerabilities": ["CVE-2021-41282"],
-      "assets": ["internal_firewall_rules", "network_segmentation", "traffic_logs"],
+      "vulnerabilities": [
+        "CVE-2021-41282"
+      ],
+      "assets": [
+        "internal_firewall_rules",
+        "network_segmentation",
+        "traffic_logs"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -97,8 +134,9 @@
     },
     {
       "id": "domain_controller_01",
-      "type": "server",
-      "zone": "internal_servers",
+      "name": "domain_controller_01",
+      "x": 300,
+      "y": 180,
       "software": {
         "os": "Windows Server",
         "version": "2019",
@@ -107,8 +145,18 @@
         "dns_server": "Windows DNS",
         "dhcp_server": "Windows DHCP"
       },
-      "vulnerabilities": ["CVE-2021-42287", "CVE-2021-42278", "CVE-2022-26923"],
-      "assets": ["domain_database", "user_credentials", "kerberos_tickets", "group_policies", "dns_records"],
+      "vulnerabilities": [
+        "CVE-2021-42287",
+        "CVE-2021-42278",
+        "CVE-2022-26923"
+      ],
+      "assets": [
+        "domain_database",
+        "user_credentials",
+        "kerberos_tickets",
+        "group_policies",
+        "dns_records"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -120,8 +168,9 @@
     },
     {
       "id": "file_server_01",
-      "type": "server",
-      "zone": "internal_servers",
+      "name": "file_server_01",
+      "x": 300,
+      "y": 420,
       "software": {
         "os": "Windows Server 2008",
         "version": "2016",
@@ -129,11 +178,20 @@
         "file_services": "SMB 3.1.1",
         "backup_agent": "Veeam Agent"
       },
-      "vulnerabilities": ["CVE-2017-0144", "CVE-2017-0145", "CVE-2021-31166"],
-      "assets": ["shared_drives", "department_files", "user_profiles", "project_data"],
+      "vulnerabilities": [
+        "CVE-2017-0144",
+        "CVE-2017-0145",
+        "CVE-2021-31166"
+      ],
+      "assets": [
+        "shared_drives",
+        "department_files",
+        "user_profiles",
+        "project_data"
+      ],
       "properties": {
         "critical": false,
-        "physical_security": "high", 
+        "physical_security": "high",
         "network_segment": "172.16.20.0/24",
         "ip_address": "172.16.20.20",
         "storage_capacity": "10TB",
@@ -142,8 +200,9 @@
     },
     {
       "id": "sql_server_01",
-      "type": "server",
-      "zone": "data_tier",
+      "name": "sql_server_01",
+      "x": 300,
+      "y": 300,
       "software": {
         "os": "Windows Server",
         "version": "2019",
@@ -151,30 +210,48 @@
         "db_version": "2019 Enterprise",
         "db_patch_level": "CU18"
       },
-      "vulnerabilities": ["CVE-2022-29143", "CVE-2023-21528"],
-      "assets": ["customer_database", "financial_records", "audit_logs", "business_intelligence"],
+      "vulnerabilities": [
+        "CVE-2022-29143",
+        "CVE-2023-21528"
+      ],
+      "assets": [
+        "customer_database",
+        "financial_records",
+        "audit_logs",
+        "business_intelligence"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
-        "network_segment": "172.16.30.0/24", 
+        "network_segment": "172.16.30.0/24",
         "ip_address": "172.16.30.10",
         "encryption": "TDE",
         "backup_frequency": "every_6_hours",
-        "compliance": ["PCI-DSS", "SOX"]
+        "compliance": [
+          "PCI-DSS",
+          "SOX"
+        ]
       }
     },
     {
       "id": "backup_server",
-      "type": "server",
-      "zone": "internal_servers",
+      "name": "backup_server",
+      "x": 420,
+      "y": 420,
       "software": {
         "os": "Ubuntu Server",
         "version": "22.04.3",
         "backup_software": "Veeam Backup & Replication",
         "backup_version": "12.0"
       },
-      "vulnerabilities": ["CVE-2023-27532"],
-      "assets": ["system_backups", "disaster_recovery_data", "backup_catalog"],
+      "vulnerabilities": [
+        "CVE-2023-27532"
+      ],
+      "assets": [
+        "system_backups",
+        "disaster_recovery_data",
+        "backup_catalog"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -186,29 +263,41 @@
     },
     {
       "id": "siem_server",
-      "type": "server", 
-      "zone": "security",
+      "name": "siem_server",
+      "x": 420,
+      "y": 180,
       "software": {
         "os": "CentOS Linux",
         "version": "8.5",
         "siem": "Splunk Enterprise",
         "siem_version": "9.1.2"
       },
-      "vulnerabilities": ["CVE-2023-32707"],
-      "assets": ["security_logs", "incident_data", "threat_intelligence", "forensic_evidence"],
+      "vulnerabilities": [
+        "CVE-2023-32707"
+      ],
+      "assets": [
+        "security_logs",
+        "incident_data",
+        "threat_intelligence",
+        "forensic_evidence"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
         "network_segment": "172.16.40.0/24",
         "ip_address": "172.16.40.10",
         "log_retention": "2_years",
-        "compliance": ["SOC2", "PCI-DSS"]
+        "compliance": [
+          "SOC2",
+          "PCI-DSS"
+        ]
       }
     },
     {
-      "id": "workstation_hr_01", 
-      "type": "workstation",
-      "zone": "corporate_lan",
+      "id": "workstation_hr_01",
+      "name": "workstation_hr_01",
+      "x": 480,
+      "y": 420,
       "software": {
         "os": "Windows 10",
         "version": "22H2",
@@ -217,12 +306,20 @@
         "endpoint_protection": "CrowdStrike Falcon",
         "browser": "Microsoft Edge"
       },
-      "vulnerabilities": ["CVE-2023-36874", "CVE-2023-38180"],
-      "assets": ["hr_documents", "employee_data", "payroll_spreadsheets", "personnel_files"],
+      "vulnerabilities": [
+        "CVE-2023-36874",
+        "CVE-2023-38180"
+      ],
+      "assets": [
+        "hr_documents",
+        "employee_data",
+        "payroll_spreadsheets",
+        "personnel_files"
+      ],
       "properties": {
         "critical": false,
         "physical_security": "medium",
-        "network_segment": "172.16.50.0/24", 
+        "network_segment": "172.16.50.0/24",
         "ip_address": "172.16.50.15",
         "department": "Human Resources",
         "user": "alice.johnson",
@@ -231,23 +328,32 @@
     },
     {
       "id": "workstation_finance_01",
-      "type": "workstation", 
-      "zone": "corporate_lan",
+      "name": "workstation_finance_01",
+      "x": 540,
+      "y": 420,
       "software": {
         "os": "Windows 10",
         "version": "22H2",
-        "build": "19045.3448", 
+        "build": "19045.3448",
         "office_suite": "Microsoft Office 365",
         "financial_software": "QuickBooks Enterprise",
         "endpoint_protection": "Windows Defender"
       },
-      "vulnerabilities": ["CVE-2023-36874", "CVE-2023-21823"],
-      "assets": ["financial_reports", "budget_data", "vendor_information", "tax_documents"],
+      "vulnerabilities": [
+        "CVE-2023-36874",
+        "CVE-2023-21823"
+      ],
+      "assets": [
+        "financial_reports",
+        "budget_data",
+        "vendor_information",
+        "tax_documents"
+      ],
       "properties": {
         "critical": false,
         "physical_security": "medium",
         "network_segment": "172.16.50.0/24",
-        "ip_address": "172.16.50.25", 
+        "ip_address": "172.16.50.25",
         "department": "Finance",
         "user": "bob.chen",
         "admin_rights": false
@@ -255,189 +361,111 @@
     },
     {
       "id": "workstation_it_admin",
-      "type": "workstation",
-      "zone": "corporate_lan",
+      "name": "workstation_it_admin",
+      "x": 360,
+      "y": 420,
       "software": {
         "os": "Windows 10",
-        "version": "22H2", 
+        "version": "22H2",
         "build": "19045.3448",
         "admin_tools": "RSAT",
         "remote_access": "RDP",
         "endpoint_protection": "CrowdStrike Falcon"
       },
-      "vulnerabilities": ["CVE-2023-36874"],
-      "assets": ["admin_scripts", "network_diagrams", "system_documentation", "privileged_credentials"],
+      "vulnerabilities": [
+        "CVE-2023-36874"
+      ],
+      "assets": [
+        "admin_scripts",
+        "network_diagrams",
+        "system_documentation",
+        "privileged_credentials"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "172.16.50.0/24",
         "ip_address": "172.16.50.100",
         "department": "IT",
-        "user": "carol.admin", 
+        "user": "carol.admin",
         "admin_rights": true,
-        "privileged_access": ["domain_controller_01", "sql_server_01"]
+        "privileged_access": [
+          "domain_controller_01",
+          "sql_server_01"
+        ]
       }
     }
   ],
   "links": [
     {
       "node1": "internet_gateway",
-      "node2": "dmz_web_server", 
-      "bidirectional": true,
-      "latency": 2.0,
-      "bandwidth": "1000Mbps",
-      "firewall_rules": ["allow_http", "allow_https", "allow_ssh_from_admin"]
+      "node2": "dmz_web_server",
+      "bidirectional": true
     },
     {
-      "node1": "internet_gateway", 
+      "node1": "internet_gateway",
       "node2": "dmz_mail_server",
-      "bidirectional": true,
-      "latency": 2.5,
-      "bandwidth": "1000Mbps", 
-      "firewall_rules": ["allow_smtp", "allow_imaps", "allow_submission"]
+      "bidirectional": true
     },
     {
       "node1": "dmz_web_server",
       "node2": "internal_firewall",
-      "bidirectional": true,
-      "latency": 1.0,
-      "bandwidth": "1000Mbps",
-      "firewall_rules": ["allow_database_queries", "deny_direct_internal"]
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
       "node2": "domain_controller_01",
-      "bidirectional": true,
-      "latency": 0.5,
-      "bandwidth": "10000Mbps",
-      "vlan": 20
-    },
-    {
-      "node1": "internal_firewall", 
-      "node2": "file_server_01",
-      "bidirectional": true,
-      "latency": 0.5,
-      "bandwidth": "10000Mbps",
-      "vlan": 20
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
-      "node2": "backup_server", 
-      "bidirectional": true,
-      "latency": 0.5,
-      "bandwidth": "10000Mbps",
-      "vlan": 20
+      "node2": "file_server_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "backup_server",
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
       "node2": "sql_server_01",
-      "bidirectional": true,
-      "latency": 0.8,
-      "bandwidth": "10000Mbps",
-      "vlan": 30,
-      "firewall_rules": ["database_access_only", "no_direct_internet"]
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
       "node2": "siem_server",
-      "bidirectional": true, 
-      "latency": 0.3,
-      "bandwidth": "10000Mbps",
-      "vlan": 40
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
-      "node2": "workstation_hr_01", 
-      "bidirectional": true,
-      "latency": 1.2,
-      "bandwidth": "1000Mbps",
-      "vlan": 50
+      "node2": "workstation_hr_01",
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
       "node2": "workstation_finance_01",
-      "bidirectional": true,
-      "latency": 1.1, 
-      "bandwidth": "1000Mbps",
-      "vlan": 50
+      "bidirectional": true
     },
     {
       "node1": "internal_firewall",
       "node2": "workstation_it_admin",
-      "bidirectional": true,
-      "latency": 0.8,
-      "bandwidth": "1000Mbps", 
-      "vlan": 50,
-      "firewall_rules": ["admin_access", "rdp_allowed"]
+      "bidirectional": true
     },
     {
       "node1": "domain_controller_01",
       "node2": "sql_server_01",
-      "bidirectional": true,
-      "latency": 0.9,
-      "bandwidth": "10000Mbps", 
-      "connection_type": "authentication_only"
-    },
-    {
-      "node1": "siem_server", 
-      "node2": "domain_controller_01",
-      "bidirectional": false,
-      "latency": 0.4,
-      "bandwidth": "1000Mbps",
-      "connection_type": "log_collection"
+      "bidirectional": true
     },
     {
       "node1": "siem_server",
-      "node2": "dmz_web_server", 
-      "bidirectional": false,
-      "latency": 2.2,
-      "bandwidth": "100Mbps",
-      "connection_type": "log_collection"
-    }
-  ],
-  "attack_scenarios": [
-    {
-      "name": "Web Application Compromise",
-      "description": "External attacker exploits web server vulnerability to gain DMZ foothold",
-      "entry_point": "dmz_web_server",
-      "attack_path": ["dmz_web_server", "internal_firewall", "domain_controller_01", "sql_server_01"],
-      "required_vulnerabilities": ["CVE-2021-41773", "CVE-2021-42287"]
+      "node2": "domain_controller_01",
+      "bidirectional": false
     },
     {
-      "name": "Phishing to Domain Admin", 
-      "description": "Email phishing leads to workstation compromise and privilege escalation",
-      "entry_point": "workstation_hr_01",
-      "attack_path": ["workstation_hr_01", "domain_controller_01", "sql_server_01"],
-      "required_vulnerabilities": ["CVE-2023-36874", "CVE-2021-42287"]
-    },
-    {
-      "name": "IT Admin Compromise",
-      "description": "Compromise privileged IT admin workstation for direct server access", 
-      "entry_point": "workstation_it_admin",
-      "attack_path": ["workstation_it_admin", "domain_controller_01", "sql_server_01"],
-      "lateral_movement": "rdp_and_admin_credentials"
-    }
-  ],
-  "security_controls": [
-    {
-      "type": "network_segmentation",
-      "zones": ["dmz", "internal_servers", "data_tier", "security", "corporate_lan"],
-      "enforcement": "firewall_rules"
-    },
-    {
-      "type": "endpoint_protection",
-      "coverage": ["CrowdStrike Falcon", "Windows Defender"],
-      "monitored_by": "siem_server"
-    },
-    {
-      "type": "backup_and_recovery", 
-      "systems": ["backup_server", "offsite_replication"],
-      "frequency": "multiple_schedules"
-    },
-    {
-      "type": "logging_and_monitoring",
-      "centralized": "siem_server",
-      "log_sources": ["all_servers", "firewalls", "domain_controllers"]
+      "node1": "siem_server",
+      "node2": "dmz_web_server",
+      "bidirectional": false
     }
   ]
 }
