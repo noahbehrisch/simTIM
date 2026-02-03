@@ -7,7 +7,10 @@ from src.core.simulation_orchestrator import SimulationOrchestrator, run_variabl
 
 
 class SimulationRunner:
-    """Wraps SimulationOrchestrator with threading and callbacks. Async for GUI, sync for CLI."""
+    """
+    Wraps SimulationOrchestrator with threading and callbacks. Async for GUI, sync for CLI.
+    Here is where multithreading could be implemented.
+    """
 
     def __init__(
         self,
