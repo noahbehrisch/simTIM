@@ -15,7 +15,7 @@ from src.core.access_utils import (
     set_link_access,
     set_node_access,
 )
-from src.core.graph import Link, Node
+from src.core.network import Link, Node
 from src.utils.version import Version
 
 if TYPE_CHECKING:
@@ -237,7 +237,10 @@ class ConditionEvaluator:
     ) -> list[Any]:
         domain_type = domain.get("type")
         if domain_type == "neighbors":
-            return [link.get_other_node(node) for link in node.links if link.get_other_node(node)]
+            if self._simulator and self._simulator.network:
+                links = self._simulator.network.get_links_for_node(node.id)
+                return [link.get_other_node(node) for link in links if link.get_other_node(node)]
+            return []
         elif domain_type == "network_nodes":
             if network_context and "nodes" in network_context:
                 return list(network_context["nodes"].values())
@@ -450,7 +453,12 @@ class ConditionEvaluator:
         elif check_type == "neighbor_count":
             operator = condition.get("operator", "equals")
             value = condition.get("value", 0)
-            neighbor_count = len(node.links)
+            links = (
+                self._simulator.network.get_links_for_node(node.id)
+                if self._simulator and self._simulator.network
+                else []
+            )
+            neighbor_count = len(links)
             if operator == "equals":
                 return neighbor_count == value
             elif operator == "greater_than":
@@ -463,6 +471,8 @@ class ConditionEvaluator:
             target_id = condition.get("target_id")
             if not network_context or not target_id:
                 return False
+            if not self._simulator or not self._simulator.network:
+                return False
             visited = set()
             queue = [node]
             while queue:
@@ -472,7 +482,8 @@ class ConditionEvaluator:
                 if current.id in visited:
                     continue
                 visited.add(current.id)
-                for link in current.links:
+                current_links = self._simulator.network.get_links_for_node(current.id)
+                for link in current_links:
                     neighbor = link.get_other_node(current)
                     if neighbor and neighbor.id not in visited:
                         queue.append(neighbor)
@@ -722,20 +733,21 @@ class ActionExecutor:
         setattr(node, counter_name, current_value + increment)
 
     def _execute_set_links_access(self, action: dict[str, Any], node: Node, actor_id: str) -> None:
-        if not hasattr(node, "links"):
+        if not self._simulator or not self._simulator.network:
             logger.debug(
-                f"set_links_access: Node {getattr(node, 'id', '?')} has no links attribute"
+                f"set_links_access: No simulator/network available for node {getattr(node, 'id', '?')}"
             )
             return
+        links = self._simulator.network.get_links_for_node(node.id)
         logger.debug(f"set_links_access on node {node.id} by {actor_id}")
-        logger.debug(f"  Node has {len(node.links)} links")
+        logger.debug(f"  Node has {len(links)} links")
         access_value = action["access_value"]
         # Convert string from JSON to LinkAccessLevel
         if isinstance(access_value, str):
             access_value = validate_link_access(access_value)
         discovered_nodes = []
         discovered_links = []
-        for link in node.links:
+        for link in links:
             old_access = get_link_access(link, actor_id)
             set_link_access(link, actor_id, access_value)
             logger.debug(f"  Link access: {old_access} → {access_value}")
@@ -758,11 +770,12 @@ class ActionExecutor:
     def _execute_set_access_neighbors(
         self, action: dict[str, Any], node: Node, actor_id: str
     ) -> None:
-        if not hasattr(node, "links"):
+        if not self._simulator or not self._simulator.network:
             return
+        links = self._simulator.network.get_links_for_node(node.id)
         access_value = action["access_value"]
         compromised_neighbors = []
-        for link in node.links:
+        for link in links:
             other_node = link.get_other_node(node)
             if other_node and (not other_node.compromised):
                 if not hasattr(other_node, "access"):

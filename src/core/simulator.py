@@ -21,8 +21,7 @@ from .exceptions import (
     NodeValidationError,
     PreconditionError,
 )
-from .graph import Link
-from .network import Network
+from .network import Link, Network
 
 logger = logging.getLogger(__name__)
 infinity = float("inf")

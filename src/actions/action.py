@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any
 # Node is only needed for type hints, not at runtime
 if TYPE_CHECKING:
     from src.core.access_levels import NodeAccessLevel
-    from src.core.graph import Node
+    from src.core.network import Node
 
 # Type alias for the callback signature used in preconditions/postconditions
 AccessCallback = Callable[["Node", "NodeAccessLevel", str], Any]

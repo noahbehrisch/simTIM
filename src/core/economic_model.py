@@ -2,7 +2,7 @@ from typing import Any
 
 from src.core.access_levels import NodeAccessLevel
 from src.core.access_utils import get_node_access
-from src.core.graph import Node
+from src.core.network import Node
 
 
 class EconomicParameters:

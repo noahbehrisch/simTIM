@@ -7,7 +7,9 @@ class BalancedDefenderStrategy(DefenderStrategy):
     def __init__(self):
         super().__init__("balanced", detection_window_hours=3.0)
 
-    def get_priority(self, action: Any, node: Any, detected_nodes: set[str] | None = None) -> float:
+    def get_priority(
+        self, action: Any, node: Any, detected_nodes: set[str] | None = None, network: Any = None
+    ) -> float:
         node_id = getattr(node, "id", str(node))
         tactic = self.get_d3fend_tactic(action)
         priority = 1.0

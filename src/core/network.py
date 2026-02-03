@@ -1,9 +1,64 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from src.core.graph import Link, Node
+if TYPE_CHECKING:
+    from src.core.access_levels import LinkAccessLevel, NodeAccessLevel
+
+
+class Node:
+    def __init__(
+        self,
+        id: str,
+        software: dict[str, str] | None = None,
+        vulnerabilities: list[str] | None = None,
+        assets: list[str] | None = None,
+    ):
+        self.id = id
+        self.software = software or {}
+        self.vulnerabilities = vulnerabilities or []
+        self.assets = assets or []
+        self.compromised = False
+        self.repaired = False
+        self.access: dict[str, NodeAccessLevel] = {}
+        self.properties: dict[str, Any] = {}
+        self.exposed_services: list[str] = []
+        self.services: dict[str, str] = {}
+        self.capabilities: list[str] = []
+        self.exposed_to_internet: bool = False
+
+    def get_software(self, key: str, default: str | None = None) -> str | None:
+        return self.software.get(key, default)
+
+    def get_vulnerability(self, vuln: str) -> bool:
+        return vuln in self.vulnerabilities
+
+    def get_asset(self, asset: str) -> bool:
+        return asset in self.assets
+
+    def get_property(self, key: str, default: Any = None) -> Any:
+        return self.properties.get(key, default)
+
+    def __repr__(self) -> str:
+        return f"Node(id={self.id}, compromised={self.compromised}, assets={len(self.assets)}, vulnerabilities={len(self.vulnerabilities)})"
+
+
+class Link:
+    def __init__(self, node1: Node, node2: Node, bidirectional: bool = True, latency: float = 0.0):
+        self.node1 = node1
+        self.node2 = node2
+        self.bidirectional = bidirectional
+        self.latency = latency
+        self.access: dict[str, LinkAccessLevel] = {}
+
+    def get_other_node(self, node: Node) -> Node | None:
+        """Return the node on the other end of this link."""
+        if self.node1.id == node.id:
+            return self.node2
+        elif self.node2.id == node.id:
+            return self.node1
+        return None
 
 
 @dataclass

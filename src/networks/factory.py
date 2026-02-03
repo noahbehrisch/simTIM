@@ -7,8 +7,7 @@ Creates Network objects from JSON configurations.
 import logging
 from typing import Any
 
-from src.core.graph import Link, Node
-from src.core.network import Network
+from src.core.network import Link, Network, Node
 from src.networks.validation import NetworkValidator
 
 logger = logging.getLogger(__name__)

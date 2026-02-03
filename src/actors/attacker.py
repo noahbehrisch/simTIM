@@ -4,7 +4,7 @@ from typing import Any
 from src.core.access_levels import NodeAccessLevel
 from src.core.access_utils import get_node_access, set_node_access
 from src.core.economic_model import calculate_action_gain
-from src.core.graph import Node
+from src.core.network import Node
 
 from .actor import Actor
 from .strategies import get_attacker_strategy
@@ -86,9 +86,10 @@ class Attacker(Actor):
                 self.on_successful_attack(action, target, self.simulator.current_time)
 
     def _discover_links_from_node(self, node: Node):
-        if not hasattr(node, "links"):
+        if not hasattr(self, "simulator") or not self.simulator or not self.simulator.network:
             return
-        for link in node.links:
+        links = self.simulator.network.get_links_for_node(node.id)
+        for link in links:
             if link not in self.visible_links:
                 self.visible_links.add(link)
             connected_node = link.node1 if link.node2.id == node.id else link.node2

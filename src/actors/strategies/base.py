@@ -15,10 +15,12 @@ class AttackerStrategy(ABC):
     def choose_action(self, attacker: Any, network_state: Any) -> tuple[Any, Any] | None:
         visible_nodes = list(attacker.visible_nodes)
 
+        # Get links from network_state (which is the Network object)
         for node in list(visible_nodes):
             access_level = get_node_access(node, attacker.id)
             if access_level >= NodeAccessLevel.USER:
-                for link in getattr(node, "links", []):
+                links = network_state.get_links_for_node(node.id) if network_state else []
+                for link in links:
                     connected = link.node1 if link.node2.id == node.id else link.node2
                     if connected not in visible_nodes:
                         visible_nodes.append(connected)
@@ -34,8 +36,6 @@ class AttackerStrategy(ABC):
                 continue
             if action.is_node_action():
                 for node in visible_nodes:
-                    if not hasattr(node, "links"):
-                        continue
                     if self._is_action_ongoing(attacker, action, node):
                         continue
                     actor_access = get_node_access(node, attacker.id)
@@ -94,14 +94,14 @@ class DefenderStrategy(ABC):
         for action in defender.available_actions:
             if action.is_node_action():
                 for node in nodes_list:
-                    if not hasattr(node, "links"):
-                        continue
                     if self._is_action_ongoing(defender, action, node):
                         continue
                     actor_access = get_node_access(node, defender.id)
                     try:
                         if action.precondition(node, actor_access, defender.id):
-                            priority = self.get_priority(action, node, detected_node_ids)
+                            priority = self.get_priority(
+                                action, node, detected_node_ids, network_state
+                            )
                             if priority > best_priority:
                                 best = (action, node)
                                 best_priority = priority
@@ -150,5 +150,7 @@ class DefenderStrategy(ABC):
         return "Unknown"
 
     @abstractmethod
-    def get_priority(self, action: Any, node: Any, detected_nodes: set[str] | None = None) -> float:
+    def get_priority(
+        self, action: Any, node: Any, detected_nodes: set[str] | None = None, network: Any = None
+    ) -> float:
         pass

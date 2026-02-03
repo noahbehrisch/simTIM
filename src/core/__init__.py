@@ -38,8 +38,7 @@ from .exceptions import (
     SimulationError,
     ValidationError,
 )
-from .graph import Link, Node
-from .network import Network
+from .network import Link, Network, Node
 from .simulation_orchestrator import SimulationOrchestrator, run_variable_scenarios
 from .simulation_runner import SimulationRunner
 from .simulator import Event, Simulator
