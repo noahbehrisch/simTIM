@@ -200,11 +200,12 @@ class NetworkTab(BaseTab):
             self.network_file_var.set(file_path)
 
     def launch_visualizer(self):
-        from src.core.graph import Graph
+        from src.networks import NetworkLoader
         from src.networks.network_visualizer import NetworkVisualizer
 
         network_path = self.network_file_var.get()
-        network = Graph.from_json(network_path)
+        loader = NetworkLoader()
+        network = loader.load(network_path)
         visualizer = NetworkVisualizer(network)
         visualizer.visualize()
 

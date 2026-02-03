@@ -4,6 +4,13 @@ import matplotlib.pyplot as plt
 
 
 class NetworkVisualizer:
+    """Visualizes network topology using matplotlib."""
+
+    # Colors matching the network creator
+    COLOR_EXPOSED = "#ff6b6b"  # Red for internet-exposed nodes
+    COLOR_INTERNAL = "#4ecdc4"  # Teal for internal nodes
+    COLOR_LINK = "#888888"  # Gray for links
+
     def __init__(self, network):
         self.network = network
         self.node_positions = {}
@@ -11,58 +18,114 @@ class NetworkVisualizer:
 
     def _initialize_positions(self):
         num_nodes = len(self.network.nodes)
+        if num_nodes == 0:
+            return
+
         radius = 5
         for i, node_id in enumerate(self.network.nodes):
-            angle = 2 * math.pi * i / num_nodes
-            x = radius * math.cos(angle)
-            y = radius * math.sin(angle)
-            self.node_positions[node_id] = (x, y)
+            node = self.network.nodes[node_id]
+            # Check for saved coordinates in properties
+            x = node.properties.get("x")
+            y = node.properties.get("y")
 
-    def _draw_network(self):
-        plt.clf()
-        ax = plt.gca()
+            if x is not None and y is not None:
+                # Use saved coordinates (scale down for matplotlib)
+                self.node_positions[node_id] = (x / 50, y / 50)
+            else:
+                # Fall back to circular layout
+                angle = 2 * math.pi * i / num_nodes
+                self.node_positions[node_id] = (
+                    radius * math.cos(angle),
+                    radius * math.sin(angle),
+                )
+
+    def _get_node_color(self, node_id):
+        node = self.network.nodes[node_id]
+        exposed = node.exposed_to_internet or node.properties.get("exposed_to_internet", False)
+        return self.COLOR_EXPOSED if exposed else self.COLOR_INTERNAL
+
+    def _draw_network(self, ax=None):
+        if ax is None:
+            ax = plt.gca()
+
+        ax.clear()
         ax.set_aspect("equal", adjustable="datalim")
+
+        if not self.node_positions:
+            ax.text(0.5, 0.5, "No nodes to display", ha="center", va="center")
+            return
+
+        # Calculate bounds
         all_x = [pos[0] for pos in self.node_positions.values()]
         all_y = [pos[1] for pos in self.node_positions.values()]
-        margin = 1
+        margin = 1.5
         ax.set_xlim(min(all_x) - margin, max(all_x) + margin)
         ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
+
+        # Draw links first (behind nodes)
         for link in self.network.links:
-            node1_pos = self.node_positions[link.node1.id]
-            node2_pos = self.node_positions[link.node2.id]
-            ax.plot(
-                [node1_pos[0], node2_pos[0]],
-                [node1_pos[1], node2_pos[1]],
-                color="gray",
-                linestyle="-",
-                linewidth=1,
-            )
+            node1_pos = self.node_positions.get(link.node1.id)
+            node2_pos = self.node_positions.get(link.node2.id)
+            if node1_pos and node2_pos:
+                ax.plot(
+                    [node1_pos[0], node2_pos[0]],
+                    [node1_pos[1], node2_pos[1]],
+                    color=self.COLOR_LINK,
+                    linestyle="-",
+                    linewidth=2,
+                    zorder=1,
+                )
+
+        # Draw nodes
         for node_id, position in self.node_positions.items():
-            ax.scatter(position[0], position[1], color="lightblue", s=200, zorder=2)
+            color = self._get_node_color(node_id)
+            ax.scatter(
+                position[0],
+                position[1],
+                color=color,
+                s=400,
+                zorder=2,
+                edgecolors="black",
+                linewidths=1.5,
+            )
             ax.text(
                 position[0],
                 position[1],
-                node_id,
-                fontsize=10,
+                node_id[:10],
+                fontsize=8,
                 ha="center",
                 va="center",
                 zorder=3,
+                fontweight="bold",
             )
 
-    def _update(self, frame):
-        self._draw_network()
-        ax = plt.gca()
-        all_x = [pos[0] for pos in self.node_positions.values()]
-        all_y = [pos[1] for pos in self.node_positions.values()]
-        margin = 1
-        ax.set_xlim(min(all_x) - margin, max(all_x) + margin)
-        ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
+        # Hide axes for cleaner look
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+        ax.spines["left"].set_visible(False)
 
     def visualize(self):
-        fig, ax = plt.subplots(figsize=(8, 6))
-        self._draw_network()
+        """Display the network in a matplotlib window."""
+        fig, ax = plt.subplots(figsize=(10, 8))
+        fig.suptitle("Network Topology", fontsize=14, fontweight="bold")
+        self._draw_network(ax)
+
+        # Add legend
+        from matplotlib.patches import Patch
+
+        legend_elements = [
+            Patch(facecolor=self.COLOR_EXPOSED, edgecolor="black", label="Exposed to Internet"),
+            Patch(facecolor=self.COLOR_INTERNAL, edgecolor="black", label="Internal"),
+        ]
+        ax.legend(handles=legend_elements, loc="upper right")
+
+        plt.tight_layout()
         plt.show()
 
     def update_plot(self):
+        """Refresh the plot."""
         plt.clf()
         self.visualize()

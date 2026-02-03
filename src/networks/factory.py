@@ -124,6 +124,12 @@ class NetworkFactory:
         properties = node_config.get("properties", {})
         node.properties.update(properties)
 
+        # Copy x, y coordinates if present (for visualization)
+        if "x" in node_config:
+            node.properties["x"] = node_config["x"]
+        if "y" in node_config:
+            node.properties["y"] = node_config["y"]
+
         # Handle special properties
         node.exposed_to_internet = properties.get("exposed_to_internet", False)
         node.exposed_services = node_config.get(

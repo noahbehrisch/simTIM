@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ROADMAP.md
 - Progress Bar
 - Simulation Runner with threads
+- Grid in Network Creator canvas
+- Network creator saves and loads coordinates
 
 ### Fixed
 
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 - simulation_main got refactored into simulation_orchestrator
+- network visualizer now uses coordinates and unified color scheme
 
 ## [0.6.0] - 2026-01-26
 
