@@ -30,6 +30,8 @@ class FileOperations:
                     {
                         "id": node["id"],
                         "name": node["name"],
+                        "x": node["x"],
+                        "y": node["y"],
                         "software": node["software"],
                         "vulnerabilities": node["vulnerabilities"],
                         "assets": node["assets"],
@@ -71,9 +73,14 @@ class FileOperations:
                 self.links = []
                 for i, node in enumerate(data.get("nodes", [])):
                     node_id = node["id"]
-                    angle = 2 * math.pi * i / len(data["nodes"])
-                    x = 400 + 200 * math.cos(angle)
-                    y = 300 + 200 * math.sin(angle)
+                    # Use saved coordinates if available, otherwise calculate circular layout
+                    if "x" in node and "y" in node:
+                        x = node["x"]
+                        y = node["y"]
+                    else:
+                        angle = 2 * math.pi * i / len(data["nodes"])
+                        x = 400 + 200 * math.cos(angle)
+                        y = 300 + 200 * math.sin(angle)
                     self.nodes[node_id] = {
                         "id": node_id,
                         "name": node.get("name", node_id),

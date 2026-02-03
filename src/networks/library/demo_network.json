@@ -1,29 +1,26 @@
 {
-  "name": "Academic Demo Network",
-  "description": "A network designed to demonstrate and test all TIM simulator capabilities including attack chains, lateral movement, privilege escalation, detection, and defense mechanisms.",
-  "metadata": {
-    "purpose": "academic_demonstration",
-    "created": "2026-01-26",
-    "author": "simTIM Academic Demo"
-  },
+  "name": "Custom Network",
+  "description": "Custom network with 6 nodes and 6 links",
   "nodes": [
     {
       "id": "webserver",
-      "type": "server",
-      "zone": "dmz",
+      "name": "webserver",
+      "x": 720,
+      "y": 180,
       "software": {
         "os": "Ubuntu Server",
         "version": "20.04",
         "web_server": "Apache",
         "web_version": "2.4.41"
       },
-      "vulnerabilities": ["CVE-2021-41773", "CVE-2021-42013"],
-      "assets": ["public_website", "web_logs"],
-      "services": {
-        "HTTP": "running",
-        "HTTPS": "running",
-        "SSH": "running"
-      },
+      "vulnerabilities": [
+        "CVE-2021-41773",
+        "CVE-2021-42013"
+      ],
+      "assets": [
+        "public_website",
+        "web_logs"
+      ],
       "properties": {
         "exposed_to_internet": true,
         "criticality": "high",
@@ -34,19 +31,21 @@
     },
     {
       "id": "mailserver",
-      "type": "server",
-      "zone": "dmz",
+      "name": "mailserver",
+      "x": 720,
+      "y": 420,
       "software": {
         "os": "Debian",
         "version": "11",
         "mail_server": "Postfix"
       },
-      "vulnerabilities": ["CVE-2020-28948"],
-      "assets": ["email_database", "user_credentials"],
-      "services": {
-        "SMTP": "running",
-        "SSH": "running"
-      },
+      "vulnerabilities": [
+        "CVE-2020-28948"
+      ],
+      "assets": [
+        "email_database",
+        "user_credentials"
+      ],
       "properties": {
         "exposed_to_internet": true,
         "criticality": "high",
@@ -57,19 +56,23 @@
     },
     {
       "id": "workstation_win",
-      "type": "workstation",
-      "zone": "internal",
+      "name": "workstation_win",
+      "x": 540,
+      "y": 300,
       "software": {
         "os": "Windows",
         "version": "10 Pro",
         "office": "Microsoft 365"
       },
-      "vulnerabilities": ["CVE-2021-34527", "CVE-2022-21999"],
-      "assets": ["user_documents", "browser_credentials", "cached_passwords"],
-      "services": {
-        "RDP": "running",
-        "SMB": "running"
-      },
+      "vulnerabilities": [
+        "CVE-2021-34527",
+        "CVE-2022-21999"
+      ],
+      "assets": [
+        "user_documents",
+        "browser_credentials",
+        "cached_passwords"
+      ],
       "properties": {
         "exposed_to_internet": false,
         "criticality": "medium",
@@ -80,21 +83,23 @@
     },
     {
       "id": "domain_controller",
-      "type": "server",
-      "zone": "internal",
+      "name": "domain_controller",
+      "x": 360,
+      "y": 300,
       "software": {
         "os": "Windows Server",
         "version": "2019",
         "role": "Active Directory"
       },
-      "vulnerabilities": ["CVE-2020-1472"],
-      "assets": ["domain_credentials", "gpo_policies", "user_database", "kerberos_keys"],
-      "services": {
-        "LDAP": "running",
-        "Kerberos": "running",
-        "SMB": "running",
-        "RDP": "running"
-      },
+      "vulnerabilities": [
+        "CVE-2020-1472"
+      ],
+      "assets": [
+        "domain_credentials",
+        "gpo_policies",
+        "user_database",
+        "kerberos_keys"
+      ],
       "properties": {
         "exposed_to_internet": false,
         "criticality": "critical",
@@ -105,20 +110,24 @@
     },
     {
       "id": "database_server",
-      "type": "server",
-      "zone": "backend",
+      "name": "database_server",
+      "x": 180,
+      "y": 420,
       "software": {
         "os": "Ubuntu Server",
         "version": "22.04",
         "database": "PostgreSQL",
         "db_version": "14.5"
       },
-      "vulnerabilities": ["CVE-2022-1552"],
-      "assets": ["customer_pii", "financial_records", "transaction_logs", "backup_data"],
-      "services": {
-        "PostgreSQL": "running",
-        "SSH": "running"
-      },
+      "vulnerabilities": [
+        "CVE-2022-1552"
+      ],
+      "assets": [
+        "customer_pii",
+        "financial_records",
+        "transaction_logs",
+        "backup_data"
+      ],
       "properties": {
         "exposed_to_internet": false,
         "criticality": "critical",
@@ -130,19 +139,23 @@
     },
     {
       "id": "backup_server",
-      "type": "server",
-      "zone": "backend",
+      "name": "backup_server",
+      "x": 180,
+      "y": 180,
       "software": {
         "os": "Windows Server",
         "version": "2016",
         "backup_software": "Veeam"
       },
-      "vulnerabilities": ["CVE-2022-26500", "CVE-2022-26501"],
-      "assets": ["backup_archives", "encryption_keys", "disaster_recovery_data"],
-      "services": {
-        "SMB": "running",
-        "RDP": "running"
-      },
+      "vulnerabilities": [
+        "CVE-2022-26500",
+        "CVE-2022-26501"
+      ],
+      "assets": [
+        "backup_archives",
+        "encryption_keys",
+        "disaster_recovery_data"
+      ],
       "properties": {
         "exposed_to_internet": false,
         "criticality": "high",
@@ -156,62 +169,32 @@
     {
       "node1": "webserver",
       "node2": "workstation_win",
-      "bidirectional": true,
-      "properties": {
-        "connection_type": "vlan",
-        "bandwidth": "1Gbps",
-        "firewall_filtered": false
-      }
+      "bidirectional": true
     },
     {
       "node1": "mailserver",
       "node2": "workstation_win",
-      "bidirectional": true,
-      "properties": {
-        "connection_type": "vlan",
-        "bandwidth": "1Gbps",
-        "firewall_filtered": false
-      }
+      "bidirectional": true
     },
     {
       "node1": "workstation_win",
       "node2": "domain_controller",
-      "bidirectional": true,
-      "properties": {
-        "connection_type": "vlan",
-        "bandwidth": "1Gbps",
-        "firewall_filtered": false
-      }
+      "bidirectional": true
     },
     {
       "node1": "domain_controller",
       "node2": "database_server",
-      "bidirectional": true,
-      "properties": {
-        "connection_type": "vlan",
-        "bandwidth": "10Gbps",
-        "firewall_filtered": true
-      }
+      "bidirectional": true
     },
     {
       "node1": "domain_controller",
       "node2": "backup_server",
-      "bidirectional": true,
-      "properties": {
-        "connection_type": "vlan",
-        "bandwidth": "10Gbps",
-        "firewall_filtered": false
-      }
+      "bidirectional": true
     },
     {
       "node1": "database_server",
       "node2": "backup_server",
-      "bidirectional": true,
-      "properties": {
-        "connection_type": "dedicated",
-        "bandwidth": "10Gbps",
-        "firewall_filtered": false
-      }
+      "bidirectional": true
     }
   ]
 }
