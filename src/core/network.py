@@ -12,6 +12,7 @@ class Network:
     links: list[Link] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    # Properties
     @property
     def nodes_list(self) -> list[Node]:
         return list(self.nodes.values())
@@ -20,6 +21,15 @@ class Network:
     def links_list(self) -> list[Link]:
         return self.links
 
+    @property
+    def node_count(self) -> int:
+        return len(self.nodes)
+
+    @property
+    def link_count(self) -> int:
+        return len(self.links)
+
+    # Node functions
     def get_node(self, node_id: str) -> Node | None:
         return self.nodes.get(node_id)
 
@@ -34,9 +44,7 @@ class Network:
             ]
         return node
 
-    def has_node(self, node_id: str) -> bool:
-        return node_id in self.nodes
-
+    # Link functions
     def add_link(self, link: Link) -> None:
         if link not in self.links:
             self.links.append(link)
@@ -50,79 +58,7 @@ class Network:
     def get_links_for_node(self, node_id: str) -> list[Link]:
         return [link for link in self.links if link.node1.id == node_id or link.node2.id == node_id]
 
-    def get_exposed_nodes(self) -> list[Node]:
-        return [
-            node
-            for node in self.nodes.values()
-            if node.properties.get("exposed_to_internet", False)
-        ]
-
-    def get_compromised_nodes(self) -> list[Node]:
-        return [node for node in self.nodes.values() if node.compromised]
-
-    def get_neighbors(self, node: Node) -> list[Node]:
-        neighbors = []
-        for link in node.links:
-            other = link.get_other_node(node)
-            if other:
-                neighbors.append(other)
-        return neighbors
-
-    def get_nodes_by_property(self, prop_name: str, prop_value: Any) -> list[Node]:
-        return [
-            node for node in self.nodes.values() if node.properties.get(prop_name) == prop_value
-        ]
-
-    def get_nodes_with_vulnerability(self, vuln: str) -> list[Node]:
-        return [node for node in self.nodes.values() if vuln in node.vulnerabilities]
-
-    def get_nodes_with_software(self, software_name: str) -> list[Node]:
-        return [node for node in self.nodes.values() if software_name in node.software]
-
-    @property
-    def node_count(self) -> int:
-        return len(self.nodes)
-
-    @property
-    def link_count(self) -> int:
-        return len(self.links)
-
-    def get_statistics(self) -> dict[str, Any]:
-        return {
-            "node_count": self.node_count,
-            "link_count": self.link_count,
-            "exposed_nodes": len(self.get_exposed_nodes()),
-            "compromised_nodes": len(self.get_compromised_nodes()),
-        }
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "nodes": self.nodes,
-            "nodes_list": self.nodes_list,
-            "links": self.links,
-            "links_list": self.links_list,
-            **self.metadata,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Network:
-        network = cls()
-
-        if "nodes" in data:
-            if isinstance(data["nodes"], dict):
-                network.nodes = data["nodes"]
-            elif isinstance(data["nodes"], list):
-                for node in data["nodes"]:
-                    if isinstance(node, Node):
-                        network.nodes[node.id] = node
-
-        if "links" in data:
-            network.links = list(data["links"])
-        elif "links_list" in data:
-            network.links = list(data["links_list"])
-
-        return network
-
+    # Dunder methods
     def __len__(self) -> int:
         return len(self.nodes)
 
