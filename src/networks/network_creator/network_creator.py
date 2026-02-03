@@ -37,7 +37,7 @@ class NetworkCreator(
         self.drag_start_y = 0
         self.selection_box_active = False
         self.selection_box_start = None
-        self.snap_size = 60
+        self.snap_size = 60  # grid_size is already used by tkinter
         self.create_widgets()
         self.transient(parent)
 
