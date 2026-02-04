@@ -72,3 +72,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Performance
 
 - Multithreading with diables GIL or Multiprocessing -> one simulation per thread with its own instances (no global instances)
+
+## Github
+
+- securing main branch -> rulesets?
