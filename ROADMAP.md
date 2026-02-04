@@ -24,7 +24,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Core
 
 - Better implementation of scenario comparison -> see simulation_orchestrator.py
-- Simulation Behavior
+- [!] Simulation Behavior
 - Different instances for every run -> check economic model especially
 
 ## GUI
@@ -35,26 +35,27 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Visualization
 
-- Path through network visualizer
+- [!] Path through network visualizer
 - export visualizations
-- seperation into different files for each plot
+- [!] seperation into different files for each plot
 
 ## Network
 
-- Implement the ability to change node properties in the network creator
+- [!] Implement the ability to change node properties in the network creator
 - Change Properties in the GUI
-- mapping versions to vulnerabilities
+- [!] mapping versions to vulnerabilities
 - Dynamic Behavior
 
 ## Software Architecture
 
 - using and explaining design patterns where useful -> write clean code and refactor bad code
+- Safe imports everywhere -> typecheck
 
 ## Actions
 
 - Modifiable Actions
 - Action Creator
-- Puzzling Actions together with properties
+- [!] Puzzling Actions together with properties
 
 ## Strategies
 
