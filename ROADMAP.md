@@ -64,6 +64,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Testing
 
+- [!] big Network Test
 - create a tests/ folder with tests for every part of the simulator
 - more demo/test networks
 - Test the app on different operating systems (Arch, Ubuntu, Windows, MacOS)
