@@ -44,7 +44,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 - Implement the ability to change node properties in the network creator
 - Change Properties in the GUI
 - mapping versions to vulnerabilities
-- Make the canvas of the network creator scrollable and zoomable
 - Dynamic Behavior
 
 ## Software Architecture
