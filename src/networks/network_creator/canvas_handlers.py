@@ -1,4 +1,61 @@
 class CanvasHandlers:
+    def screen_to_canvas(self, event):
+        canvas_x = self.canvas.canvasx(event.x)
+        canvas_y = self.canvas.canvasy(event.y)
+        return canvas_x / self.zoom_scale, canvas_y / self.zoom_scale
+
+    def pan_start(self, event):
+        self.canvas.scan_mark(event.x, event.y)
+
+    def pan_move(self, event):
+        self.canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def pan_end(self, event):
+        pass
+
+    def on_zoom(self, event):
+        if event.delta > 0:
+            self.zoom_in(event)
+        else:
+            self.zoom_out(event)
+
+    def on_zoom_in(self, event):
+        self.zoom_in(event)
+
+    def on_zoom_out(self, event):
+        self.zoom_out(event)
+
+    def zoom_in(self, event):
+        if self.zoom_scale < self.max_zoom:
+            self.apply_zoom(1.1, event)
+
+    def zoom_out(self, event):
+        if self.zoom_scale > self.min_zoom:
+            self.apply_zoom(1 / 1.1, event)
+
+    def apply_zoom(self, factor, event):
+        canvas_x = self.canvas.canvasx(event.x)
+        canvas_y = self.canvas.canvasy(event.y)
+
+        self.zoom_scale *= factor
+        self.zoom_scale = max(self.min_zoom, min(self.max_zoom, self.zoom_scale))
+
+        half = self.canvas_half_extent * self.zoom_scale
+        self.canvas.config(scrollregion=(-half, -half, half, half))
+
+        new_canvas_x = canvas_x * factor
+        new_canvas_y = canvas_y * factor
+
+        self.canvas.xview_moveto((new_canvas_x - event.x + half) / (2 * half))
+        self.canvas.yview_moveto((new_canvas_y - event.y + half) / (2 * half))
+
+        self.draw_network()
+        self.status_label.config(
+            text=f"Zoom: {self.zoom_scale:.0%}",
+            bg=self.theme.COLORS["bg_sidebar"],
+            fg=self.theme.COLORS["text_primary"],
+        )
+
     def start_link_creation(self):
         if len(self.nodes) < 2:
             return
@@ -11,9 +68,10 @@ class CanvasHandlers:
         )
 
     def canvas_click(self, event):
-        clicked_node = self.find_node_at(event.x, event.y)
-        self.drag_start_x = event.x
-        self.drag_start_y = event.y
+        cx, cy = self.screen_to_canvas(event)
+        clicked_node = self.find_node_at(cx, cy)
+        self.drag_start_x = cx
+        self.drag_start_y = cy
         if self.link_mode:
             if self.link_start_node is None:
                 if clicked_node:
@@ -96,7 +154,7 @@ class CanvasHandlers:
             self.selected_nodes = []
             self.dragging_node = None
             self.selection_box_active = True
-            self.selection_box_start = (event.x, event.y)
+            self.selection_box_start = (cx, cy)
             self.draw_network()
             self.update_button_states()
             self.status_label.config(
@@ -111,47 +169,83 @@ class CanvasHandlers:
                 return node_id
         return None
 
+    def line_intersects_rect(self, x1, y1, x2, y2, rx1, ry1, rx2, ry2):
+        if (rx1 <= x1 <= rx2 and ry1 <= y1 <= ry2) or (rx1 <= x2 <= rx2 and ry1 <= y2 <= ry2):
+            return True
+        edges = [
+            (rx1, ry1, rx2, ry1),
+            (rx2, ry1, rx2, ry2),
+            (rx2, ry2, rx1, ry2),
+            (rx1, ry2, rx1, ry1),
+        ]
+        for ex1, ey1, ex2, ey2 in edges:
+            if self.segments_intersect(x1, y1, x2, y2, ex1, ey1, ex2, ey2):
+                return True
+        return False
+
+    def segments_intersect(self, x1, y1, x2, y2, x3, y3, x4, y4):
+        def ccw(ax, ay, bx, by, cx, cy):
+            return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
+
+        if ccw(x1, y1, x3, y3, x4, y4) != ccw(x2, y2, x3, y3, x4, y4) and ccw(
+            x1, y1, x2, y2, x3, y3
+        ) != ccw(x1, y1, x2, y2, x4, y4):
+            return True
+        return False
+
     def canvas_drag(self, event):
+        cx, cy = self.screen_to_canvas(event)
         if self.selection_box_active and self.selection_box_start:
             self.draw_network()
             x1, y1 = self.selection_box_start
+            scale = self.zoom_scale
             self.canvas.create_rectangle(
-                x1,
-                y1,
-                event.x,
-                event.y,
+                x1 * scale,
+                y1 * scale,
+                cx * scale,
+                cy * scale,
                 outline="blue",
                 width=2,
                 dash=(4, 4),
                 tags="selection_box",
             )
         elif not self.link_mode and self.dragging_node:
-            dx = event.x - self.drag_start_x
-            dy = event.y - self.drag_start_y
+            dx = cx - self.drag_start_x
+            dy = cy - self.drag_start_y
             if abs(dx) > 3 or abs(dy) > 3:
-                snapped_x, snapped_y = self.snap_to_grid(event.x, event.y)
+                snapped_x, snapped_y = self.snap_to_grid(cx, cy)
                 self.nodes[self.dragging_node]["x"] = snapped_x
                 self.nodes[self.dragging_node]["y"] = snapped_y
                 self.draw_network()
-                self.drag_start_x = event.x
-                self.drag_start_y = event.y
+                self.drag_start_x = cx
+                self.drag_start_y = cy
 
     def canvas_release(self, event):
+        cx, cy = self.screen_to_canvas(event)
         if self.selection_box_active and self.selection_box_start:
             x1, y1 = self.selection_box_start
-            x2, y2 = (event.x, event.y)
+            x2, y2 = (cx, cy)
             min_x, max_x = (min(x1, x2), max(x1, x2))
             min_y, max_y = (min(y1, y2), max(y1, y2))
             self.selected_nodes = []
             for node_id, node in self.nodes.items():
                 if min_x <= node["x"] <= max_x and min_y <= node["y"] <= max_y:
                     self.selected_nodes.append(node_id)
+            self.selected_links = []
+            for i, link in enumerate(self.links):
+                n1 = self.nodes[link["node1"]]
+                n2 = self.nodes[link["node2"]]
+                if self.line_intersects_rect(
+                    n1["x"], n1["y"], n2["x"], n2["y"], min_x, min_y, max_x, max_y
+                ):
+                    self.selected_links.append(i)
             self.selection_box_active = False
             self.selection_box_start = None
             self.draw_network()
-            if self.selected_nodes:
+            total_selected = len(self.selected_nodes) + len(self.selected_links)
+            if total_selected > 0:
                 self.status_label.config(
-                    text=f"{len(self.selected_nodes)} node(s) selected. Click 'Delete Selected' to remove them.",
+                    text=f"{len(self.selected_nodes)} node(s), {len(self.selected_links)} link(s) selected. Click 'Delete Selected' to remove.",
                     bg="#d1ecf1",
                     fg="#0c5460",
                 )
@@ -162,7 +256,7 @@ class CanvasHandlers:
                     fg=self.theme.COLORS["text_primary"],
                 )
         elif self.dragging_node and (not self.link_mode):
-            snapped_x, snapped_y = self.snap_to_grid(event.x, event.y)
+            snapped_x, snapped_y = self.snap_to_grid(cx, cy)
             self.nodes[self.dragging_node]["x"] = snapped_x
             self.nodes[self.dragging_node]["y"] = snapped_y
             self.draw_network()
@@ -176,7 +270,8 @@ class CanvasHandlers:
             self.dragging_node = None
 
     def canvas_right_click(self, event):
-        clicked_node = self.find_node_at(event.x, event.y)
+        cx, cy = self.screen_to_canvas(event)
+        clicked_node = self.find_node_at(cx, cy)
         if clicked_node:
             self.right_click_link_start = clicked_node
             self.status_label.config(
@@ -189,11 +284,13 @@ class CanvasHandlers:
         if self.right_click_link_start:
             self.draw_network()
             start_node = self.nodes[self.right_click_link_start]
+            cx, cy = self.screen_to_canvas(event)
+            scale = self.zoom_scale
             self.canvas.create_line(
-                start_node["x"],
-                start_node["y"],
-                event.x,
-                event.y,
+                start_node["x"] * scale,
+                start_node["y"] * scale,
+                cx * scale,
+                cy * scale,
                 fill="red",
                 width=2,
                 dash=(4, 4),
@@ -202,7 +299,8 @@ class CanvasHandlers:
 
     def canvas_right_release(self, event):
         if self.right_click_link_start:
-            target_node = self.find_node_at(event.x, event.y)
+            cx, cy = self.screen_to_canvas(event)
+            target_node = self.find_node_at(cx, cy)
             if target_node and target_node != self.right_click_link_start:
                 link_exists = any(
                     link["node1"] == self.right_click_link_start
@@ -251,8 +349,14 @@ class CanvasHandlers:
             self.draw_network()
 
     def delete_selected(self):
+        num_nodes_deleted = 0
+        num_links_deleted = 0
+        if self.selected_links:
+            num_links_deleted = len(self.selected_links)
+            self.links = [link for i, link in enumerate(self.links) if i not in self.selected_links]
+            self.selected_links = []
         if self.selected_nodes:
-            num_deleted = len(self.selected_nodes)
+            num_nodes_deleted = len(self.selected_nodes)
             for node_id in self.selected_nodes:
                 if node_id in self.nodes:
                     del self.nodes[node_id]
@@ -264,11 +368,12 @@ class CanvasHandlers:
             ]
             self.selected_nodes = []
             self.selected_node = None
+        if num_nodes_deleted > 0 or num_links_deleted > 0:
             self.draw_network()
             self.update_properties_display()
             self.update_button_states()
             self.status_label.config(
-                text=f"{num_deleted} node(s) deleted. Total nodes: {len(self.nodes)}",
+                text=f"{num_nodes_deleted} node(s), {num_links_deleted} link(s) deleted. Total nodes: {len(self.nodes)}",
                 bg=self.theme.COLORS["bg_sidebar"],
                 fg=self.theme.COLORS["text_primary"],
             )
@@ -292,27 +397,41 @@ class CanvasHandlers:
 
     def draw_network(self):
         self.canvas.delete("all")
-        for link in self.links:
+        scale = self.zoom_scale
+        for i, link in enumerate(self.links):
             n1 = self.nodes[link["node1"]]
             n2 = self.nodes[link["node2"]]
-            self.canvas.create_line(n1["x"], n1["y"], n2["x"], n2["y"], fill="gray", width=2)
+            is_selected = i in self.selected_links
+            color = "blue" if is_selected else "gray"
+            width = 4 if is_selected else 2
+            self.canvas.create_line(
+                n1["x"] * scale,
+                n1["y"] * scale,
+                n2["x"] * scale,
+                n2["y"] * scale,
+                fill=color,
+                width=max(1, int(width * scale)),
+            )
         for node_id, node in self.nodes.items():
             color = "#ff6b6b" if node["properties"].get("exposed_to_internet") else "#4ecdc4"
             is_selected = node_id == self.selected_node or node_id in self.selected_nodes
             outline_color = "blue" if is_selected else "black"
             outline_width = 4 if is_selected else 2
+            radius = 20 * scale
+            x, y = node["x"] * scale, node["y"] * scale
             self.canvas.create_oval(
-                node["x"] - 20,
-                node["y"] - 20,
-                node["x"] + 20,
-                node["y"] + 20,
+                x - radius,
+                y - radius,
+                x + radius,
+                y + radius,
                 fill=color,
                 outline=outline_color,
-                width=outline_width,
+                width=max(1, int(outline_width * scale)),
             )
+            font_size = max(8, int(10 * scale))
             self.canvas.create_text(
-                node["x"],
-                node["y"],
+                x,
+                y,
                 text=node["id"][:8],
-                font=self.theme.FONTS["body_small"],
+                font=(self.theme.FONTS["body_small"][0], font_size),
             )

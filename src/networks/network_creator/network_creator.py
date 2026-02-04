@@ -28,6 +28,7 @@ class NetworkCreator(
         self.links = []
         self.selected_node = None
         self.selected_nodes = []
+        self.selected_links = []
         self.link_start_node = None
         self.link_mode = False
         self.right_click_link_start = None
@@ -38,6 +39,10 @@ class NetworkCreator(
         self.selection_box_active = False
         self.selection_box_start = None
         self.snap_size = 60  # grid_size is already used by tkinter
+        self.zoom_scale = 1.0
+        self.min_zoom = 0.25
+        self.max_zoom = 4.0
+        self.canvas_half_extent = 2000
         self.create_widgets()
         self.transient(parent)
 
@@ -197,14 +202,44 @@ class NetworkCreator(
             content_frame, bg=self.theme.COLORS["bg_secondary"], relief=tk.SUNKEN, bd=2
         )
         self.canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        self.canvas = tk.Canvas(self.canvas_frame, bg="white", width=800, height=600)
+        self.v_scrollbar = tk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
+        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.h_scrollbar = tk.Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL)
+        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.canvas = tk.Canvas(
+            self.canvas_frame,
+            bg="white",
+            width=800,
+            height=600,
+            xscrollcommand=self.h_scrollbar.set,
+            yscrollcommand=self.v_scrollbar.set,
+            scrollregion=(
+                -self.canvas_half_extent,
+                -self.canvas_half_extent,
+                self.canvas_half_extent,
+                self.canvas_half_extent,
+            ),
+        )
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.v_scrollbar.config(command=self.canvas.yview)
+        self.h_scrollbar.config(command=self.canvas.xview)
+        self.canvas.xview_moveto(0.5)
+        self.canvas.yview_moveto(0.5)
         self.canvas.bind("<Button-1>", self.canvas_click)
         self.canvas.bind("<B1-Motion>", self.canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.canvas_release)
         self.canvas.bind("<Button-3>", self.canvas_right_click)
         self.canvas.bind("<B3-Motion>", self.canvas_right_drag)
         self.canvas.bind("<ButtonRelease-3>", self.canvas_right_release)
+        self.canvas.bind("<MouseWheel>", self.on_zoom)
+        self.canvas.bind("<Button-4>", self.on_zoom_in)
+        self.canvas.bind("<Button-5>", self.on_zoom_out)
+        self.canvas.bind("<Button-2>", self.pan_start)
+        self.canvas.bind("<B2-Motion>", self.pan_move)
+        self.canvas.bind("<ButtonRelease-2>", self.pan_end)
+        self.canvas.bind("<Control-Button-1>", self.pan_start)
+        self.canvas.bind("<Control-B1-Motion>", self.pan_move)
+        self.canvas.bind("<Control-ButtonRelease-1>", self.pan_end)
         self.properties_frame = tk.Frame(
             content_frame, bg=self.theme.COLORS["bg_sidebar"], width=300
         )

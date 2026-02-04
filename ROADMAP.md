@@ -37,6 +37,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 - Path through network visualizer
 - export visualizations
+- seperation into different files for each plot
 
 ## Network
 
@@ -45,7 +46,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 - mapping versions to vulnerabilities
 - Make the canvas of the network creator scrollable and zoomable
 - Dynamic Behavior
-- saving network layout -> Coordinates of nodes -> 10 grid snap
 
 ## Software Architecture
 
