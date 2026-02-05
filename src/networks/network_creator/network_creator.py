@@ -51,7 +51,6 @@ class NetworkCreator(
             self.add_link_button.config(state=tk.DISABLED)
         else:
             self.add_link_button.config(state=tk.NORMAL)
-        # Enable Edit Node button only when exactly one node is selected
         if len(self.selected_nodes) == 1 or (self.selected_node and len(self.selected_nodes) == 0):
             self.edit_node_button.config(state=tk.NORMAL)
         else:

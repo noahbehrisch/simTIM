@@ -276,7 +276,6 @@ class NodeDialog:
         fields = {}
         current_row = 0
 
-        # Node ID (read-only for edit)
         tk.Label(
             form_frame,
             text="Node ID:",
@@ -290,7 +289,6 @@ class NodeDialog:
         fields["id"].config(state="readonly")
         current_row += 1
 
-        # Name
         tk.Label(
             form_frame,
             text="Name:",
@@ -302,7 +300,6 @@ class NodeDialog:
         fields["name"].insert(0, node.get("name", ""))
         current_row += 1
 
-        # Operating System
         tk.Label(
             form_frame,
             text="Operating System:",
@@ -319,7 +316,6 @@ class NodeDialog:
             fields["os"].set(os_list[0])
         current_row += 1
 
-        # OS Version
         tk.Label(
             form_frame,
             text="OS Version:",
@@ -330,7 +326,6 @@ class NodeDialog:
         fields["version"].grid(row=current_row, column=1, sticky="ew", pady=5, padx=5)
         current_row += 1
 
-        # Category
         tk.Label(
             form_frame,
             text="Category:",
@@ -347,10 +342,8 @@ class NodeDialog:
             fields["category"].set(categories[0])
         current_row += 1
 
-        # Services
         fields["services_vars"] = {}
 
-        # Assets
         tk.Label(
             form_frame,
             text="Assets:",
@@ -423,7 +416,6 @@ class NodeDialog:
             ).pack(fill="x", padx=5, pady=2)
         current_row += 1
 
-        # Exposed to Internet
         fields["exposed"] = tk.BooleanVar(
             value=node.get("properties", {}).get("exposed_to_internet", False)
         )
@@ -444,7 +436,6 @@ class NodeDialog:
             versions = [v["version"] for v in os_data.get("versions", [])]
             fields["version"]["values"] = versions
             if restore_version:
-                # Try to restore the current version
                 current_version = node.get("software", {}).get("version", "")
                 if current_version in versions:
                     fields["version"].set(current_version)
@@ -456,7 +447,6 @@ class NodeDialog:
                 fields["version"].set("")
 
         fields["os"].bind("<<ComboboxSelected>>", on_os_change)
-        # Initialize with current node's values
         on_os_change(restore_version=True)
 
         def update_node():
