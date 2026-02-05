@@ -68,14 +68,12 @@ class CanvasHandlers:
         )
 
     def canvas_double_click(self, event):
-        """Handle double-click to edit a node."""
         cx, cy = self.screen_to_canvas(event)
         clicked_node = self.find_node_at(cx, cy)
         if clicked_node:
             self.edit_node_dialog(clicked_node)
 
     def edit_selected_node(self):
-        """Edit the currently selected node."""
         node_id = None
         if len(self.selected_nodes) == 1:
             node_id = self.selected_nodes[0]
