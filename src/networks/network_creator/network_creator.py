@@ -51,6 +51,11 @@ class NetworkCreator(
             self.add_link_button.config(state=tk.DISABLED)
         else:
             self.add_link_button.config(state=tk.NORMAL)
+        # Enable Edit Node button only when exactly one node is selected
+        if len(self.selected_nodes) == 1 or (self.selected_node and len(self.selected_nodes) == 0):
+            self.edit_node_button.config(state=tk.NORMAL)
+        else:
+            self.edit_node_button.config(state=tk.DISABLED)
 
     def snap_to_grid(self, x: int, y: int) -> tuple[int, int]:
         if self.snap_size <= 0:
@@ -131,6 +136,16 @@ class NetworkCreator(
             fg="white",
             font=self.theme.FONTS["body"],
         ).pack(side=tk.LEFT, padx=5, pady=5)
+        self.edit_node_button = tk.Button(
+            toolbar_frame,
+            text="Edit Node",
+            command=self.edit_selected_node,
+            bg=self.theme.COLORS["info"],
+            fg="white",
+            font=self.theme.FONTS["body"],
+            state=tk.DISABLED,
+        )
+        self.edit_node_button.pack(side=tk.LEFT, padx=5, pady=5)
         tk.Button(
             toolbar_frame,
             text="Generate Random",
@@ -226,6 +241,7 @@ class NetworkCreator(
         self.canvas.xview_moveto(0.5)
         self.canvas.yview_moveto(0.5)
         self.canvas.bind("<Button-1>", self.canvas_click)
+        self.canvas.bind("<Double-Button-1>", self.canvas_double_click)
         self.canvas.bind("<B1-Motion>", self.canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.canvas_release)
         self.canvas.bind("<Button-3>", self.canvas_right_click)

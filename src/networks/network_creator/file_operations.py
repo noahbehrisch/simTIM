@@ -33,8 +33,7 @@ class FileOperations:
                         "x": node["x"],
                         "y": node["y"],
                         "software": node["software"],
-                        "vulnerabilities": node["vulnerabilities"],
-                        "assets": node["assets"],
+                        "assets": node.get("assets", []),
                         "properties": node["properties"],
                     }
                 )
@@ -87,7 +86,6 @@ class FileOperations:
                         "x": int(x),
                         "y": int(y),
                         "software": node.get("software", {}),
-                        "vulnerabilities": node.get("vulnerabilities", []),
                         "assets": node.get("assets", []),
                         "properties": node.get("properties", {}),
                     }
