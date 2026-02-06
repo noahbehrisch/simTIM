@@ -76,3 +76,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Github
 
 - securing main branch -> rulesets?
+
+## Licensing
+
+- Use GNU GPLv3 License, Name Martin-Luther-University
