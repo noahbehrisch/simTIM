@@ -3,7 +3,7 @@ name = "simtim"
 version = "0.6.0"
 description = "Simulation based on the paper 'Time is money: A temporal model of cybersecurity' by Zoltán Ádám Mann."
 readme = "README.md"
-license = "GNU GPLv3"
+license = "GPL-3.0"
 requires-python = ">=3.10"
 
 authors = [
