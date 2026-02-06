@@ -41,7 +41,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Network
 
-- [!] Implement the ability to change node properties in the network creator
 - Change Properties in the GUI
 - [!] mapping versions to vulnerabilities
 - Dynamic Behavior
