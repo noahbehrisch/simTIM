@@ -79,4 +79,4 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Licensing
 
-- Use GNU GPLv3 License, Name Martin-Luther-University
+- Use GNU GPLv3 License, Name Martin-Luther-University -> Do it right, Search for examples
