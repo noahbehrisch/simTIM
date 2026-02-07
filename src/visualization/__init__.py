@@ -1,9 +1,13 @@
 from .analyzer import analyze_simulation_results, create_visualization_report
-from .plots import ViolinPlotEngine
+from .base import BasePlotEngine, BaseTimelinePlotEngine, BaseViolinPlotEngine
 from .theme import VisualizationTheme, get_color, get_colors, get_palette, get_theme
 from .timeline_plots import TimeSeriesPlotEngine
+from .violin_plots import ViolinPlotEngine
 
 __all__ = [
+    "BasePlotEngine",
+    "BaseTimelinePlotEngine",
+    "BaseViolinPlotEngine",
     "ViolinPlotEngine",
     "TimeSeriesPlotEngine",
     "VisualizationTheme",

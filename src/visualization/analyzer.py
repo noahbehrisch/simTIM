@@ -3,7 +3,7 @@ from typing import Any
 from src.core.economic_model import calculate_action_damage, calculate_action_gain
 from src.utils.time_utils import parse_event
 
-from .plots import ViolinPlotEngine
+from .violin_plots import ViolinPlotEngine
 
 
 def analyze_simulation_results(
