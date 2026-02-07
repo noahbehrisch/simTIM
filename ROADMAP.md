@@ -76,8 +76,3 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Github
 
 - securing main branch -> rulesets?
-
-## Licensing
-
-- Use GNU GPLv3 License, Name Martin-Luther-University -> Do it right, Search for examples
-- Apache 2.0 vs GPLv3
