@@ -25,6 +25,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self._is_closing = False
+        self._results_window = None  # Track results window for proper cleanup
         self.theme = Theme()
         self.title("simTIM GUI")
         self.geometry("1400x800")
@@ -151,6 +152,15 @@ class App(tk.Tk):
     def _on_closing(self):
         """Handle window close event to prevent Tkinter thread errors."""
         self._is_closing = True
+        # Close results window first to properly clean up its matplotlib resources
+        self._close_results_window()
+        # Close all remaining matplotlib figures to prevent thread cleanup errors
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.close("all")
+        except Exception:
+            pass
         self.quit()
         self.destroy()
 
@@ -236,16 +246,29 @@ class App(tk.Tk):
     def open_create_network_window(self):
         self.network_tab.open_create_network_window()
 
+    def _close_results_window(self):
+        """Close any existing results window to free matplotlib resources."""
+        if self._results_window is not None:
+            try:
+                self._results_window._on_close()
+            except Exception:
+                pass
+            self._results_window = None
+
     def open_results_window(self, all_histories):
+        self._close_results_window()
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
-        ResultsWindow(self, all_histories, theme_colors, sim_time=self.last_sim_time)
+        self._results_window = ResultsWindow(
+            self, all_histories, theme_colors, sim_time=self.last_sim_time
+        )
 
     def open_results_window_scenarios(self, scenario_results):
+        self._close_results_window()
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
         all_histories = []
         for scenario in scenario_results["scenarios"]:
             all_histories.extend(scenario["histories"])
-        ResultsWindow(
+        self._results_window = ResultsWindow(
             self,
             all_histories,
             theme_colors,

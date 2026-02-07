@@ -31,7 +31,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 - Help
 - Enforcing the use of theme
-- Colorblind friendly colors
+- ~~Colorblind friendly colors~~ ✅ (Implemented in `src/visualization/theme.py`)
 
 ## Visualization
 

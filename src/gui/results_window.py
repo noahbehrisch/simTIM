@@ -12,6 +12,7 @@ from src.utils.time_utils import parse_event
 from src.visualization import (
     TimeSeriesPlotEngine,
     analyze_simulation_results,
+    get_theme,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ class ResultsWindow:
         self.runs_data = []
         self.actors_data = {}
         self.economic_data = {}
+        self.viz_theme = get_theme()
         self.window = tk.Toplevel(parent)
         self.window.title("Simulation Results")
         self.window.geometry("1600x1000")
@@ -508,7 +510,7 @@ class ResultsWindow:
                     cum_cost,
                     where="post",
                     label="Cumulative Cost",
-                    color="#ff7f0e",
+                    color=self.viz_theme.get_color("cost"),
                     linewidth=2,
                 )
                 ax.step(
@@ -516,7 +518,7 @@ class ResultsWindow:
                     cum_gain,
                     where="post",
                     label="Attacker Gain",
-                    color="#2ca02c",
+                    color=self.viz_theme.get_color("gain"),
                     linewidth=2,
                 )
                 ax.step(
@@ -524,7 +526,7 @@ class ResultsWindow:
                     cum_damage,
                     where="post",
                     label="System Damage",
-                    color="#d62728",
+                    color=self.viz_theme.get_color("damage"),
                     linewidth=2,
                 )
                 ax.set_xlabel("Time (hours)")
@@ -649,12 +651,13 @@ class ResultsWindow:
                 user_counts.append(user_counts[-1])
                 visible_counts.append(visible_counts[-1])
 
+            access_colors = self.viz_theme.get_access_level_colors()
             ax.fill_between(
                 times,
                 0,
                 admin_counts,
                 label="Admin Access",
-                color="#d62728",
+                color=access_colors["admin"],
                 alpha=0.7,
                 step="post",
             )
@@ -663,7 +666,7 @@ class ResultsWindow:
                 admin_counts,
                 [a + u for a, u in zip(admin_counts, user_counts, strict=False)],
                 label="User Access",
-                color="#ff7f0e",
+                color=access_colors["user"],
                 alpha=0.7,
                 step="post",
             )
@@ -675,7 +678,7 @@ class ResultsWindow:
                     for a, u, v in zip(admin_counts, user_counts, visible_counts, strict=False)
                 ],
                 label="Visible",
-                color="#ffbb78",
+                color=access_colors["visible"],
                 alpha=0.7,
                 step="post",
             )
@@ -901,11 +904,12 @@ class ResultsWindow:
                     )
                 self.stat_canvas.draw()
                 return
+            economic_colors = self.viz_theme.get_economic_colors()
             damages = [r.get("total_damage", 0) for r in simulation_results]
             if damages and any(d > 0 for d in damages):
                 parts = self.damage_ax.violinplot([damages], showmeans=True, showmedians=True)
                 for pc in parts["bodies"]:
-                    pc.set_facecolor("#d62728")
+                    pc.set_facecolor(economic_colors["damage"])
                     pc.set_alpha(0.7)
                 self.damage_ax.set_title("Damage Distribution")
                 self.damage_ax.set_ylabel("Damage ($)")
@@ -920,7 +924,7 @@ class ResultsWindow:
             if all_costs and any(c > 0 for c in all_costs):
                 parts = self.cost_ax.violinplot([all_costs], showmeans=True, showmedians=True)
                 for pc in parts["bodies"]:
-                    pc.set_facecolor("#ff7f0e")
+                    pc.set_facecolor(economic_colors["cost"])
                     pc.set_alpha(0.7)
                 self.cost_ax.set_title("Cost Distribution")
                 self.cost_ax.set_ylabel("Cost ($)")
@@ -934,7 +938,7 @@ class ResultsWindow:
             if all_gains and any(g > 0 for g in all_gains):
                 parts = self.gain_ax.violinplot([all_gains], showmeans=True, showmedians=True)
                 for pc in parts["bodies"]:
-                    pc.set_facecolor("#2ca02c")
+                    pc.set_facecolor(economic_colors["gain"])
                     pc.set_alpha(0.7)
                 self.gain_ax.set_title("Attacker Gains Distribution")
                 self.gain_ax.set_ylabel("Gains ($)")
@@ -1035,9 +1039,9 @@ class ResultsWindow:
                 showmedians=True,
                 showextrema=True,
             )
-            colors = plt.cm.RdYlGn_r(np.linspace(0.2, 0.8, len(scenarios)))
+            scenario_colors = self.viz_theme.get_scenario_colors(len(scenarios))
             for i, pc in enumerate(parts["bodies"]):
-                pc.set_facecolor(colors[i])
+                pc.set_facecolor(scenario_colors[i])
                 pc.set_alpha(0.8)
                 pc.set_edgecolor("black")
                 pc.set_linewidth(1.5)
@@ -1112,7 +1116,17 @@ class ResultsWindow:
             traceback.print_exc()
 
     def _on_close(self):
+        """Clean up matplotlib resources before closing to prevent thread errors."""
         try:
+            # Destroy canvas widgets first to release tkinter resources
+            for canvas_attr in ["events_canvas", "money_canvas", "nodes_canvas", "stat_canvas"]:
+                canvas = getattr(self, canvas_attr, None)
+                if canvas is not None:
+                    try:
+                        canvas.get_tk_widget().destroy()
+                    except Exception:
+                        pass
+            # Then close all matplotlib figures
             plt.close("all")
         except Exception as e:
             # Log but don't crash on cleanup failure

@@ -3,30 +3,11 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 
-COLORS = {
-    "attacker": "#d62728",
-    "defender": "#2ca02c",
-    "start_action": "#1f77b4",
-    "action_succeeded": "#2ca02c",
-    "action_failed": "#ff7f0e",
-    "action_interrupted": "#9467bd",
-    "attack_detected": "#e377c2",
-    "damage": "#d62728",
-    "gain": "#2ca02c",
-    "cost": "#ff7f0e",
-    "admin": "#d62728",
-    "user": "#ff7f0e",
-    "visible": "#ffbb78",
-    "none": "#2ca02c",
-}
+from .theme import get_theme
 
-EVENT_TYPES = [
-    ("start_action", "Action Started", "o"),
-    ("action_succeeded", "Success", "^"),
-    ("action_failed", "Failed", "x"),
-    ("action_interrupted", "Interrupted", "s"),
-    ("attack_detected", "Detected", "d"),
-]
+_theme = get_theme()
+COLORS = _theme.colors
+EVENT_TYPES = _theme.event_types
 
 
 def _get_max_time(history: list) -> float:

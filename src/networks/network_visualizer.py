@@ -2,18 +2,20 @@ import math
 
 import matplotlib.pyplot as plt
 
+from src.visualization.theme import get_theme
+
 
 class NetworkVisualizer:
     """Visualizes network topology using matplotlib."""
 
-    # Colors matching the network creator
-    COLOR_EXPOSED = "#ff6b6b"  # Red for internet-exposed nodes
-    COLOR_INTERNAL = "#4ecdc4"  # Teal for internal nodes
-    COLOR_LINK = "#888888"  # Gray for links
-
     def __init__(self, network):
         self.network = network
         self.node_positions = {}
+        theme = get_theme()
+        network_colors = theme.get_network_colors()
+        self.COLOR_EXPOSED = network_colors["exposed"]
+        self.COLOR_INTERNAL = network_colors["internal"]
+        self.COLOR_LINK = network_colors["link"]
         self._initialize_positions()
 
     def _initialize_positions(self):

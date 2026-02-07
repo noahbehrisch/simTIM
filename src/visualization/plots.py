@@ -4,13 +4,15 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .theme import get_theme
+
 
 class ViolinPlotEngine:
     def __init__(self, output_dir: str = "plots"):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
-        plt.style.use("default")
-        self.colors = {"damage": "#d62728", "gain": "#2ca02c", "cost": "#ff7f0e"}
+        self.theme = get_theme()
+        self.colors = self.theme.get_economic_colors()
 
     def create_damage_distribution_plot(
         self,
