@@ -59,6 +59,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 - unified priority system to build strategies more easily
 - using the MITRE ATT&CK and D3EFEND matrizes
+- reinforcement learning with rewards for attackers and defenders
 
 ## Testing
 
