@@ -10,7 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from src.utils import format_time
 from src.utils.time_utils import parse_event
 from src.visualization import (
-    AttackPathPanel,
+    # AttackPathPanel,
     TimeSeriesPlotEngine,
     analyze_simulation_results,
     get_theme,
@@ -703,55 +703,55 @@ class ResultsWindow:
         self.nodes_fig = fig
         self.nodes_canvas = canvas
 
-    def _create_attack_path_tab(self):
-        tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
-        self.notebook.add(tab_frame, text="Attack Path")
+    # def _create_attack_path_tab(self):
+    #     tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
+    #     self.notebook.add(tab_frame, text="Attack Path")
 
-        if len(self.all_histories) > 1:
-            selector_frame = tk.Frame(tab_frame, bg=self.bg_color)
-            selector_frame.pack(fill=tk.X, padx=10, pady=5)
-            tk.Label(
-                selector_frame,
-                text="Select Run:",
-                bg=self.bg_color,
-                fg=self.button_fg,
-            ).pack(side=tk.LEFT, padx=5)
-            self.attack_path_run_var = tk.StringVar(value="Run 1")
-            run_options = [f"Run {i + 1}" for i in range(len(self.all_histories))]
-            dropdown = ttk.Combobox(
-                selector_frame,
-                textvariable=self.attack_path_run_var,
-                values=run_options,
-                state="readonly",
-                width=15,
-            )
-            dropdown.pack(side=tk.LEFT, padx=5)
-            dropdown.bind("<<ComboboxSelected>>", lambda e: self._update_attack_path_tab())
+    #     if len(self.all_histories) > 1:
+    #         selector_frame = tk.Frame(tab_frame, bg=self.bg_color)
+    #         selector_frame.pack(fill=tk.X, padx=10, pady=5)
+    #         tk.Label(
+    #             selector_frame,
+    #             text="Select Run:",
+    #             bg=self.bg_color,
+    #             fg=self.button_fg,
+    #         ).pack(side=tk.LEFT, padx=5)
+    #         self.attack_path_run_var = tk.StringVar(value="Run 1")
+    #         run_options = [f"Run {i + 1}" for i in range(len(self.all_histories))]
+    #         dropdown = ttk.Combobox(
+    #             selector_frame,
+    #             textvariable=self.attack_path_run_var,
+    #             values=run_options,
+    #             state="readonly",
+    #             width=15,
+    #         )
+    #         dropdown.pack(side=tk.LEFT, padx=5)
+    #         dropdown.bind("<<ComboboxSelected>>", lambda e: self._update_attack_path_tab())
 
-        self.attack_path_content_frame = tk.Frame(tab_frame, bg=self.bg_color)
-        self.attack_path_content_frame.pack(fill=tk.BOTH, expand=True)
-        self._attack_path_panel: AttackPathPanel | None = None
-        self._update_attack_path_tab()
+    #     self.attack_path_content_frame = tk.Frame(tab_frame, bg=self.bg_color)
+    #     self.attack_path_content_frame.pack(fill=tk.BOTH, expand=True)
+    #     self._attack_path_panel: AttackPathPanel | None = None
+    #     self._update_attack_path_tab()
 
-    def _update_attack_path_tab(self):
-        run_id = 0
-        if hasattr(self, "attack_path_run_var"):
-            run_id = int(self.attack_path_run_var.get().split()[1]) - 1
+    # def _update_attack_path_tab(self):
+    #     run_id = 0
+    #     if hasattr(self, "attack_path_run_var"):
+    #         run_id = int(self.attack_path_run_var.get().split()[1]) - 1
 
-        # Clean up previous panel
-        if self._attack_path_panel is not None:
-            self._attack_path_panel.destroy()
-            self._attack_path_panel = None
-        for widget in self.attack_path_content_frame.winfo_children():
-            widget.destroy()
+    #     # Clean up previous panel
+    #     if self._attack_path_panel is not None:
+    #         self._attack_path_panel.destroy()
+    #         self._attack_path_panel = None
+    #     for widget in self.attack_path_content_frame.winfo_children():
+    #         widget.destroy()
 
-        history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
-        self._attack_path_panel = AttackPathPanel(
-            self.attack_path_content_frame,
-            history,
-            sim_time=self.sim_time,
-            bg_color=self.bg_color,
-        )
+    #     history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
+    #     # self._attack_path_panel = AttackPathPanel(
+    #     #     self.attack_path_content_frame,
+    #     #     history,
+    #     #     sim_time=self.sim_time,
+    #     #     bg_color=self.bg_color,
+    #     # )
 
     def _create_statistical_tab(self):
         tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
