@@ -10,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from src.utils import format_time
 from src.utils.time_utils import parse_event
 from src.visualization import (
+    AttackPathPanel,
     TimeSeriesPlotEngine,
     analyze_simulation_results,
     get_theme,
@@ -221,6 +222,7 @@ class ResultsWindow:
         self._create_events_timeline_tab()
         self._create_money_timeline_tab()
         self._create_nodes_timeline_tab()
+        self._create_attack_path_tab()
         self._create_statistical_tab()
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -584,53 +586,47 @@ class ResultsWindow:
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        node_states = {}
+        # Track access per (node_id, actor_id) to avoid cross-actor overwrites
+        access_map: dict[tuple[str, str], str] = {}
         times = []
         admin_counts = []
         user_counts = []
         visible_counts = []
 
+        ACCESS_RANK = {"NONE": 0, "VISIBLE": 1, "USER": 2, "ADMIN": 3}
+
         for entry in history:
             if len(entry) >= 3:
                 time, event_type, data = entry[0], entry[1], entry[2]
-                if event_type == "action_succeeded" and isinstance(data, dict):
-                    target = data.get("target")
-                    actor = data.get("actor")
-                    action = data.get("action")
+                if event_type == "access_changed" and isinstance(data, dict):
+                    node_id = data.get("node_id")
+                    actor_id = data.get("actor_id", "")
+                    raw_access = data.get("new_access", "NONE")
+                    new_access = raw_access.name if hasattr(raw_access, "name") else str(raw_access)
+                    if not node_id:
+                        continue
 
-                    if (
-                        target
-                        and hasattr(target, "id")
-                        and actor
-                        and hasattr(actor, "is_attacker")
-                        and actor.is_attacker
-                    ):
-                        node_id = target.id
-                        action_name = (
-                            action.name.lower() if action and hasattr(action, "name") else ""
-                        )
+                    key = (node_id, actor_id)
+                    old = access_map.get(key, "NONE")
+                    if old == new_access:
+                        continue  # no actual change
+                    access_map[key] = new_access
 
-                        if (
-                            "admin" in action_name
-                            or "privilege" in action_name
-                            or "root" in action_name
-                        ):
-                            node_states[node_id] = "admin"
-                        elif "exploit" in action_name or "user" in action_name:
-                            if node_states.get(node_id) != "admin":
-                                node_states[node_id] = "user"
-                        elif "scan" in action_name or "discover" in action_name:
-                            if node_id not in node_states:
-                                node_states[node_id] = "visible"
+                    # Compute per-node max access across all actors
+                    node_max: dict[str, str] = {}
+                    for (nid, _aid), acc in access_map.items():
+                        prev = node_max.get(nid, "NONE")
+                        if ACCESS_RANK.get(acc.upper(), 0) > ACCESS_RANK.get(prev.upper(), 0):
+                            node_max[nid] = acc
 
-                        admin = sum(1 for s in node_states.values() if s == "admin")
-                        user = sum(1 for s in node_states.values() if s == "user")
-                        visible = sum(1 for s in node_states.values() if s == "visible")
+                    admin = sum(1 for s in node_max.values() if s.upper() == "ADMIN")
+                    user = sum(1 for s in node_max.values() if s.upper() == "USER")
+                    visible = sum(1 for s in node_max.values() if s.upper() == "VISIBLE")
 
-                        times.append(time)
-                        admin_counts.append(admin)
-                        user_counts.append(user)
-                        visible_counts.append(visible)
+                    times.append(time)
+                    admin_counts.append(admin)
+                    user_counts.append(user)
+                    visible_counts.append(visible)
 
         if times:
             # Use simulation time for consistent X-axis, fall back to max event time
@@ -706,6 +702,56 @@ class ResultsWindow:
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         self.nodes_fig = fig
         self.nodes_canvas = canvas
+
+    def _create_attack_path_tab(self):
+        tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
+        self.notebook.add(tab_frame, text="Attack Path")
+
+        if len(self.all_histories) > 1:
+            selector_frame = tk.Frame(tab_frame, bg=self.bg_color)
+            selector_frame.pack(fill=tk.X, padx=10, pady=5)
+            tk.Label(
+                selector_frame,
+                text="Select Run:",
+                bg=self.bg_color,
+                fg=self.button_fg,
+            ).pack(side=tk.LEFT, padx=5)
+            self.attack_path_run_var = tk.StringVar(value="Run 1")
+            run_options = [f"Run {i + 1}" for i in range(len(self.all_histories))]
+            dropdown = ttk.Combobox(
+                selector_frame,
+                textvariable=self.attack_path_run_var,
+                values=run_options,
+                state="readonly",
+                width=15,
+            )
+            dropdown.pack(side=tk.LEFT, padx=5)
+            dropdown.bind("<<ComboboxSelected>>", lambda e: self._update_attack_path_tab())
+
+        self.attack_path_content_frame = tk.Frame(tab_frame, bg=self.bg_color)
+        self.attack_path_content_frame.pack(fill=tk.BOTH, expand=True)
+        self._attack_path_panel: AttackPathPanel | None = None
+        self._update_attack_path_tab()
+
+    def _update_attack_path_tab(self):
+        run_id = 0
+        if hasattr(self, "attack_path_run_var"):
+            run_id = int(self.attack_path_run_var.get().split()[1]) - 1
+
+        # Clean up previous panel
+        if self._attack_path_panel is not None:
+            self._attack_path_panel.destroy()
+            self._attack_path_panel = None
+        for widget in self.attack_path_content_frame.winfo_children():
+            widget.destroy()
+
+        history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
+        self._attack_path_panel = AttackPathPanel(
+            self.attack_path_content_frame,
+            history,
+            sim_time=self.sim_time,
+            bg_color=self.bg_color,
+        )
 
     def _create_statistical_tab(self):
         tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
@@ -1118,6 +1164,12 @@ class ResultsWindow:
     def _on_close(self):
         """Clean up matplotlib resources before closing to prevent thread errors."""
         try:
+            # Clean up attack path panel
+            if hasattr(self, "_attack_path_panel") and self._attack_path_panel is not None:
+                try:
+                    self._attack_path_panel.destroy()
+                except Exception:
+                    pass
             # Destroy canvas widgets first to release tkinter resources
             for canvas_attr in ["events_canvas", "money_canvas", "nodes_canvas", "stat_canvas"]:
                 canvas = getattr(self, canvas_attr, None)

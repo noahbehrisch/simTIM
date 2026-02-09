@@ -51,8 +51,6 @@ class SimpleEconomicModel:
         self.action_history: list[tuple[float, str, str, float, float]] = []
         self.time_proportional_damage = 0.0
         self.time_proportional_gains: dict[str, float] = {}
-        self.access_state_changes: list[tuple[float, str, str, str, str]] = []
-        self.property_state_changes: list[tuple[float, str, str, Any, Any]] = []
         self.last_accumulation_time = 0.0
 
     def record_damage(self, damage: float):
@@ -76,21 +74,6 @@ class SimpleEconomicModel:
         if gain > 0:
             self.record_gain(actor_id, gain)
         self.action_history.append((time, actor_id, action_name, damage, gain))
-
-    def record_access_change(
-        self, time: float, node_id: str, actor_id: str, old_access: str, new_access: str
-    ):
-        self.access_state_changes.append((time, node_id, actor_id, old_access, new_access))
-
-    def record_property_change(
-        self,
-        time: float,
-        node_id: str,
-        property_name: str,
-        old_value: Any,
-        new_value: Any,
-    ):
-        self.property_state_changes.append((time, node_id, property_name, old_value, new_value))
 
     def accumulate_time_proportional_impact(
         self, current_time: float, all_nodes: list[Node], attacker_actors: list[Any]
@@ -146,8 +129,6 @@ class SimpleEconomicModel:
             "actor_costs": actor_costs,
             "actor_gains": dict(self.actor_gains),
             "num_actions": len(self.action_history),
-            "num_access_changes": len(self.access_state_changes),
-            "num_property_changes": len(self.property_state_changes),
         }
 
     def calculate_delta(self, access: NodeAccessLevel, node: Node) -> float:

@@ -146,8 +146,7 @@ class BaseTimelinePlotEngine(BasePlotEngine):
 
         return timeline
 
-    def _extract_nodes(self, economic_model: Any) -> dict[str, list[Any]]:
-        access_changes = getattr(economic_model, "access_state_changes", [])
+    def _extract_nodes(self, history: list) -> dict[str, list[Any]]:
         timeline: dict[str, list[Any]] = {
             "times": [],
             "nodes_compromised": [],
@@ -155,20 +154,38 @@ class BaseTimelinePlotEngine(BasePlotEngine):
             "nodes_visible": [],
         }
 
-        if not access_changes:
+        ACCESS_RANK = {"NONE": 0, "VISIBLE": 1, "USER": 2, "ADMIN": 3}
+
+        access_events = []
+        for entry in history:
+            if len(entry) >= 3:
+                time, event_type, data = entry[0], entry[1], entry[2]
+                if event_type == "access_changed" and isinstance(data, dict):
+                    raw_access = data.get("new_access", "NONE")
+                    access_str = raw_access.name if hasattr(raw_access, "name") else str(raw_access)
+                    actor_id = data.get("actor_id", "")
+                    access_events.append((time, data.get("node_id"), actor_id, access_str))
+
+        if not access_events:
             return timeline
 
-        node_states = {}
-        for t in sorted({c[0] for c in access_changes}):
-            for change in access_changes:
-                if change[0] == t:
-                    node_states[change[1]] = change[4]
+        # Track access per (node_id, actor_id) to avoid cross-actor overwrites
+        access_map: dict[tuple[str, str], str] = {}
+        for t in sorted({e[0] for e in access_events}):
+            for event_time, node_id, actor_id, new_access in access_events:
+                if event_time == t and node_id:
+                    access_map[(node_id, actor_id)] = new_access
 
-            admin = sum(1 for s in node_states.values() if s in ["ADMIN", "admin", 3])
-            compromised = sum(
-                1 for s in node_states.values() if s in ["USER", "ADMIN", "user", "admin", 2, 3]
-            )
-            visible = sum(1 for s in node_states.values() if s in ["VISIBLE", "visible", 1])
+            # Compute per-node max access across all actors
+            node_max: dict[str, str] = {}
+            for (nid, _aid), acc in access_map.items():
+                prev = node_max.get(nid, "NONE")
+                if ACCESS_RANK.get(acc.upper(), 0) > ACCESS_RANK.get(prev.upper(), 0):
+                    node_max[nid] = acc
+
+            admin = sum(1 for s in node_max.values() if s.upper() == "ADMIN")
+            compromised = sum(1 for s in node_max.values() if s.upper() in ("USER", "ADMIN"))
+            visible = sum(1 for s in node_max.values() if s.upper() == "VISIBLE")
 
             timeline["times"].append(t)
             timeline["nodes_admin"].append(admin)

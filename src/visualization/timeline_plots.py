@@ -1,5 +1,3 @@
-from typing import Any
-
 import matplotlib.pyplot as plt
 
 from .base import BaseTimelinePlotEngine
@@ -75,12 +73,12 @@ class TimeSeriesPlotEngine(BaseTimelinePlotEngine):
 
     def create_nodes_over_time_plot(
         self,
-        economic_model: Any,
+        history: list,
         total_nodes: int | None = None,
         title: str = "Node Compromise Over Time",
         max_time: float | None = None,
     ) -> plt.Figure:
-        timeline = self._extract_nodes(economic_model)
+        timeline = self._extract_nodes(history)
 
         if not timeline["times"]:
             return self._create_empty_plot("No node access changes recorded", title)
@@ -121,13 +119,12 @@ class TimeSeriesPlotEngine(BaseTimelinePlotEngine):
         self,
         history: list,
         actors: list,
-        economic_model: Any,
         total_nodes: int | None = None,
         title: str = "Simulation Timeline",
     ) -> plt.Figure:
         events = self._extract_events(history)
         money = self._extract_money(history, actors)
-        nodes = self._extract_nodes(economic_model)
+        nodes = self._extract_nodes(history)
         max_time = self._get_max_time(history)
 
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 12), sharex=True)

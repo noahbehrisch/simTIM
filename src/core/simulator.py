@@ -137,7 +137,13 @@ class Simulator:
         self._event_bus.publish(event)
 
     def run(self, until: float):
-        self._publish_event(EventType.SIMULATION_STARTED, {"until": until})
+        self._publish_event(
+            EventType.SIMULATION_STARTED,
+            {
+                "until": until,
+                "network": self.network,
+            },
+        )
         for actor in self.get_all_actors():
             actor.simulator = self
             actor.running = True
@@ -346,13 +352,10 @@ class Simulator:
                         new_access.name if hasattr(new_access, "name") else str(new_access)
                     )
 
-                    self._record_state_change(
-                        postcondition_target,
-                        data["actor"].id,
-                        data["action"],
-                        previous_access=previous_access,
-                        new_access=new_access,
-                    )
+                    # Note: ACCESS_CHANGED events are already emitted by the
+                    # postcondition's _execute_set_access calls.  We only need
+                    # to accumulate time-proportional economic impact here.
+                    self._accumulate_time_proportional_impact()
 
                     self._calculate_economic_impact(data)
 
@@ -383,17 +386,6 @@ class Simulator:
                     data["actor"].on_action_finished(data["action"], "aborted", data["target"])
                 self._publish_event(EventType.ACTION_ABORTED, data)
             self._ongoing_actions_index.remove(ongoing)
-
-    def _record_state_change(
-        self, node, actor_id: str, action, previous_access=None, new_access=None
-    ):
-        self._accumulate_time_proportional_impact()
-
-        if new_access is None:
-            new_access = get_node_access(node, actor_id)
-        old_str = previous_access.name if hasattr(previous_access, "name") else str(previous_access)
-        new_str = new_access.name if hasattr(new_access, "name") else str(new_access)
-        self.record_access_change(node, actor_id, old_str, new_str)
 
     def _schedule_detection_check(self, action_data):
         action = action_data["action"]
@@ -479,18 +471,17 @@ class Simulator:
                 self.current_time, actor.id, action.name, 0, 0
             )
 
-    def record_access_change(self, node, actor_id: str, old_access: str, new_access: str):
+    def record_access_change(self, node, actor_id: str, old_access, new_access):
         node_id = node.id if hasattr(node, "id") else str(node)
-        self._economic_model.record_access_change(
-            self.current_time, node_id, actor_id, old_access, new_access
-        )
+        old_str = old_access.name if hasattr(old_access, "name") else str(old_access)
+        new_str = new_access.name if hasattr(new_access, "name") else str(new_access)
         self._publish_event(
             EventType.ACCESS_CHANGED,
             {
                 "node_id": node_id,
                 "actor_id": actor_id,
-                "old_access": old_access,
-                "new_access": new_access,
+                "old_access": old_str,
+                "new_access": new_str,
             },
         )
         logger.debug(
@@ -500,9 +491,6 @@ class Simulator:
 
     def record_property_change(self, node, property_name: str, old_value, new_value):
         node_id = node.id if hasattr(node, "id") else str(node)
-        self._economic_model.record_property_change(
-            self.current_time, node_id, property_name, old_value, new_value
-        )
         self._publish_event(
             EventType.PROPERTY_CHANGED,
             {
