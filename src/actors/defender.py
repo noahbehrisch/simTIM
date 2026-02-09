@@ -120,14 +120,19 @@ class Defender(Actor):
 
     def _execute_defensive_action(self, action, target):
         if self.simulator and self.can_schedule_action():
-            action_data = {
-                "actor": self,
-                "action": action,
-                "target": target,
-                "actor_access": get_node_access(target, self.id),
-            }
-            self.simulator.schedule_event(self.simulator.current_time, "action", action_data)
-            self.ongoing_actions.add(action)
+            actor_access = get_node_access(target, self.id)
+            if action.precondition(target, actor_access, self.id):
+                self.pending_action_count += 1
+                self.simulator.schedule_event(
+                    self.simulator.current_time,
+                    "start_action",
+                    {
+                        "actor": self,
+                        "action": action,
+                        "target": target,
+                        "actor_access": actor_access,
+                    },
+                )
 
     def _calculate_total_system_damage(self, time_interval=None):
         if hasattr(self.simulator, "get_total_system_damage"):

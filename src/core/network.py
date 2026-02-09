@@ -20,7 +20,6 @@ class Node:
         self.vulnerabilities = vulnerabilities or []
         self.assets = assets or []
         self.compromised = False
-        self.repaired = False
         self.access: dict[str, NodeAccessLevel] = {}
         self.properties: dict[str, Any] = {}
         self.exposed_services: list[str] = []

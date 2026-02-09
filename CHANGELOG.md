@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Grid in Network Creator canvas
 - Network creator saves and loads coordinates
 - Network creator canvas scrollable and zoomable
+- Visualization Theme (colorblind friendly)
 
 ### Fixed
 

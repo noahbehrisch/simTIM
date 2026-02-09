@@ -439,21 +439,6 @@ class HistoryRecorder(SimulationObserver):
             self._history.pop(0)
         self._history.append(entry)
 
-    def on_action_started(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_action_succeeded(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_action_failed(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_attack_detected(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_state_changed(self, event: SimulationEvent) -> None:
-        self._record(event)
-
     def register(self) -> None:
         self._unsubscribers.append(self._event_bus.subscribe_all(self._record))
 

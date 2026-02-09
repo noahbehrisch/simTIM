@@ -3,17 +3,15 @@ import logging
 import random
 from typing import Any
 
+from .access_levels import NodeAccessLevel
 from .access_utils import (
     get_node_access,
+    set_node_access,
     validate_actor,
     validate_node,
 )
 from .action_index import OngoingActionsIndex
-from .economic_model import (
-    calculate_action_damage,
-    calculate_action_gain,
-    economic_model,
-)
+from .economic_model import SimpleEconomicModel
 from .events import EventBus, EventType, HistoryRecorder, SimulationEvent
 from .exceptions import (
     ActorValidationError,
@@ -37,7 +35,6 @@ class Event:
         "start_action": 6,
         "accumulate_time_proportional": 7,
         "actor_run": 8,
-        "complete_action": 9,
     }
 
     def __init__(self, time: float, event_type: str, data: dict[str, Any]):
@@ -77,7 +74,7 @@ class Simulator:
         if economic_model_instance is not None:
             self._economic_model = economic_model_instance
         else:
-            self._economic_model = economic_model
+            self._economic_model = SimpleEconomicModel()
 
         if detection_engine is not None:
             self.detection_engine = detection_engine
@@ -182,45 +179,10 @@ class Simulator:
         )
 
     def schedule_event(self, time: float, event_type: str, data: dict[str, Any]):
-        if event_type == "action":
-            actor = data["actor"]
-            if not actor.can_schedule_action():
-                self.history.append((self.current_time, "action_capacity_exceeded", data))
-                return
-            precond = data["action"].precondition(
-                data["target"],
-                getattr(data["target"].access, data["actor"].id, None),
-                data["actor"].id,
-            )
-            if not precond:
-                return
-            heapq.heappush(self.event_queue, Event(time, "start_action", data))
-            heapq.heappush(
-                self.event_queue,
-                Event(time + data["action"].duration, "complete_action", data),
-            )
-        else:
-            heapq.heappush(self.event_queue, Event(time, event_type, data))
-
-    def timeout(self, delay: float, event_type: str, data: dict):
-        self.schedule_event(time=self.current_time + delay, event_type=event_type, data=data)
-
-    def print_event_queue(self):
-        for _event in sorted(self.event_queue, key=lambda e: e[0]):
-            pass
+        heapq.heappush(self.event_queue, Event(time, event_type, data))
 
     def get_all_actors(self):
         return self.actors
-
-    def interrupt(self, actor=None, target=None, action_type=None):
-        to_interrupt = self._ongoing_actions_index.find_all(
-            actor=actor,
-            target=target,
-            action_name=action_type,
-        )
-        for a in to_interrupt:
-            self._ongoing_actions_index.remove(a)
-            self._publish_event(EventType.ACTION_INTERRUPTED, a)
 
     def process_event(self, event):
         time, event_type, data = event
@@ -261,7 +223,6 @@ class Simulator:
                 end_node = link.node2
                 start_node = link.node1
                 start_access = get_node_access(start_node, actor.id)
-                get_node_access(end_node, actor.id)
                 current_access = start_access
                 precondition_target = link
                 postcondition_target = end_node
@@ -367,14 +328,30 @@ class Simulator:
             if precond:
                 if random.random() < data["action"].success_probability:
                     postcondition_target = data.get("postcondition_target", data["target"])
-                    data.get("is_link_action", False)
+
+                    previous_access = get_node_access(postcondition_target, data["actor"].id)
 
                     data["action"].postcondition(
                         postcondition_target, data.get("actor_access"), data["actor"].id
                     )
 
+                    new_access = get_node_access(postcondition_target, data["actor"].id)
+
+                    data["previous_access"] = (
+                        previous_access.name
+                        if hasattr(previous_access, "name")
+                        else str(previous_access)
+                    )
+                    data["new_access"] = (
+                        new_access.name if hasattr(new_access, "name") else str(new_access)
+                    )
+
                     self._record_state_change(
-                        postcondition_target, data["actor"].id, data["action"]
+                        postcondition_target,
+                        data["actor"].id,
+                        data["action"],
+                        previous_access=previous_access,
+                        new_access=new_access,
                     )
 
                     self._calculate_economic_impact(data)
@@ -407,17 +384,16 @@ class Simulator:
                 self._publish_event(EventType.ACTION_ABORTED, data)
             self._ongoing_actions_index.remove(ongoing)
 
-    def _record_state_change(self, node, actor_id: str, action):
+    def _record_state_change(
+        self, node, actor_id: str, action, previous_access=None, new_access=None
+    ):
         self._accumulate_time_proportional_impact()
 
-        current_access = get_node_access(node, actor_id)
-        self._economic_model.record_access_change(
-            self.current_time,
-            node.id if hasattr(node, "id") else str(node),
-            actor_id,
-            "CHANGED",  # Previous access
-            (current_access.name if hasattr(current_access, "name") else str(current_access)),
-        )
+        if new_access is None:
+            new_access = get_node_access(node, actor_id)
+        old_str = previous_access.name if hasattr(previous_access, "name") else str(previous_access)
+        new_str = new_access.name if hasattr(new_access, "name") else str(new_access)
+        self.record_access_change(node, actor_id, old_str, new_str)
 
     def _schedule_detection_check(self, action_data):
         action = action_data["action"]
@@ -492,8 +468,8 @@ class Simulator:
         action = action_data["action"]
         target = action_data["target"]
         actor = action_data["actor"]
-        damage = calculate_action_damage(action.name, target)
-        gain = calculate_action_gain(action.name, target)
+        damage = self._economic_model.calculate_action_damage(action.name, target)
+        gain = self._economic_model.calculate_action_gain(action.name, target)
         if hasattr(actor, "is_attacker") and actor.is_attacker:
             self._economic_model.record_action_outcome(
                 self.current_time, actor.id, action.name, damage, gain
@@ -508,6 +484,15 @@ class Simulator:
         self._economic_model.record_access_change(
             self.current_time, node_id, actor_id, old_access, new_access
         )
+        self._publish_event(
+            EventType.ACCESS_CHANGED,
+            {
+                "node_id": node_id,
+                "actor_id": actor_id,
+                "old_access": old_access,
+                "new_access": new_access,
+            },
+        )
         logger.debug(
             f"Access change recorded: {actor_id} on {node_id}: {old_access} -> {new_access}"
         )
@@ -517,6 +502,15 @@ class Simulator:
         node_id = node.id if hasattr(node, "id") else str(node)
         self._economic_model.record_property_change(
             self.current_time, node_id, property_name, old_value, new_value
+        )
+        self._publish_event(
+            EventType.PROPERTY_CHANGED,
+            {
+                "node_id": node_id,
+                "property_name": property_name,
+                "old_value": old_value,
+                "new_value": new_value,
+            },
         )
         logger.debug(
             f"Property change recorded: {node_id}.{property_name}: {old_value} -> {new_value}"
@@ -565,12 +559,6 @@ class Simulator:
                     if node not in actor.visible_nodes:
                         actor.visible_nodes.add(node)
                         logger.debug(f"Added {node.id} to {actor_id}'s visible_nodes")
-                        from src.core.access_levels import NodeAccessLevel
-                        from src.core.access_utils import (
-                            get_node_access,
-                            set_node_access,
-                        )
-
                         current_access = get_node_access(node, actor_id)
                         if current_access == NodeAccessLevel.NONE:
                             set_node_access(node, actor_id, NodeAccessLevel.VISIBLE)
@@ -584,7 +572,3 @@ class Simulator:
                 for link in discovered_links:
                     if link not in actor.visible_links:
                         actor.visible_links.add(link)
-
-    def print_history(self):
-        for entry in self.history:
-            logger.info(entry)

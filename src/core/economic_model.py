@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 from src.core.access_levels import NodeAccessLevel
@@ -168,8 +169,6 @@ class SimpleEconomicModel:
         base_rate *= self.parameters.criticality_multipliers.get(criticality, 1.0)
         data_amount = properties.get("data_amount", 0)
         if data_amount > 0:
-            import math
-
             base_rate *= 1 + math.log10(data_amount + 1) * 0.1
         return base_rate
 
