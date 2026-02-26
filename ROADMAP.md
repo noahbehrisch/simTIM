@@ -34,7 +34,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Visualization
 
-- [!] Path through network visualizer -> more detailed record of network and changes
+- [!] Path through network visualizer -> more detailed record of network and changes -> Compute and Cache the simulations
 - export visualizations
 - [!] seperation into different files for each plot
 
