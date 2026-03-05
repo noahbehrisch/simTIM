@@ -310,8 +310,6 @@ class ConditionEvaluator:
     def _evaluate_service_check(self, condition: dict[str, Any], node: Node) -> bool:
         service = condition["service"]
         status = condition.get("status", "running")
-        if not hasattr(node, "services"):
-            node.services = {}
         service_status = node.services.get(service, "stopped")
         if status == "running":
             return service_status == "running"
@@ -538,7 +536,7 @@ class ConditionEvaluator:
     def _evaluate_time_check(self, condition: dict[str, Any], node: Node) -> bool:
         """Check time-based conditions (cooldowns). Extends property_check with time math."""
         property_name = condition["property"]
-        last_time = node.properties.get(property_name) if hasattr(node, "properties") else None
+        last_time = node.properties.get(property_name)
         if last_time is None:
             return True  # Never done before = condition satisfied
 
@@ -597,6 +595,8 @@ class ActionExecutor:
             self._execute_add_capability(postcondition, node)
         elif action_type == "remove_capability":
             self._execute_remove_capability(postcondition, node)
+        elif action_type == "reduce_attacker_access":
+            self._execute_reduce_attacker_access(postcondition, node, actor_id)
         else:
             raise ValueError(f"Unknown postcondition type: {action_type}")
 
@@ -622,16 +622,14 @@ class ActionExecutor:
         set_node_access(node, actor_id, access_level)
         if access_level >= NodeAccessLevel.USER and old_access < NodeAccessLevel.USER:
             node.compromised = True
-            if hasattr(self, "_simulator") and self._simulator:
+            if self._simulator:
                 for actor in self._simulator.get_all_actors():
                     if actor.id == actor_id and hasattr(actor, "compromised_nodes"):
-                        if hasattr(node, "id"):
-                            actor.compromised_nodes.add(node.id)
+                        actor.compromised_nodes.add(node.id)
         if old_access == NodeAccessLevel.NONE and access_level == NodeAccessLevel.VISIBLE:
-            if hasattr(self, "_simulator") and self._simulator:
-                if hasattr(node, "id"):
-                    self._simulator.notify_nodes_discovered(actor_id, [node])
-        if hasattr(self, "_simulator") and self._simulator:
+            if self._simulator:
+                self._simulator.notify_nodes_discovered(actor_id, [node])
+        if self._simulator:
             self._simulator.record_access_change(node, actor_id, old_access, access_level)
 
     def _execute_set_access_if_none(
@@ -642,6 +640,31 @@ class ActionExecutor:
         if current_access == NodeAccessLevel.NONE:
             self._execute_set_access(action, node, actor_id)
 
+    def _execute_reduce_attacker_access(
+        self, action: dict[str, Any], node: Node, defender_id: str
+    ) -> None:
+        """Reduce all attackers' access on this node to the specified level.
+
+        Used by defender actions like incident response / system restore.
+        JSON spec: {"type": "reduce_attacker_access", "access_value": "NONE"}
+        """
+        target_level = validate_node_access(action.get("access_value", "NONE"))
+        if not self._simulator:
+            return
+        for actor in self._simulator.get_all_actors():
+            if not getattr(actor, "is_attacker", False):
+                continue
+            current_access = get_node_access(node, actor.id)
+            if current_access > target_level:
+                set_node_access(node, actor.id, target_level)
+                self._simulator.record_access_change(node, actor.id, current_access, target_level)
+                # Remove from compromised_nodes if dropping below USER
+                if target_level < NodeAccessLevel.USER and hasattr(actor, "compromised_nodes"):
+                    actor.compromised_nodes.discard(node.id)
+                # Remove from visible_nodes if dropping to NONE
+                if target_level == NodeAccessLevel.NONE and hasattr(actor, "visible_nodes"):
+                    actor.visible_nodes.discard(node)
+
     def _execute_set_property(self, action: dict[str, Any], node: Node) -> None:
         property_name = action["property"]
         value = action["value"]
@@ -650,8 +673,6 @@ class ActionExecutor:
         if isinstance(value, str) and value.startswith("@"):
             value = self._resolve_special_value(value, node)
 
-        if not hasattr(node, "properties"):
-            node.properties = {}
         node.properties[property_name] = value
 
     def _execute_modify_property(self, action: dict[str, Any], node: Node) -> None:
@@ -687,20 +708,13 @@ class ActionExecutor:
     def _execute_set_software(self, action: dict[str, Any], node: Node) -> None:
         software_key = action["software_key"]
         value = action["value"]
-        if not hasattr(node, "software"):
-            node.software = {}
         node.software[software_key] = value
 
     def _execute_add_vulnerability(self, action: dict[str, Any], node: Node) -> None:
         vulnerability = action["vulnerability"]
-        if not hasattr(node, "vulnerabilities"):
-            node.vulnerabilities = []
         node.vulnerabilities.append(vulnerability)
 
     def _execute_remove_vulnerability(self, action: dict[str, Any], node: Node) -> None:
-        if not hasattr(node, "vulnerabilities"):
-            node.vulnerabilities = []
-            return
         if "cve" in action:
             cve_id = action["cve"]
             if cve_id in node.vulnerabilities:
@@ -760,10 +774,10 @@ class ActionExecutor:
         logger.debug(
             f"  Total discovered: {len(discovered_nodes)} nodes, {len(discovered_links)} links"
         )
-        if discovered_nodes and hasattr(self, "_simulator") and self._simulator:
+        if discovered_nodes and self._simulator:
             logger.debug(f"  Notifying simulator about {len(discovered_nodes)} discovered nodes")
             self._simulator.notify_nodes_discovered(actor_id, discovered_nodes)
-        if discovered_links and hasattr(self, "_simulator") and self._simulator:
+        if discovered_links and self._simulator:
             logger.debug(f"  Notifying simulator about {len(discovered_links)} discovered links")
             self._simulator.notify_links_discovered(actor_id, discovered_links)
 
@@ -778,36 +792,28 @@ class ActionExecutor:
         for link in links:
             other_node = link.get_other_node(node)
             if other_node and (not other_node.compromised):
-                if not hasattr(other_node, "access"):
-                    other_node.access = {}
                 other_node.access[actor_id] = access_value
                 other_node.compromised = True
                 compromised_neighbors.append(other_node)
-                if not hasattr(link, "access"):
-                    link.access = {}
                 link.access[actor_id] = LinkAccessLevel.VISIBLE
-        if compromised_neighbors and hasattr(self, "_simulator") and self._simulator:
+        if compromised_neighbors and self._simulator:
             self._simulator.notify_nodes_discovered(actor_id, compromised_neighbors)
             for actor in self._simulator.get_all_actors():
                 if actor.id == actor_id and hasattr(actor, "compromised_nodes"):
                     for neighbor in compromised_neighbors:
-                        if hasattr(neighbor, "id"):
-                            actor.compromised_nodes.add(neighbor.id)
+                        actor.compromised_nodes.add(neighbor.id)
 
     def _execute_clear_assets(self, action: dict[str, Any], node: Node) -> None:
-        if hasattr(node, "assets"):
-            node.assets.clear()
+        node.assets.clear()
 
     def _execute_add_capability(self, action: dict[str, Any], node: Node) -> None:
         capability = action["capability"]
-        if not hasattr(node, "capabilities"):
-            node.capabilities = []
         if capability not in node.capabilities:
             node.capabilities.append(capability)
 
     def _execute_remove_capability(self, action: dict[str, Any], node: Node) -> None:
         capability = action["capability"]
-        if hasattr(node, "capabilities") and capability in node.capabilities:
+        if capability in node.capabilities:
             node.capabilities.remove(capability)
 
     def _resolve_special_value(self, value: str, node: Node) -> Any:

@@ -8,8 +8,8 @@ import logging
 from typing import Any
 
 from src.detection.base_detection import BaseDetectionEngine
-from src.detection.exponential_detection import ExponentialDetectionEngine
-from src.detection.linear_detection import LinearDetectionEngine
+from src.detection.early_weighted_detection import EarlyWeightedDetectionEngine
+from src.detection.late_weighted_detection import LateWeightedDetectionEngine
 from src.detection.uniform_detection import UniformDetectionEngine
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,8 @@ class DetectionEngineRegistry:
 
     Built-in engines:
     - "uniform": UniformDetectionEngine
-    - "exponential": ExponentialDetectionEngine
-    - "linear": LinearDetectionEngine
+    - "early_weighted": EarlyWeightedDetectionEngine
+    - "late_weighted": LateWeightedDetectionEngine
     """
 
     # Default engine configurations
@@ -40,12 +40,12 @@ class DetectionEngineRegistry:
             "class": UniformDetectionEngine,
             "default_params": {"default_detection_probability": 0.3},
         },
-        "exponential": {
-            "class": ExponentialDetectionEngine,
-            "default_params": {"lambda_param": 4.605, "default_detection_probability": 0.4},
+        "early_weighted": {
+            "class": EarlyWeightedDetectionEngine,
+            "default_params": {"exponent": 2.0, "default_detection_probability": 0.4},
         },
-        "linear": {
-            "class": LinearDetectionEngine,
+        "late_weighted": {
+            "class": LateWeightedDetectionEngine,
             "default_params": {"exponent": 2.0, "default_detection_probability": 0.35},
         },
     }
@@ -69,7 +69,7 @@ class DetectionEngineRegistry:
         Register a detection engine type.
 
         Args:
-            name: Name to register under (e.g., "uniform", "exponential")
+            name: Name to register under (e.g., "uniform", "early_weighted")
             engine_class: Detection engine class (must inherit BaseDetectionEngine)
             default_params: Default parameters for engine creation
         """
@@ -141,7 +141,7 @@ class DetectionEngineRegistry:
         Create a detection engine instance.
 
         Args:
-            name: Engine type name (e.g., "uniform", "exponential", "linear")
+            name: Engine type name (e.g., "uniform", "early_weighted", "late_weighted")
             **kwargs: Override default parameters
 
         Returns:
@@ -175,7 +175,7 @@ class DetectionEngineRegistry:
 
         Args:
             config: Configuration with "type" and optional parameters
-                Example: {"type": "exponential", "lambda_param": 3.0}
+                Example: {"type": "early_weighted", "exponent": 3.0}
 
         Returns:
             Configured detection engine instance

@@ -18,23 +18,28 @@ def _get_env(key: str, default: str, cast_type: type = str):
 @dataclass
 class SimConfig:
     default_detection_engine: str = field(
-        default_factory=lambda: _get_env("DETECTION_ENGINE", "exponential")
+        default_factory=lambda: _get_env("DETECTION_ENGINE", "early_weighted")
     )
-    default_sim_time: int = field(default_factory=lambda: _get_env("SIM_TIME", "72", int))
-    default_sim_runs: int = field(default_factory=lambda: _get_env("SIM_RUNS", "1", int))
+    default_sim_time: int = field(default_factory=lambda: _get_env("SIM_TIME", "168", int))
+    default_sim_runs: int = field(default_factory=lambda: _get_env("SIM_RUNS", "3", int))
     log_level: str = field(default_factory=lambda: _get_env("LOG_LEVEL", "INFO"))
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     max_event_queue_size: int = field(
         default_factory=lambda: _get_env("MAX_EVENT_QUEUE_SIZE", "10000", int)
     )
     event_history_limit: int | None = None
-    default_attacker_capacity: int = field(
-        default_factory=lambda: _get_env("ATTACKER_CAPACITY", "3", int)
+    default_attacker_capacity: float = field(
+        default_factory=lambda: _get_env("ATTACKER_CAPACITY", "inf", float)
     )
     default_defender_capacity: int = field(
-        default_factory=lambda: _get_env("DEFENDER_CAPACITY", "3", int)
+        default_factory=lambda: _get_env("DEFENDER_CAPACITY", "2", int)
     )
-    default_budget: float = field(default_factory=lambda: _get_env("DEFAULT_BUDGET", "inf", float))
+    default_budget: float = field(
+        default_factory=lambda: _get_env("DEFAULT_BUDGET", "100000", float)
+    )
+    default_network: str = field(
+        default_factory=lambda: _get_env("DEFAULT_NETWORK", "poc_network.json")
+    )
     damage_multiplier: float = field(
         default_factory=lambda: _get_env("DAMAGE_MULTIPLIER", "1.0", float)
     )
@@ -66,8 +71,8 @@ class PathConfig:
 
 @dataclass
 class DetectionConfig:
-    exponential_lambda: float = 2.0
-    linear_slope: float = 1.0
+    early_weighted_exponent: float = 2.0
+    late_weighted_exponent: float = 2.0
     uniform_rate: float = 1.0
     cdf_tolerance: float = 0.02
     validate_cdf: bool = True

@@ -38,3 +38,8 @@ class ProactiveDefenderStrategy(DefenderStrategy):
             priority += 15
 
         return priority
+
+    def get_minimum_threshold(self, ongoing_count: int) -> float:
+        """Proactive strategy spreads defenses broadly, with moderate
+        selectivity for additional concurrent actions."""
+        return 40.0 * ongoing_count

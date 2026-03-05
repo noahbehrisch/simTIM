@@ -1,21 +1,19 @@
 {
   "name": "Incident Response",
+  "description": "Investigate and remediate a compromised node. Evicts attacker access by resetting credentials, killing malicious processes, and isolating the system. Requires defender ADMIN access and the node must be flagged as compromised.",
   "action_type": "node",
   "d3fend": {
     "technique_id": "D3-CE",
     "technique_name": "Credential Eviction",
     "url": "https://d3fend.mitre.org/technique/d3f:CredentialEviction",
-    "related_techniques": [
-      "D3-CCSA"
-    ],
+    "related_techniques": ["D3-CCSA"],
     "tactic": "Evict",
-    "related_tactics": [
-      "Detect"
-    ]
+    "related_tactics": ["Detect"]
   },
   "cost": 5000,
-  "duration": 72.0,
-  "success_probability": 0.7,
+  "duration": 4.0,
+  "success_probability": 0.75,
+  "enabled_by_default": false,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -38,24 +36,13 @@
     "operator": "AND",
     "actions": [
       {
+        "type": "reduce_attacker_access",
+        "access_value": "VISIBLE"
+      },
+      {
         "type": "set_property",
-        "property": "security_level",
-        "value": "high"
-      },
-      {
-        "type": "modify_property",
-        "property": "vulnerabilities",
-        "operation": "subtract",
-        "value": 3
-      },
-      {
-        "type": "set_links_access",
-        "access_value": "NONE"
-      },
-      {
-        "type": "increment_counter",
-        "counter": "incident_responses",
-        "increment": 1
+        "property": "compromised",
+        "value": false
       }
     ]
   },
@@ -65,7 +52,7 @@
   },
   "damage_gain": {
     "one_off_damage": 0.0,
-    "one_off_gain": 100.0,
+    "one_off_gain": 0.0,
     "time_damage": 0.0,
     "time_gain": 0.0
   }

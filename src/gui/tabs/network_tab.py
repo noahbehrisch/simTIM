@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from ...config import sim_config
 from ...networks.network_creator import NetworkCreator
 from .base_tab import BaseTab
 
@@ -15,7 +16,7 @@ class NetworkTab(BaseTab):
                 "..",
                 "networks",
                 "library",
-                "demo_network.json",
+                sim_config.default_network,
             )
         )
         self.network_file_var = tk.StringVar(value=default_network_path)
@@ -62,7 +63,7 @@ class NetworkTab(BaseTab):
             bg=self.tab_color,
             fg=self.button_fg,
         ).grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.predefined_var = tk.StringVar(value="demo_network.json")
+        self.predefined_var = tk.StringVar(value=sim_config.default_network)
         self.predefined_dropdown = ttk.Combobox(
             self.predefined_frame,
             textvariable=self.predefined_var,
@@ -81,14 +82,15 @@ class NetworkTab(BaseTab):
         descriptions_frame = tk.Frame(self.predefined_frame, bg=self.tab_color)
         descriptions_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
         self.network_descriptions = {
-            "demo_network.json": "Simple 2-node network for testing and demonstrations",
+            "poc_network.json": "Minimal 2-node PoC network: internet-exposed webserver and internal database",
+            "demo_network.json": "6-node enterprise network for testing and demonstrations",
             "healthcare_network.json": "Healthcare facility network with medical devices and systems",
             "realistic_enterprise_network.json": "Large enterprise network with multiple departments",
             "realistic_smb_network.json": "Small-to-medium business network topology",
         }
         self.description_label = tk.Label(
             descriptions_frame,
-            text=self.network_descriptions["demo_network.json"],
+            text=self.network_descriptions.get(sim_config.default_network, ""),
             bg=self.tab_color,
             fg=self.theme.COLORS["text_secondary"],
             wraplength=400,

@@ -12,9 +12,22 @@
   "cost": 50.0,
   "duration": 0.5,
   "success_probability": 0.95,
+  "enabled_by_default": true,
   "precondition": {
-    "type": "constant",
-    "value": true
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "start_node_access_check",
+        "operator": "greater_equal",
+        "value": "USER"
+      },
+      {
+        "type": "end_node_access_check",
+        "operator": "equals",
+        "value": "NONE"
+      }
+    ]
   },
   "postcondition": {
     "type": "set_access_if_none",

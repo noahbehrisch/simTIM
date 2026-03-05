@@ -1,7 +1,7 @@
 HELP_CONTENT = {
     "Simulation": {
         "title": "Simulation Configuration",
-        "content": "• Simulation Time: Duration in hours\n• Number of Runs: Repeat count for statistics\n• Detection Engine: uniform (constant) | exponential (early bias) | linear (late bias)\n• Duration Overrides: Test what-if scenarios",
+        "content": "• Simulation Time: Duration in hours\n• Number of Runs: Repeat count for statistics\n• Detection Engine: uniform (constant) | early_weighted (early bias) | late_weighted (late bias)\n• Duration Overrides: Test what-if scenarios",
     },
     "Network": {
         "title": "Network Configuration",
@@ -31,7 +31,7 @@ HELP_CONTENT = {
 TOOLTIPS = {
     "sim_time": "Duration in hours",
     "sim_runs": "Repeat count",
-    "detection_engine": "uniform | exponential | linear",
+    "detection_engine": "uniform | early_weighted | late_weighted",
     "action_duration": "Override all durations",
     "attack_duration": "Override attack durations",
     "defense_duration": "Override defense durations",

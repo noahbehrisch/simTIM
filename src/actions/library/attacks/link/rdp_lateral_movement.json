@@ -23,6 +23,11 @@
         "value": "running"
       },
       {
+        "type": "start_node_access_check",
+        "operator": "greater_equal",
+        "value": "USER"
+      },
+      {
         "type": "end_node_access_check",
         "operator": "less_than",
         "value": "USER"
@@ -35,7 +40,7 @@
     "actions": [
       {
         "type": "set_access",
-        "access_value": "ADMIN"
+        "access_value": "USER"
       },
       {
         "type": "set_property",

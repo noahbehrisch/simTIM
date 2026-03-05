@@ -56,9 +56,9 @@
     "value": 0.35
   },
   "damage_gain": {
-    "one_off_damage": 0.0,
+    "one_off_damage": 1500.0,
     "one_off_gain": 800.0,
-    "time_damage": 0.0,
+    "time_damage": 20.0,
     "time_gain": 50.0
   },
   "references": [

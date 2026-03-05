@@ -12,9 +12,6 @@
         "model": "TZ370",
         "firmware": "7.0.1-5035"
       },
-      "vulnerabilities": [
-        "CVE-2022-22274"
-      ],
       "assets": [
         "firewall_config",
         "vpn_tunnels",
@@ -43,11 +40,6 @@
         "cms": "WordPress",
         "cms_version": "6.1.1"
       },
-      "vulnerabilities": [
-        "CVE-2022-22963",
-        "CVE-2023-23752",
-        "CVE-2022-43497"
-      ],
       "assets": [
         "company_website",
         "customer_inquiries",
@@ -79,11 +71,6 @@
         "file_services": "SMB 3.1.1",
         "email_server": "Exchange 2016"
       },
-      "vulnerabilities": [
-        "CVE-2017-0144",
-        "CVE-2021-31207",
-        "CVE-2022-41040"
-      ],
       "assets": [
         "user_accounts",
         "shared_files",
@@ -110,9 +97,6 @@
         "os": "DSM",
         "version": "7.1.1-42962"
       },
-      "vulnerabilities": [
-        "CVE-2023-2729"
-      ],
       "assets": [
         "file_backups",
         "media_storage",
@@ -137,9 +121,6 @@
         "model": "LaserJet Pro MFP M428fdw",
         "firmware": "20220622"
       },
-      "vulnerabilities": [
-        "CVE-2023-1707"
-      ],
       "assets": [
         "print_jobs",
         "scanned_documents",
@@ -167,10 +148,6 @@
         "browser": "Google Chrome",
         "endpoint_protection": "Windows Defender"
       },
-      "vulnerabilities": [
-        "CVE-2023-21823",
-        "CVE-2022-30190"
-      ],
       "assets": [
         "financial_data",
         "business_plans",
@@ -201,11 +178,6 @@
         "browser": "Internet Explorer 11",
         "endpoint_protection": "none"
       },
-      "vulnerabilities": [
-        "CVE-2021-40444",
-        "CVE-2022-30190",
-        "CVE-2023-21823"
-      ],
       "assets": [
         "work_documents",
         "email_access",
@@ -235,10 +207,6 @@
         "browser": "Mozilla Firefox",
         "endpoint_protection": "none"
       },
-      "vulnerabilities": [
-        "CVE-2022-30190",
-        "CVE-2023-21823"
-      ],
       "assets": [
         "accounting_files",
         "vendor_invoices",

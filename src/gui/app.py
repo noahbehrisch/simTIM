@@ -58,6 +58,7 @@ class App(tk.Tk):
         self.tabs = {}
         self.current_tab = None
         self.last_sim_time = None  # Store last simulation time for results window
+        self.last_total_nodes = None  # Store total nodes for consistent Y-axis
         self.theme_colors = self.theme.get_theme_colors()
         self.create_tabs()
         self.sidebar = Sidebar(
@@ -259,7 +260,11 @@ class App(tk.Tk):
         self._close_results_window()
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
         self._results_window = ResultsWindow(
-            self, all_histories, theme_colors, sim_time=self.last_sim_time
+            self,
+            all_histories,
+            theme_colors,
+            sim_time=self.last_sim_time,
+            total_nodes=self.last_total_nodes,
         )
 
     def open_results_window_scenarios(self, scenario_results):
@@ -274,6 +279,7 @@ class App(tk.Tk):
             theme_colors,
             scenario_results=scenario_results,
             sim_time=self.last_sim_time,
+            total_nodes=self.last_total_nodes,
         )
 
     def open_help_window(self):
@@ -285,16 +291,25 @@ class App(tk.Tk):
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
         scenario_config = self.scenario_tab.get_variables_config()
+        enabled_actions = self.action_tab.get_enabled_actions()
         sim_runs = sim_config["runs"]
         sim_time = sim_config["time"]
         self.last_sim_time = sim_time
         detection_engine_type = sim_config["detection_engine_type"]
         path_to_network_config = network_config["file_path"]
+
+        # Count nodes in the network for consistent Y-axis in plots
+        try:
+            import json
+
+            with open(path_to_network_config) as f:
+                net_data = json.load(f)
+            self.last_total_nodes = len(net_data.get("nodes", []))
+        except Exception:
+            self.last_total_nodes = None
+
         if not attackers:
             tk.messagebox.showerror("Error", "At least one attacker is required!")
-            return
-        if not defenders:
-            tk.messagebox.showerror("Error", "At least one defender is required!")
             return
         try:
             if scenario_config and "scenarios" in scenario_config and scenario_config["scenarios"]:
@@ -333,6 +348,7 @@ class App(tk.Tk):
                     defenders=defenders,
                     sim_time=sim_time,
                     detection_engine_type=detection_engine_type,
+                    enabled_actions=enabled_actions,
                 )
             else:
                 progress_window = ProgressWindow(self, total_runs=sim_runs)
@@ -368,6 +384,7 @@ class App(tk.Tk):
                     attackers=attackers,
                     defenders=defenders,
                     detection_engine_type=detection_engine_type,
+                    enabled_actions=enabled_actions,
                 )
         except Exception as e:
             import traceback

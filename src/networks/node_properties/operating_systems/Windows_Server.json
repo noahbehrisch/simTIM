@@ -2,31 +2,13 @@
   "name": "Windows Server",
   "versions": [
     {
-      "version": "2022",
-      "vulnerabilities": [
-        "CVE-2023-36036",
-        "CVE-2023-23397",
-        "CVE-2023-21674",
-        "CVE-2022-21857"
-      ]
+      "version": "2022"
     },
     {
-      "version": "2019",
-      "vulnerabilities": [
-        "CVE-2022-21857",
-        "CVE-2021-36934",
-        "CVE-2021-34527",
-        "CVE-2020-1472"
-      ]
+      "version": "2019"
     },
     {
-      "version": "2016",
-      "vulnerabilities": [
-        "CVE-2020-1472",
-        "CVE-2019-0708",
-        "CVE-2017-0144"
-      ]
+      "version": "2016"
     }
   ]
 }
-

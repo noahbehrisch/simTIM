@@ -13,10 +13,6 @@
         "firmware": "9.16.1",
         "management": "ASDM 7.16"
       },
-      "vulnerabilities": [
-        "CVE-2020-3259",
-        "CVE-2020-3187"
-      ],
       "assets": [
         "internet_access",
         "vpn_gateway",
@@ -44,11 +40,6 @@
         "php": "7.4.33",
         "ssl_cert": "Let's Encrypt"
       },
-      "vulnerabilities": [
-        "CVE-2021-41773",
-        "CVE-2021-42013",
-        "CVE-2022-22720"
-      ],
       "assets": [
         "corporate_website",
         "customer_portal",
@@ -82,10 +73,6 @@
         "webmail": "Roundcube",
         "antivirus": "ClamAV"
       },
-      "vulnerabilities": [
-        "CVE-2020-28948",
-        "CVE-2021-38562"
-      ],
       "assets": [
         "email_database",
         "user_mailboxes",
@@ -116,9 +103,6 @@
         "version": "2.6.0",
         "base_os": "FreeBSD 12.3"
       },
-      "vulnerabilities": [
-        "CVE-2021-41282"
-      ],
       "assets": [
         "internal_firewall_rules",
         "network_segmentation",
@@ -145,11 +129,6 @@
         "dns_server": "Windows DNS",
         "dhcp_server": "Windows DHCP"
       },
-      "vulnerabilities": [
-        "CVE-2021-42287",
-        "CVE-2021-42278",
-        "CVE-2022-26923"
-      ],
       "assets": [
         "domain_database",
         "user_credentials",
@@ -178,11 +157,6 @@
         "file_services": "SMB 3.1.1",
         "backup_agent": "Veeam Agent"
       },
-      "vulnerabilities": [
-        "CVE-2017-0144",
-        "CVE-2017-0145",
-        "CVE-2021-31166"
-      ],
       "assets": [
         "shared_drives",
         "department_files",
@@ -210,10 +184,6 @@
         "db_version": "2019 Enterprise",
         "db_patch_level": "CU18"
       },
-      "vulnerabilities": [
-        "CVE-2022-29143",
-        "CVE-2023-21528"
-      ],
       "assets": [
         "customer_database",
         "financial_records",
@@ -244,9 +214,6 @@
         "backup_software": "Veeam Backup & Replication",
         "backup_version": "12.0"
       },
-      "vulnerabilities": [
-        "CVE-2023-27532"
-      ],
       "assets": [
         "system_backups",
         "disaster_recovery_data",
@@ -272,9 +239,6 @@
         "siem": "Splunk Enterprise",
         "siem_version": "9.1.2"
       },
-      "vulnerabilities": [
-        "CVE-2023-32707"
-      ],
       "assets": [
         "security_logs",
         "incident_data",
@@ -306,10 +270,6 @@
         "endpoint_protection": "CrowdStrike Falcon",
         "browser": "Microsoft Edge"
       },
-      "vulnerabilities": [
-        "CVE-2023-36874",
-        "CVE-2023-38180"
-      ],
       "assets": [
         "hr_documents",
         "employee_data",
@@ -339,10 +299,6 @@
         "financial_software": "QuickBooks Enterprise",
         "endpoint_protection": "Windows Defender"
       },
-      "vulnerabilities": [
-        "CVE-2023-36874",
-        "CVE-2023-21823"
-      ],
       "assets": [
         "financial_reports",
         "budget_data",
@@ -372,9 +328,6 @@
         "remote_access": "RDP",
         "endpoint_protection": "CrowdStrike Falcon"
       },
-      "vulnerabilities": [
-        "CVE-2023-36874"
-      ],
       "assets": [
         "admin_scripts",
         "network_diagrams",
@@ -405,7 +358,6 @@
         "version": "24.04 LTS",
         "services": []
       },
-      "vulnerabilities": [],
       "assets": [],
       "properties": {
         "exposed_to_internet": false

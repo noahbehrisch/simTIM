@@ -12,9 +12,6 @@
         "model": "FortiGate 600E",
         "firmware": "7.2.5"
       },
-      "vulnerabilities": [
-        "CVE-2023-25610"
-      ],
       "assets": [
         "network_access_logs",
         "vpn_connections",
@@ -39,7 +36,6 @@
         "model": "ASA 5525-X",
         "firmware": "9.18.2"
       },
-      "vulnerabilities": [],
       "assets": [
         "medical_network_segmentation",
         "device_access_logs"
@@ -65,10 +61,6 @@
         "ehr_version": "2022.1",
         "database": "Microsoft SQL Server 2019"
       },
-      "vulnerabilities": [
-        "CVE-2023-21528",
-        "CVE-2022-29143"
-      ],
       "assets": [
         "patient_records",
         "medical_histories",
@@ -102,9 +94,6 @@
         "pacs_version": "6.1",
         "dicom_services": "DICOM 3.0"
       },
-      "vulnerabilities": [
-        "CVE-2022-29464"
-      ],
       "assets": [
         "medical_images",
         "radiology_studies",
@@ -133,10 +122,6 @@
         "his_system": "Meditech",
         "his_version": "6.17"
       },
-      "vulnerabilities": [
-        "CVE-2021-31166",
-        "CVE-2017-0144"
-      ],
       "assets": [
         "hospital_administration",
         "patient_billing",
@@ -164,10 +149,6 @@
         "os": "Windows 10 IoT",
         "dicom_version": "3.0"
       },
-      "vulnerabilities": [
-        "CVE-2022-30190",
-        "CVE-2023-21823"
-      ],
       "assets": [
         "mri_images",
         "patient_scan_data",
@@ -196,11 +177,6 @@
         "os": "Windows 7 Embedded",
         "dicom_version": "3.0"
       },
-      "vulnerabilities": [
-        "CVE-2020-1472",
-        "CVE-2017-0144",
-        "CVE-2019-0708"
-      ],
       "assets": [
         "ct_images",
         "contrast_protocols",
@@ -228,9 +204,6 @@
         "software_version": "12.1.2",
         "wireless": "802.11n"
       },
-      "vulnerabilities": [
-        "CVE-2022-26392"
-      ],
       "assets": [
         "medication_protocols",
         "infusion_logs",
@@ -258,9 +231,6 @@
         "software_version": "M.00.04",
         "protocol": "HL7 FHIR"
       },
-      "vulnerabilities": [
-        "CVE-2023-20076"
-      ],
       "assets": [
         "vital_signs",
         "alarm_history",
@@ -289,9 +259,6 @@
         "browser": "Internet Explorer 11",
         "endpoint_protection": "Symantec Endpoint Protection"
       },
-      "vulnerabilities": [
-        "CVE-2023-36874"
-      ],
       "assets": [
         "patient_charts",
         "medication_orders",
@@ -322,9 +289,6 @@
         "pacs_client": "GE Centricity Universal Viewer",
         "endpoint_protection": "CrowdStrike Falcon"
       },
-      "vulnerabilities": [
-        "CVE-2023-36874"
-      ],
       "assets": [
         "diagnosis_data",
         "treatment_plans",
@@ -358,9 +322,6 @@
         "his_admin": "Meditech Admin",
         "endpoint_protection": "CrowdStrike Falcon"
       },
-      "vulnerabilities": [
-        "CVE-2023-36874"
-      ],
       "assets": [
         "system_administration",
         "user_accounts",

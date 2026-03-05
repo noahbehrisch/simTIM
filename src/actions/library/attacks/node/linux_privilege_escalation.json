@@ -12,6 +12,7 @@
   "cost": 150,
   "duration": 6.0,
   "success_probability": 0.45,
+  "enabled_by_default": true,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -20,18 +21,12 @@
         "type": "software_check",
         "software_key": "os",
         "operator": "in",
-        "values": ["Ubuntu", "Linux", "CentOS", "RedHat"]
+        "values": ["Ubuntu", "Ubuntu Server", "Linux", "CentOS", "RedHat", "Debian"]
       },
       {
         "type": "access_check",
         "operator": "equals",
         "value": "USER"
-      },
-      {
-        "type": "vulnerability_check",
-        "check_type": "count",
-        "operator": "greater_than",
-        "value": 0
       }
     ]
   },
@@ -89,17 +84,11 @@
         "nested_property": "security_monitoring",
         "values": ["business_hours"],
         "probability_modifier": 0.10
-      },
-      {
-        "property": "properties",
-        "nested_property": "criticality",
-        "values": ["critical", "high"],
-        "probability_modifier": 0.10
       }
     ]
   },
   "damage_gain": {
-    "one_off_damage": 40.0,
+    "one_off_damage": 2000.0,
     "one_off_gain": 2500.0,
     "time_damage": 8.0,
     "time_gain": 4.0

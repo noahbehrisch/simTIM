@@ -6,11 +6,7 @@ from .access_utils import (
     set_node_access,
 )
 from .action_index import OngoingActionsIndex
-from .economic_model import (
-    calculate_action_damage,
-    calculate_action_gain,
-    economic_model,
-)
+from .economic_model import SimpleEconomicModel
 from .events import (
     DefenderAlertObserver,
     EventBus,
@@ -58,9 +54,7 @@ __all__ = [
     "set_node_access",
     "get_link_access",
     "set_link_access",
-    "economic_model",
-    "calculate_action_damage",
-    "calculate_action_gain",
+    "SimpleEconomicModel",
     "OngoingActionsIndex",
     "EventBus",
     "EventType",

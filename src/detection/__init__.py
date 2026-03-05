@@ -6,8 +6,8 @@ Provides detection engines for calculating when attacker actions are detected.
 Main Classes:
 - BaseDetectionEngine: Abstract base class for detection engines
 - UniformDetectionEngine: Uniform distribution detection timing
-- ExponentialDetectionEngine: Exponential distribution (early detection bias)
-- LinearDetectionEngine: Power-law distribution (configurable bias)
+- EarlyWeightedDetectionEngine: Early-biased detection (front-loaded)
+- LateWeightedDetectionEngine: Late-biased detection (back-loaded)
 - DetectionEngineRegistry: Registry for engine types
 
 Convenience Functions:
@@ -17,8 +17,8 @@ Convenience Functions:
 """
 
 from .base_detection import BaseDetectionEngine
-from .exponential_detection import ExponentialDetectionEngine
-from .linear_detection import LinearDetectionEngine
+from .early_weighted_detection import EarlyWeightedDetectionEngine
+from .late_weighted_detection import LateWeightedDetectionEngine
 from .registry import (
     DetectionEngineError,
     DetectionEngineRegistry,
@@ -33,8 +33,8 @@ __all__ = [
     "BaseDetectionEngine",
     # Engine implementations
     "UniformDetectionEngine",
-    "ExponentialDetectionEngine",
-    "LinearDetectionEngine",
+    "EarlyWeightedDetectionEngine",
+    "LateWeightedDetectionEngine",
     # Registry
     "DetectionEngineRegistry",
     "DetectionEngineError",

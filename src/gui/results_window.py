@@ -20,11 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 class ResultsWindow:
-    def __init__(self, parent, all_histories, theme_colors, scenario_results=None, sim_time=None):
+    def __init__(
+        self,
+        parent,
+        all_histories,
+        theme_colors,
+        scenario_results=None,
+        sim_time=None,
+        total_nodes=None,
+    ):
         self.parent = parent
         self.all_histories = all_histories
         self.scenario_results = scenario_results
         self.sim_time = sim_time  # Store simulation duration for consistent X-axis
+        self.total_nodes = total_nodes  # Total nodes in network for consistent Y-axis
         self.bg_color = theme_colors["bg_color"]
         self.button_fg = theme_colors["button_fg"]
         self.runs_data = []
@@ -222,7 +231,6 @@ class ResultsWindow:
         self._create_events_timeline_tab()
         self._create_money_timeline_tab()
         self._create_nodes_timeline_tab()
-        self._create_attack_path_tab()
         self._create_statistical_tab()
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -680,6 +688,9 @@ class ResultsWindow:
             )
             ax.legend(loc="upper left")
             ax.set_xlim(0, plot_max_time * 1.02)
+            if self.total_nodes:
+                ax.set_ylim(0, self.total_nodes)
+                ax.set_yticks(range(self.total_nodes + 1))
         else:
             ax.text(
                 0.5,
@@ -691,6 +702,12 @@ class ResultsWindow:
                 fontsize=12,
                 color="gray",
             )
+            # Still set consistent axes even with no data
+            if self.sim_time:
+                ax.set_xlim(0, self.sim_time * 1.02)
+            if self.total_nodes:
+                ax.set_ylim(0, self.total_nodes)
+                ax.set_yticks(range(self.total_nodes + 1))
 
         ax.set_xlabel("Time (hours)")
         ax.set_ylabel("Number of Nodes")

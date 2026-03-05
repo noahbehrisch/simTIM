@@ -59,6 +59,10 @@ class Link:
             return self.node1
         return None
 
+    def __repr__(self) -> str:
+        direction = "<->" if self.bidirectional else "->"
+        return f"{self.node1.id}{direction}{self.node2.id}"
+
 
 @dataclass
 class Network:

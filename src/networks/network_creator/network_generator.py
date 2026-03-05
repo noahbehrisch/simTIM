@@ -26,13 +26,8 @@ class NetworkGenerator:
             if versions:
                 chosen_version_data = random.choice(versions)
                 chosen_version = chosen_version_data["version"]
-                available_vulns = chosen_version_data.get("vulnerabilities", [])
-                chosen_vulns = random.sample(
-                    available_vulns, min(len(available_vulns), random.randint(0, 3))
-                )
             else:
                 chosen_version = "1.0"
-                chosen_vulns = []
             num_services = random.randint(1, min(4, len(services))) if services else 0
             chosen_services = random.sample(services, num_services) if num_services > 0 else []
             num_assets = random.randint(0, min(2, len(assets))) if assets else 0
@@ -49,7 +44,6 @@ class NetworkGenerator:
                     "version": chosen_version,
                     "services": chosen_services,
                 },
-                "vulnerabilities": chosen_vulns,
                 "assets": chosen_assets,
                 "category": chosen_category,
                 "properties": {"exposed_to_internet": False},
@@ -130,13 +124,8 @@ class NetworkGenerator:
             if versions:
                 chosen_version_data = random.choice(versions)
                 chosen_version = chosen_version_data["version"]
-                available_vulns = chosen_version_data.get("vulnerabilities", [])
-                chosen_vulns = random.sample(
-                    available_vulns, min(len(available_vulns), random.randint(0, 3))
-                )
             else:
                 chosen_version = "1.0"
-                chosen_vulns = []
             num_services = random.randint(1, min(4, len(services))) if services else 0
             chosen_services = random.sample(services, num_services) if num_services > 0 else []
             num_assets = random.randint(0, min(2, len(assets))) if assets else 0
@@ -153,7 +142,6 @@ class NetworkGenerator:
                     "version": chosen_version,
                     "services": chosen_services,
                 },
-                "vulnerabilities": chosen_vulns,
                 "assets": chosen_assets,
                 "category": chosen_category,
                 "properties": {"exposed_to_internet": False},

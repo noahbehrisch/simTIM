@@ -134,8 +134,9 @@ class ActionTab(BaseTab):
     def _create_action_checkbox(self, parent, action_name, action_data, action_category):
         action_frame = tk.Frame(parent, bg=self.tab_color)
         action_frame.pack(fill="x", padx=5, pady=3)
+        default_enabled = action_data.get("enabled_by_default", False)
         if action_name not in self.action_states:
-            self.action_states[action_name] = tk.BooleanVar(value=True)
+            self.action_states[action_name] = tk.BooleanVar(value=default_enabled)
         checkbox = tk.Checkbutton(
             action_frame,
             text=action_name,

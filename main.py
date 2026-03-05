@@ -43,11 +43,7 @@ For more information, see README.md
 
 
 def run_demo():
-    import tkinter as tk
-
     from src.core.simulation_runner import SimulationRunner
-    from src.gui.results_window import ResultsWindow
-    from src.gui.theme import Theme
     from src.utils.results_printer import print_event_history, print_quick_summary
 
     demo_network = os.path.join(
@@ -86,7 +82,7 @@ def run_demo():
         ],
         sim_time=168,
         sim_runs=3,
-        detection_engine_type="exponential",
+        detection_engine_type="early_weighted",
     )
 
     if histories:
@@ -98,19 +94,8 @@ def run_demo():
 
         print()
         print("=" * 70)
-        print("Opening GUI results window...")
-        print("(Close the window to exit)")
+        print("Demo complete.")
         print("=" * 70)
-
-        root = tk.Tk()
-        root.withdraw()
-        theme_colors = {
-            "bg_color": Theme.COLORS["bg_primary"],
-            "button_fg": Theme.COLORS["text_primary"],
-        }
-        results_window = ResultsWindow(root, histories, theme_colors, sim_time=168)
-        results_window.window.protocol("WM_DELETE_WINDOW", root.quit)
-        root.mainloop()
     else:
         print("Demo run failed!")
         return 1
@@ -201,7 +186,7 @@ def run_cli():
         ],
         sim_time=sim_time,
         sim_runs=sim_runs,
-        detection_engine_type="exponential",
+        detection_engine_type="early_weighted",
     )
 
     if not histories:

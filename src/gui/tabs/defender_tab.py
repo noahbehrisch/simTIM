@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from src.config import sim_config
 from src.utils.discovery import list_defender_strategies
 
 from .base_tab import BaseTab
@@ -65,10 +66,15 @@ class DefenderTab(BaseTab):
             state="readonly",
         )
         strategy_dropdown.grid(row=row, column=1, padx=2, pady=2, sticky="ew")
-        capacity_var = tk.StringVar(value="2")
+        capacity_var = tk.StringVar(value=str(int(sim_config.default_defender_capacity)))
         capacity_entry = self.create_styled_entry(self.defender_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
-        budget_var = tk.StringVar(value="100000")
+        budget_default = (
+            "inf"
+            if sim_config.default_budget == float("inf")
+            else str(int(sim_config.default_budget))
+        )
+        budget_var = tk.StringVar(value=budget_default)
         budget_entry = self.create_styled_entry(self.defender_entries_frame, budget_var)
         budget_entry.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
         remove_btn = self.create_styled_button(

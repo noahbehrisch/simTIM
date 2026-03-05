@@ -5,6 +5,7 @@ from typing import Any
 from src.actions.action_manager import action_manager
 from src.actors.attacker import Attacker
 from src.actors.defender import Defender
+from src.config import sim_config
 from src.core.access_levels import LinkAccessLevel, NodeAccessLevel
 from src.core.economic_model import SimpleEconomicModel
 from src.core.simulator import Simulator
@@ -24,24 +25,26 @@ class SimulationOrchestrator:
         path_to_network_config: str,
         attackers: list[dict[str, Any]],
         defenders: list[dict[str, Any]],
-        sim_time: int = 72,
-        sim_runs: int = 1,
-        detection_engine_type: str = "exponential",
+        sim_time: int | None = None,
+        sim_runs: int | None = None,
+        detection_engine_type: str | None = None,
         action_duration_override: float | None = None,
         attack_duration_override: float | None = None,
         defense_duration_override: float | None = None,
         progress_callback: Callable[[int, int], None] | None = None,
+        enabled_actions: dict[str, list[str]] | None = None,
     ):
         self.path_to_network_config = path_to_network_config
         self.attackers_config = attackers
         self.defenders_config = defenders
-        self.sim_time = sim_time
-        self.sim_runs = sim_runs
-        self.detection_engine_type = detection_engine_type
+        self.sim_time = sim_time if sim_time is not None else sim_config.default_sim_time
+        self.sim_runs = sim_runs if sim_runs is not None else sim_config.default_sim_runs
+        self.detection_engine_type = detection_engine_type or sim_config.default_detection_engine
         self.action_duration_override = action_duration_override
         self.attack_duration_override = attack_duration_override
         self.defense_duration_override = defense_duration_override
         self.progress_callback = progress_callback
+        self.enabled_actions = enabled_actions
 
     def run(self) -> list[list] | None:
         if not self._validate():
@@ -99,8 +102,7 @@ class SimulationOrchestrator:
             logger.error("No attackers specified")
             return False
         if not self.defenders_config or len(self.defenders_config) == 0:
-            logger.error("No defenders specified")
-            return False
+            logger.info("No defenders specified — running attacker-only simulation")
         if self.sim_time is None:
             logger.error("Simulation end time not provided")
             return False
@@ -111,6 +113,14 @@ class SimulationOrchestrator:
     def _load_actions(self):
         attack_actions = action_manager.get_attack_actions()
         defense_actions = action_manager.get_defense_actions()
+
+        if self.enabled_actions is not None:
+            enabled_attacks = self.enabled_actions.get("attack_actions")
+            enabled_defenses = self.enabled_actions.get("defense_actions")
+            if enabled_attacks is not None:
+                attack_actions = [a for a in attack_actions if a.name in enabled_attacks]
+            if enabled_defenses is not None:
+                defense_actions = [a for a in defense_actions if a.name in enabled_defenses]
 
         if self.action_duration_override is not None:
             for action in attack_actions:
@@ -142,18 +152,12 @@ class SimulationOrchestrator:
     def _init_attacker_access(self, attackers: list[Attacker], network) -> None:
         for attacker in attackers:
             for node in network.nodes_list:
-                if not hasattr(node, "access"):
-                    node.access = {}
-                if hasattr(node, "properties") and node.properties.get(
-                    "exposed_to_internet", False
-                ):
+                if node.properties.get("exposed_to_internet", False):
                     node.access[attacker.id] = NodeAccessLevel.VISIBLE
                     attacker.visible_nodes.add(node)
                 else:
                     node.access[attacker.id] = NodeAccessLevel.NONE
             for link in network.links_list:
-                if not hasattr(link, "access"):
-                    link.access = {}
                 link.access[attacker.id] = LinkAccessLevel.NONE
 
         for attacker in attackers:
@@ -166,7 +170,7 @@ class SimulationOrchestrator:
 
     def _create_defenders(self, defense_actions) -> list[Defender]:
         defender_objs = []
-        for i, config in enumerate(self.defenders_config):
+        for i, config in enumerate(self.defenders_config or []):
             defender = Defender(
                 id=config.get("id", f"defender_{i}"),
                 strategy=config.get("strategy", "reactive"),
@@ -180,13 +184,9 @@ class SimulationOrchestrator:
     def _init_defender_access(self, defenders: list[Defender], network) -> None:
         for defender in defenders:
             for node in network.nodes_list:
-                if not hasattr(node, "access"):
-                    node.access = {}
                 node.access[defender.id] = NodeAccessLevel.ADMIN
                 defender.visible_nodes.add(node)
             for link in network.links_list:
-                if not hasattr(link, "access"):
-                    link.access = {}
                 link.access[defender.id] = LinkAccessLevel.VISIBLE
                 defender.visible_links.add(link)
 
@@ -207,8 +207,9 @@ def run_variable_scenarios(
     attackers: list | None = None,
     defenders: list | None = None,
     sim_time: int = 10,
-    detection_engine_type: str = "exponential",
+    detection_engine_type: str = "early_weighted",
     progress_callback: Callable[[int, int], None] | None = None,
+    enabled_actions: dict[str, list[str]] | None = None,
 ):
     if variable_type == "attack_duration":
         comparison_label = "attack action durations"
@@ -281,6 +282,7 @@ def run_variable_scenarios(
             attack_duration_override=attack_duration_override,
             defense_duration_override=defense_duration_override,
             progress_callback=scenario_progress_callback,
+            enabled_actions=enabled_actions,
         )
         scenario_histories = orchestrator.run()
 

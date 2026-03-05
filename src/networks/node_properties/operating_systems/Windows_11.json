@@ -2,21 +2,10 @@
   "name": "Windows 11",
   "versions": [
     {
-      "version": "23H2",
-      "vulnerabilities": [
-        "CVE-2024-21412",
-        "CVE-2023-36036",
-        "CVE-2023-35628"
-      ]
+      "version": "23H2"
     },
     {
-      "version": "22H2",
-      "vulnerabilities": [
-        "CVE-2023-21768",
-        "CVE-2022-37969",
-        "CVE-2022-34713"
-      ]
+      "version": "22H2"
     }
   ]
 }
-
