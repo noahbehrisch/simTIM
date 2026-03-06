@@ -105,7 +105,6 @@ class OverviewTab(BaseTab):
             overview += f"      Budget: ${defender['budget']}\n"
 
         overview += "\n" + "=" * 50 + "\n"
-        overview += "Ready to run simulation!"
 
         self.overview_text.config(state=tk.NORMAL)
         self.overview_text.delete(1.0, tk.END)
