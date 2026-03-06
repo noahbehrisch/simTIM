@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 
 from .base_tab import BaseTab
@@ -77,8 +78,13 @@ class OverviewTab(BaseTab):
         overview += "Network Configuration:\n"
         network_file = network_config["file_path"]
         network_name = network_file.split("/")[-1] if "/" in network_file else network_file
+        library_marker = os.path.join("networks", "library")
+        if library_marker in network_file:
+            display_path = network_file[network_file.index(library_marker) :]
+        else:
+            display_path = network_file
         overview += f"   • File: {network_name}\n"
-        overview += f"   • Path: {network_file}\n\n"
+        overview += f"   • Path: {display_path}\n\n"
 
         overview += f"Attackers ({len(attackers)}):\n"
         for idx, attacker in enumerate(attackers, 1):
