@@ -88,7 +88,7 @@ class NetworkTab(BaseTab):
             text=self.network_descriptions.get(sim_config.default_network, ""),
             bg=self.tab_color,
             fg=self.theme.COLORS["text_secondary"],
-            wraplength=400,
+            wraplength=700,
             justify="left",
         )
         self.description_label.pack(anchor="w", padx=5, pady=2)
