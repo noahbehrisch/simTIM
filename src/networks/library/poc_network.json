@@ -1,6 +1,6 @@
 {
   "name": "Proof of Concept Network",
-  "description": "Minimal 2-node network for verifying simulation behavior. One internet-exposed web server and one internal database server.",
+  "description": "2-Node proof of concept network, with a web server and a database.",
   "nodes": [
     {
       "id": "webserver",
