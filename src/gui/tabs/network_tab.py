@@ -1,3 +1,4 @@
+import json
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -81,13 +82,7 @@ class NetworkTab(BaseTab):
         )
         descriptions_frame = tk.Frame(self.predefined_frame, bg=self.tab_color)
         descriptions_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
-        self.network_descriptions = {
-            "poc_network.json": "Minimal 2-node PoC network: internet-exposed webserver and internal database",
-            "demo_network.json": "6-node enterprise network for testing and demonstrations",
-            "healthcare_network.json": "Healthcare facility network with medical devices and systems",
-            "realistic_enterprise_network.json": "Large enterprise network with multiple departments",
-            "realistic_smb_network.json": "Small-to-medium business network topology",
-        }
+        self.network_descriptions = self._load_network_descriptions()
         self.description_label = tk.Label(
             descriptions_frame,
             text=self.network_descriptions.get(sim_config.default_network, ""),
@@ -141,9 +136,30 @@ class NetworkTab(BaseTab):
             print(f"Error loading network files: {e}")
             return ["demo_network.json"]
 
+    def _load_network_descriptions(self):
+        descriptions = {}
+        library_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "..", "networks", "library"
+        )
+        library_dir = os.path.abspath(library_dir)
+        try:
+            for filename in os.listdir(library_dir):
+                if filename.endswith(".json"):
+                    filepath = os.path.join(library_dir, filename)
+                    try:
+                        with open(filepath, encoding="utf-8") as f:
+                            data = json.load(f)
+                        descriptions[filename] = data.get("description", "")
+                    except (json.JSONDecodeError, OSError):
+                        descriptions[filename] = ""
+        except OSError:
+            pass
+        return descriptions
+
     def _refresh_networks(self):
         current_value = self.predefined_var.get()
         available_networks = self._get_available_networks()
+        self.network_descriptions = self._load_network_descriptions()
         self.predefined_dropdown["values"] = available_networks
         if current_value in available_networks:
             self.predefined_var.set(current_value)
