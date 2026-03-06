@@ -1,5 +1,5 @@
 {
-  "name": "Windows Privilege Escalation",
+  "name": "Exploitation for Privilege Escalation (Windows)",
   "description": "Exploits Windows system vulnerabilities for local privilege escalation. Duration includes enumeration, exploit selection, and careful execution to avoid detection.",
   "action_type": "node",
   "mitre_attack": {
@@ -20,7 +20,10 @@
         "type": "software_check",
         "software_key": "os",
         "operator": "in",
-        "values": ["Windows Server", "Windows"]
+        "values": [
+          "Windows Server",
+          "Windows"
+        ]
       },
       {
         "type": "access_check",

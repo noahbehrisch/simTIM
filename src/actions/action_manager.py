@@ -396,16 +396,19 @@ def _heuristic_access_improvement(
                 return False
         return True
 
-    # Initial access actions
-    if any(kw in action_name_lower for kw in ["phishing", "exploitation", "brute"]):
-        target_level = NodeAccessLevel.USER
-
-    # Privilege escalation
-    elif any(kw in action_name_lower for kw in ["privilege", "escalation", "admin"]):
+    # Privilege escalation (check before initial access since "exploit" matches both)
+    if any(kw in action_name_lower for kw in ["privilege", "escalation", "admin"]):
         target_level = NodeAccessLevel.ADMIN
 
-    # Data exfiltration
-    elif any(kw in action_name_lower for kw in ["exfiltration", "data", "steal"]):
+    # Initial access actions
+    elif any(kw in action_name_lower for kw in ["phishing", "exploit", "brute"]):
+        target_level = NodeAccessLevel.USER
+
+    # Data exfiltration / collection (exclude ransomware "Data Encrypted for Impact")
+    elif (
+        any(kw in action_name_lower for kw in ["exfiltration", "data", "steal"])
+        and "encrypted" not in action_name_lower
+    ):
         return current_level >= NodeAccessLevel.USER and not _has_already_exfiltrated(
             node, actor_id
         )
@@ -428,7 +431,7 @@ def _has_already_exfiltrated(node: Any, actor_id: str) -> bool:
 
     if hasattr(node, "successful_actions_by_actor"):
         actor_actions = node.successful_actions_by_actor.get(actor_id, set())
-        if "Data Exfiltration" in actor_actions:
+        if "Exfiltration Over C2 Channel" in actor_actions:
             return True
 
     return False

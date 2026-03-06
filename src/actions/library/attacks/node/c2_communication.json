@@ -1,5 +1,5 @@
 {
-  "name": "C2 Communication Setup",
+  "name": "Application Layer Protocol: Web Protocols",
   "description": "Establish command and control communication channel using HTTP/HTTPS to blend with normal traffic. Enables remote control of compromised systems, data exfiltration, and payload delivery.",
   "action_type": "node",
   "mitre_attack": {
@@ -11,7 +11,7 @@
   },
   "cost": 200,
   "duration": 2.0,
-  "success_probability": 0.70,
+  "success_probability": 0.7,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -53,7 +53,7 @@
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.40
+    "value": 0.4
   },
   "damage_gain": {
     "one_off_damage": 2000.0,

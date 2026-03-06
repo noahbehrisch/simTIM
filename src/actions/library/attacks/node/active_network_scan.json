@@ -1,5 +1,5 @@
 {
-  "name": "Active Network Scan",
+  "name": "Network Service Discovery (Node)",
   "description": "Nmap-style port scanning and service discovery",
   "action_type": "node",
   "mitre_attack": {

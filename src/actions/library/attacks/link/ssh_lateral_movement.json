@@ -1,5 +1,5 @@
 {
-  "name": "SSH Lateral Movement",
+  "name": "SSH",
   "description": "Move laterally to a connected node via SSH. Requires SSH service running on target and no existing user access. Per TIM paper: link action postcondition applies to END node.",
   "action_type": "link",
   "mitre_attack": {

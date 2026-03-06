@@ -15,7 +15,7 @@ class GreedyAttackerStrategy(AttackerStrategy):
     ) -> float:
         # Link actions: use expected gain from the action's JSON values
         if hasattr(action, "is_link_action") and action.is_link_action():
-            expected_gain = action.one_off_damage * action.success_probability
+            expected_gain = action.one_off_gain * action.success_probability
             if self.consider_cost:
                 return expected_gain - action.cost
             return expected_gain

@@ -1,5 +1,5 @@
 {
-  "name": "Scheduled Task Persistence",
+  "name": "Scheduled Task/Job: Scheduled Task",
   "description": "Create a scheduled task or cron job to maintain persistence on the compromised system. The task executes malicious code at specified intervals or system events.",
   "action_type": "node",
   "mitre_attack": {
@@ -11,7 +11,7 @@
   },
   "cost": 75,
   "duration": 1.0,
-  "success_probability": 0.80,
+  "success_probability": 0.8,
   "precondition": {
     "type": "compound",
     "operator": "AND",

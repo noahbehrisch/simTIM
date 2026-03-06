@@ -1,5 +1,5 @@
 {
-  "name": "Data Exfiltration",
+  "name": "Exfiltration Over C2 Channel",
   "description": "Exfiltrate sensitive data to external infrastructure. Data is COPIED, not deleted. Duration accounts for data discovery, compression, encryption, and staged transfer to avoid detection.",
   "action_type": "node",
   "mitre_attack": {
@@ -16,20 +16,45 @@
     "type": "compound",
     "operator": "AND",
     "conditions": [
-      {"type": "access_check", "operator": "greater_equal", "value": "USER"},
-      {"type": "assets_check", "check_type": "count", "operator": "greater_than", "value": 0},
-      {"type": "property_check", "property": "data_exfiltrated", "operator": "not_equals", "value": true}
+      {
+        "type": "access_check",
+        "operator": "greater_equal",
+        "value": "USER"
+      },
+      {
+        "type": "assets_check",
+        "check_type": "count",
+        "operator": "greater_than",
+        "value": 0
+      },
+      {
+        "type": "property_check",
+        "property": "data_exfiltrated",
+        "operator": "not_equals",
+        "value": true
+      }
     ]
   },
   "postcondition": {
     "type": "compound",
     "operator": "AND",
     "actions": [
-      {"type": "set_property", "property": "data_exfiltrated", "value": true},
-      {"type": "increment_counter", "counter": "exfiltration_events", "increment": 1}
+      {
+        "type": "set_property",
+        "property": "data_exfiltrated",
+        "value": true
+      },
+      {
+        "type": "increment_counter",
+        "counter": "exfiltration_events",
+        "increment": 1
+      }
     ]
   },
-  "detection_probability": {"type": "constant", "value": 0.35},
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.35
+  },
   "damage_gain": {
     "one_off_damage": 15000.0,
     "one_off_gain": 8000.0,

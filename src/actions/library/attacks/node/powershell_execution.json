@@ -1,5 +1,5 @@
 {
-  "name": "PowerShell Execution",
+  "name": "Command and Scripting Interpreter: PowerShell",
   "description": "Execute malicious PowerShell scripts or commands to run payloads, download tools, or perform reconnaissance. PowerShell is the most commonly abused living-off-the-land binary (LOLBin) in Windows environments.",
   "action_type": "node",
   "mitre_attack": {
@@ -20,7 +20,10 @@
         "type": "software_check",
         "software_key": "os",
         "operator": "in",
-        "values": ["Windows Server", "Windows"]
+        "values": [
+          "Windows Server",
+          "Windows"
+        ]
       },
       {
         "type": "access_check",

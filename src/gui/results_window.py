@@ -5,12 +5,12 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from src.utils import format_time
 from src.utils.time_utils import parse_event
 from src.visualization import (
-    # AttackPathPanel,
+    AttackPathPanel,
     TimeSeriesPlotEngine,
     analyze_simulation_results,
     get_theme,
@@ -28,12 +28,14 @@ class ResultsWindow:
         scenario_results=None,
         sim_time=None,
         total_nodes=None,
+        network_path=None,
     ):
         self.parent = parent
         self.all_histories = all_histories
         self.scenario_results = scenario_results
         self.sim_time = sim_time  # Store simulation duration for consistent X-axis
         self.total_nodes = total_nodes  # Total nodes in network for consistent Y-axis
+        self.network_path = network_path  # Path to network JSON for attack path viz
         self.bg_color = theme_colors["bg_color"]
         self.button_fg = theme_colors["button_fg"]
         self.runs_data = []
@@ -202,6 +204,8 @@ class ResultsWindow:
         self._create_events_timeline_tab()
         self._create_money_timeline_tab()
         self._create_nodes_timeline_tab()
+        if self.network_path:
+            self._create_attack_path_tab()
         self._create_statistical_tab()
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -417,6 +421,10 @@ class ResultsWindow:
         canvas = FigureCanvasTkAgg(fig, self.events_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        toolbar_frame = tk.Frame(self.events_plot_frame)
+        toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
         self.events_fig = fig
         self.events_canvas = canvas
 
@@ -525,6 +533,10 @@ class ResultsWindow:
         canvas = FigureCanvasTkAgg(fig, self.money_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        toolbar_frame = tk.Frame(self.money_plot_frame)
+        toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
         self.money_fig = fig
         self.money_canvas = canvas
 
@@ -688,58 +700,34 @@ class ResultsWindow:
         canvas = FigureCanvasTkAgg(fig, self.nodes_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        toolbar_frame = tk.Frame(self.nodes_plot_frame)
+        toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
         self.nodes_fig = fig
         self.nodes_canvas = canvas
 
-    # def _create_attack_path_tab(self):
-    #     tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
-    #     self.notebook.add(tab_frame, text="Attack Path")
-
-    #     if len(self.all_histories) > 1:
-    #         selector_frame = tk.Frame(tab_frame, bg=self.bg_color)
-    #         selector_frame.pack(fill=tk.X, padx=10, pady=5)
-    #         tk.Label(
-    #             selector_frame,
-    #             text="Select Run:",
-    #             bg=self.bg_color,
-    #             fg=self.button_fg,
-    #         ).pack(side=tk.LEFT, padx=5)
-    #         self.attack_path_run_var = tk.StringVar(value="Run 1")
-    #         run_options = [f"Run {i + 1}" for i in range(len(self.all_histories))]
-    #         dropdown = ttk.Combobox(
-    #             selector_frame,
-    #             textvariable=self.attack_path_run_var,
-    #             values=run_options,
-    #             state="readonly",
-    #             width=15,
-    #         )
-    #         dropdown.pack(side=tk.LEFT, padx=5)
-    #         dropdown.bind("<<ComboboxSelected>>", lambda e: self._update_attack_path_tab())
-
-    #     self.attack_path_content_frame = tk.Frame(tab_frame, bg=self.bg_color)
-    #     self.attack_path_content_frame.pack(fill=tk.BOTH, expand=True)
-    #     self._attack_path_panel: AttackPathPanel | None = None
-    #     self._update_attack_path_tab()
-
-    # def _update_attack_path_tab(self):
-    #     run_id = 0
-    #     if hasattr(self, "attack_path_run_var"):
-    #         run_id = int(self.attack_path_run_var.get().split()[1]) - 1
-
-    #     # Clean up previous panel
-    #     if self._attack_path_panel is not None:
-    #         self._attack_path_panel.destroy()
-    #         self._attack_path_panel = None
-    #     for widget in self.attack_path_content_frame.winfo_children():
-    #         widget.destroy()
-
-    #     history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
-    #     # self._attack_path_panel = AttackPathPanel(
-    #     #     self.attack_path_content_frame,
-    #     #     history,
-    #     #     sim_time=self.sim_time,
-    #     #     bg_color=self.bg_color,
-    #     # )
+    def _create_attack_path_tab(self):
+        tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
+        self.notebook.add(tab_frame, text="Attack Path")
+        try:
+            self._attack_path_panel = AttackPathPanel(
+                tab_frame,
+                network_path=self.network_path,
+                all_histories=self.all_histories,
+                bg_color=self.bg_color,
+                sim_time=self.sim_time,
+            )
+        except Exception as e:
+            logger.error(f"Failed to create attack path panel: {e}", exc_info=True)
+            self._attack_path_panel = None
+            tk.Label(
+                tab_frame,
+                text=f"Could not load attack path visualizer:\n{e}",
+                font=("TkDefaultFont", 12),
+                foreground="red",
+                bg=self.bg_color,
+            ).pack(expand=True)
 
     def _create_statistical_tab(self):
         tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
@@ -748,6 +736,10 @@ class ResultsWindow:
             self.stat_fig, self.stat_ax = plt.subplots(1, 1, figsize=(12, 8))
             self.stat_canvas = FigureCanvasTkAgg(self.stat_fig, tab_frame)
             self.stat_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+            stat_toolbar_frame = tk.Frame(tab_frame)
+            stat_toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+            self.stat_toolbar = NavigationToolbar2Tk(self.stat_canvas, stat_toolbar_frame)
+            self.stat_toolbar.update()
             self._create_scenario_comparison_plots()
         else:
             empty_label = tk.Label(

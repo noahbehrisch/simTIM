@@ -1,5 +1,5 @@
 {
-  "name": "Linux Privilege Escalation",
+  "name": "Exploitation for Privilege Escalation (Linux)",
   "description": "Exploits Linux system vulnerabilities for local privilege escalation. Duration includes enumeration, exploit research, and careful execution.",
   "action_type": "node",
   "mitre_attack": {
@@ -21,7 +21,14 @@
         "type": "software_check",
         "software_key": "os",
         "operator": "in",
-        "values": ["Ubuntu", "Ubuntu Server", "Linux", "CentOS", "RedHat", "Debian"]
+        "values": [
+          "Ubuntu",
+          "Ubuntu Server",
+          "Linux",
+          "CentOS",
+          "RedHat",
+          "Debian"
+        ]
       },
       {
         "type": "access_check",
@@ -52,38 +59,55 @@
       {
         "property": "properties",
         "nested_property": "endpoint_protection",
-        "values": ["CrowdStrike", "Carbon Black"],
-        "probability_modifier": 0.30
+        "values": [
+          "CrowdStrike",
+          "Carbon Black"
+        ],
+        "probability_modifier": 0.3
       },
       {
         "property": "properties",
         "nested_property": "endpoint_protection",
-        "values": ["Sophos", "McAfee", "Symantec"],
-        "probability_modifier": 0.20
+        "values": [
+          "Sophos",
+          "McAfee",
+          "Symantec"
+        ],
+        "probability_modifier": 0.2
       },
       {
         "property": "properties",
         "nested_property": "endpoint_protection",
-        "values": ["Windows Defender", "basic"],
+        "values": [
+          "Windows Defender",
+          "basic"
+        ],
         "probability_modifier": 0.15
       },
       {
         "property": "properties",
         "nested_property": "logging_level",
-        "values": ["verbose", "audit"],
+        "values": [
+          "verbose",
+          "audit"
+        ],
         "probability_modifier": 0.15
       },
       {
         "property": "properties",
         "nested_property": "security_monitoring",
-        "values": ["24/7_SOC"],
-        "probability_modifier": 0.20
+        "values": [
+          "24/7_SOC"
+        ],
+        "probability_modifier": 0.2
       },
       {
         "property": "properties",
         "nested_property": "security_monitoring",
-        "values": ["business_hours"],
-        "probability_modifier": 0.10
+        "values": [
+          "business_hours"
+        ],
+        "probability_modifier": 0.1
       }
     ]
   },

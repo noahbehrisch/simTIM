@@ -1,5 +1,5 @@
 {
-  "name": "Attack Infrastructure Setup",
+  "name": "Acquire Infrastructure: Domains",
   "description": "Acquire and configure attack infrastructure including domains, servers, and tools. This is a preparatory action that happens before targeting specific systems.",
   "action_type": "node",
   "mitre_attack": {
@@ -47,7 +47,7 @@
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.10
+    "value": 0.1
   },
   "damage_gain": {
     "one_off_damage": 50.0,

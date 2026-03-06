@@ -265,6 +265,7 @@ class App(tk.Tk):
             theme_colors,
             sim_time=self.last_sim_time,
             total_nodes=self.last_total_nodes,
+            network_path=getattr(self, "last_network_path", None),
         )
 
     def open_results_window_scenarios(self, scenario_results):
@@ -280,6 +281,7 @@ class App(tk.Tk):
             scenario_results=scenario_results,
             sim_time=self.last_sim_time,
             total_nodes=self.last_total_nodes,
+            network_path=getattr(self, "last_network_path", None),
         )
 
     def open_help_window(self):
@@ -297,6 +299,7 @@ class App(tk.Tk):
         self.last_sim_time = sim_time
         detection_engine_type = sim_config["detection_engine_type"]
         path_to_network_config = network_config["file_path"]
+        self.last_network_path = path_to_network_config
 
         # Count nodes in the network for consistent Y-axis in plots
         try:

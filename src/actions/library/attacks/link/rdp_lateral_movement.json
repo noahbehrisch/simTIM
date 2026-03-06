@@ -1,5 +1,5 @@
 {
-  "name": "RDP Lateral Movement",
+  "name": "Remote Desktop Protocol",
   "description": "Move laterally to a connected Windows node via Remote Desktop Protocol. Requires RDP service running on target. Gains ADMIN access on success. Per TIM paper: link action postcondition applies to END node.",
   "action_type": "link",
   "mitre_attack": {

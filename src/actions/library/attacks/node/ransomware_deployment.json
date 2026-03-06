@@ -1,5 +1,5 @@
 {
-  "name": "Ransomware Deployment",
+  "name": "Data Encrypted for Impact",
   "description": "Deploy ransomware to encrypt files and systems for extortion. Modern ransomware includes data exfiltration (double extortion) and may target backups and shadow copies.",
   "action_type": "node",
   "mitre_attack": {
@@ -11,7 +11,7 @@
   },
   "cost": 500,
   "duration": 8.0,
-  "success_probability": 0.60,
+  "success_probability": 0.6,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -58,7 +58,7 @@
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.50
+    "value": 0.5
   },
   "damage_gain": {
     "one_off_damage": 50000.0,

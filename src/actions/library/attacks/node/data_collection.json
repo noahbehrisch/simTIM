@@ -1,5 +1,5 @@
 {
-  "name": "Data Collection",
+  "name": "Data from Local System",
   "description": "Collect sensitive data from local file systems, databases, email clients, and browser storage. Includes searching for documents, credentials, and proprietary information.",
   "action_type": "node",
   "mitre_attack": {
@@ -11,7 +11,7 @@
   },
   "cost": 150,
   "duration": 4.0,
-  "success_probability": 0.70,
+  "success_probability": 0.7,
   "precondition": {
     "type": "compound",
     "operator": "AND",

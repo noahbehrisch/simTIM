@@ -1,5 +1,5 @@
 {
-  "name": "Network Scan",
+  "name": "Network Service Discovery (Link)",
   "description": "Scan connected network segment to discover adjacent nodes. Low cost reconnaissance action that makes previously unknown nodes VISIBLE. Per TIM paper: link action enables discovery of further nodes (R5).",
   "action_type": "link",
   "mitre_attack": {

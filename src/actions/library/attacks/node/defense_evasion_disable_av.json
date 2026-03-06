@@ -1,5 +1,5 @@
 {
-  "name": "Disable Security Tools",
+  "name": "Impair Defenses: Disable or Modify Tools",
   "description": "Disable or tamper with security software including antivirus, EDR agents, and Windows Defender to evade detection. May involve stopping services, modifying registry, or killing processes.",
   "action_type": "node",
   "mitre_attack": {
@@ -47,7 +47,7 @@
   },
   "detection_probability": {
     "type": "constant",
-    "value": 0.60
+    "value": 0.6
   },
   "damage_gain": {
     "one_off_damage": 4000.0,
