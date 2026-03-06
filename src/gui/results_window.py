@@ -158,59 +158,30 @@ class ResultsWindow:
             self.runs_data.append(run_events)
 
     def _extract_cost(self, event: dict[str, Any]) -> float:
-        """Extract actual cost from event data, not estimated."""
+        """Extract cost from pre-computed economics embedded in event data."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
-            action = raw_data.get("action")
-            if action and hasattr(action, "cost"):
-                return float(action.cost)
+            economics = raw_data.get("economics")
+            if economics:
+                return float(economics.get("cost", 0.0))
         return 0.0
 
     def _extract_gain(self, event: dict[str, Any]) -> float:
-        """Extract actual gain from event data, not estimated."""
-        if "attacker" not in event["actor_id"].lower():
-            return 0.0
+        """Extract gain from pre-computed economics embedded in event data."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
-            action = raw_data.get("action")
-            target = raw_data.get("target")
-            if action and hasattr(action, "get_one_off_gain"):
-                try:
-                    actor_access = raw_data.get("actor_access", "NONE")
-                    actor_id = event.get("actor_id", "unknown")
-                    return float(action.get_one_off_gain(target, actor_access, actor_id))
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract gain via get_one_off_gain: {e}")
-            if action and hasattr(action, "one_off_gain"):
-                try:
-                    return float(action.one_off_gain(target, None, None))
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract gain via one_off_gain: {e}")
+            economics = raw_data.get("economics")
+            if economics:
+                return float(economics.get("gain", 0.0))
         return 0.0
 
     def _extract_damage(self, event: dict[str, Any]) -> float:
-        actor_id = event.get("actor_id", "")
-        if "attacker" not in actor_id.lower():
-            return 0.0
-
+        """Extract damage from pre-computed economics embedded in event data."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
-            action = raw_data.get("action")
-            target = raw_data.get("target")
-            if action and hasattr(action, "get_one_off_damage"):
-                try:
-                    actor_access = raw_data.get("actor_access", "NONE")
-                    actor_id = event.get("actor_id", "unknown")
-                    damage = float(action.get_one_off_damage(target, actor_access, actor_id))
-                    return max(0.0, damage)
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract damage via get_one_off_damage: {e}")
-            if action and hasattr(action, "one_off_damage"):
-                try:
-                    damage = float(action.one_off_damage(target, None, None))
-                    return max(0.0, damage)
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract damage via one_off_damage: {e}")
+            economics = raw_data.get("economics")
+            if economics:
+                return float(economics.get("damage", 0.0))
         return 0.0
 
     def _create_interface(self):

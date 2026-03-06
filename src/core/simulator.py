@@ -436,10 +436,20 @@ class Simulator:
         actor = action_data["actor"]
         actor_access = action_data.get("actor_access")
 
+        cost = float(action.cost) if hasattr(action, "cost") else 0.0
         damage = action.get_one_off_damage(target, actor_access, actor.id)
         gain = action.get_one_off_gain(target, actor_access, actor.id)
         time_damage = action.get_time_damage(target, actor_access, actor.id)
         time_gain = action.get_time_gain(target, actor_access, actor.id)
+
+        # Embed computed economics into event data so HistoryRecorder captures them
+        action_data["economics"] = {
+            "cost": cost,
+            "damage": damage,
+            "gain": gain,
+            "time_damage": time_damage,
+            "time_gain": time_gain,
+        }
 
         self._economic_model.record_action_outcome(
             self.current_time, actor.id, action.name, damage, gain
