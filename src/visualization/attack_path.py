@@ -45,11 +45,13 @@ def _load_network_topology(network_path: str) -> dict:
     nodes: dict[str, dict] = {}
     for node in data.get("nodes", []):
         nid = node["id"]
+        props = node.get("properties", {})
         nodes[nid] = {
             "name": node.get("name", nid),
-            "exposed": node.get("exposed_to_internet", False),
-            "x": node.get("properties", {}).get("x"),
-            "y": node.get("properties", {}).get("y"),
+            "exposed": node.get("exposed_to_internet", False)
+            or props.get("exposed_to_internet", False),
+            "x": node.get("x") or props.get("x"),
+            "y": node.get("y") or props.get("y"),
         }
 
     links: list[tuple[str, str]] = []
@@ -253,7 +255,7 @@ class AttackPathPanel:
 
         # Time slider
         max_time = self._current_max_time()
-        self.time_var = tk.DoubleVar(value=max_time)
+        self.time_var = tk.DoubleVar(value=0.0)
         self.slider = ttk.Scale(
             controls_frame,
             from_=0.0,
@@ -302,7 +304,7 @@ class AttackPathPanel:
         self._stop_play()
         max_time = self._current_max_time()
         self.slider.configure(to=max_time if max_time > 0 else 1.0)
-        self.time_var.set(max_time)
+        self.time_var.set(0.0)
         self.max_label.configure(text=f"/ {max_time:.1f} h")
         self._redraw()
 
@@ -364,7 +366,7 @@ class AttackPathPanel:
 
         ax = self.ax
         ax.clear()
-        ax.set_aspect("equal", adjustable="datalim")
+        ax.set_aspect("equal", adjustable="box")
 
         if not self.positions:
             ax.text(0.5, 0.5, "No nodes to display", ha="center", va="center")
