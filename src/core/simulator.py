@@ -133,7 +133,6 @@ class Simulator:
             self.schedule_event(self.current_time, "actor_run", {"actor": actor})
         self._schedule_periodic_accumulation(until)
 
-        # Main simulation loop
         while self.event_queue and self.current_time <= until:
             event = heapq.heappop(self.event_queue)
             self.current_time = event.time
@@ -231,9 +230,6 @@ class Simulator:
             precondition_target = target
             postcondition_target = target
 
-        # Decrement pending count BEFORE capacity check — this action was already
-        # counted as pending when make_decision() scheduled it.  Without this,
-        # actors with capacity=1 always fail the re-check (pending=1, 1 < 1 is False).
         if hasattr(actor, "pending_action_count") and actor.pending_action_count > 0:
             actor.pending_action_count -= 1
 
@@ -302,9 +298,6 @@ class Simulator:
             target=data["target"],
         )
         if ongoing:
-            # Remove from index FIRST to prevent self-interrupt: the postcondition
-            # may change access, triggering _check_ongoing_actions_for_node which
-            # would otherwise find and interrupt this same action.
             self._ongoing_actions_index.remove(ongoing)
 
             precond = data["action"].precondition(
@@ -442,7 +435,6 @@ class Simulator:
         time_damage = action.get_time_damage(target, actor_access, actor.id)
         time_gain = action.get_time_gain(target, actor_access, actor.id)
 
-        # Embed computed economics into event data so HistoryRecorder captures them
         action_data["economics"] = {
             "cost": cost,
             "damage": damage,
@@ -457,7 +449,6 @@ class Simulator:
         self._economic_model.register_time_rate(actor.id, time_damage, time_gain)
 
     def _emit_initial_access_events(self):
-        """Emit access_changed events for attacker initial access at t=0."""
         if not self.network:
             return
         attacker_ids = {

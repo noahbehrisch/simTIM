@@ -1,12 +1,12 @@
 {
-  "name": "Decoy Credentials",
-  "description": "Plant fake credentials in common locations (credential stores, config files, memory) that trigger alerts when used. Detects credential theft and lateral movement attempts.",
+  "name": "Decoy File",
+  "description": "Plant fake files in common locations (credential stores, config files, memory) that trigger alerts when accessed. Detects unauthorized access and lateral movement attempts.",
   "action_type": "node",
   "d3fend": {
-    "technique_id": "D3-DC",
-    "technique_name": "Decoy Credentials",
+    "technique_id": "D3-DF",
+    "technique_name": "Decoy File",
     "tactic": "Deceive",
-    "url": "https://d3fend.mitre.org/technique/d3f:DecoyCredentials/"
+    "url": "https://d3fend.mitre.org/technique/d3f:DecoyFile/"
   },
   "cost": 200,
   "duration": 2.0,
@@ -16,7 +16,7 @@
     "operator": "AND",
     "conditions": [
       {"type": "access_check", "operator": "equals", "value": "ADMIN"},
-      {"type": "property_check", "property": "decoy_credentials_active", "operator": "not_equals", "value": true}
+      {"type": "property_check", "property": "decoy_file  _active", "operator": "not_equals", "value": true}
     ]
   },
   "postcondition": {
@@ -25,7 +25,7 @@
     "actions": [
       {
         "type": "set_property",
-        "property": "decoy_credentials_active",
+        "property": "decoy_file_active",
         "value": true
       },
       {

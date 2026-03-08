@@ -69,7 +69,6 @@ class Attacker(Actor):
                 )
                 return True
             else:
-                # Precondition failed on re-check; mark pair to avoid re-selecting it
                 self._pending_pairs.add((action.name, getattr(target, "id", str(target))))
         else:
             logger.debug("  No valid action found!")
@@ -85,7 +84,6 @@ class Attacker(Actor):
     def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
-        # Reset dedup and schedule immediate re-evaluation
         if self.running and self.simulator:
             self._last_run_time = -1.0
             self.simulator.schedule_event(
@@ -103,11 +101,6 @@ class Attacker(Actor):
                 self.on_successful_attack(action, target, self.simulator.current_time)
 
     def _discover_links_from_node(self, node: Node):
-        """Discover links from a compromised node.
-
-        Only makes links visible — does NOT set connected nodes to VISIBLE.
-        Node discovery requires the Network Scan action.
-        """
         if not hasattr(self, "simulator") or not self.simulator or not self.simulator.network:
             return
         links = self.simulator.network.get_links_for_node(node.id)

@@ -175,7 +175,6 @@ class ScenarioTab(BaseTab):
                 try:
                     widget.config(state=state)
                 except tk.TclError:
-                    # Some widgets don't support state changes (e.g., Frame, Label)
                     pass
 
     def _set_widget_state_recursive(self, widget, state):
@@ -186,7 +185,6 @@ class ScenarioTab(BaseTab):
                 try:
                     child.config(state=state)
                 except tk.TclError:
-                    # Some widgets don't support state changes (e.g., Frame, Label)
                     pass
 
     def _add_scenario(self):

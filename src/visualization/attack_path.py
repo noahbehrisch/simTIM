@@ -1,11 +1,3 @@
-"""Attack path visualizer — replays event history on the network topology.
-
-For a selected simulation run, colours each node by the highest access level
-any attacker achieved on it *up to the chosen time* and highlights links
-traversed by lateral-movement (link) actions.  A time slider and play/pause
-button let users animate the attack progression.
-"""
-
 import json
 import logging
 import math
@@ -22,13 +14,11 @@ logger = logging.getLogger(__name__)
 ACCESS_RANK = {"NONE": 0, "VISIBLE": 1, "USER": 2, "ADMIN": 3}
 ACCESS_LABELS = {0: "NONE", 1: "VISIBLE", 2: "USER", 3: "ADMIN"}
 
-# Animation speed: how many simulation-hours advance per real-time tick
 _PLAY_STEP_HOURS = 0.5
-_PLAY_INTERVAL_MS = 80  # milliseconds between ticks
+_PLAY_INTERVAL_MS = 80
 
 
 def _normalise_access(value) -> str:
-    """Accept enum, string, or int and return upper-case access name."""
     if hasattr(value, "name"):
         return value.name.upper()
     s = str(value).upper()
@@ -38,7 +28,6 @@ def _normalise_access(value) -> str:
 
 
 def _load_network_topology(network_path: str) -> dict:
-    """Load node positions and link info from the network JSON."""
     with open(network_path) as f:
         data = json.load(f)
 
@@ -65,7 +54,6 @@ def _load_network_topology(network_path: str) -> dict:
 
 
 def _compute_positions(nodes: dict[str, dict]) -> dict[str, tuple[float, float]]:
-    """Return {node_id: (x, y)}, using saved coords or circular fallback."""
     positions: dict[str, tuple[float, float]] = {}
     ids = list(nodes.keys())
     n = len(ids)
@@ -81,7 +69,6 @@ def _compute_positions(nodes: dict[str, dict]) -> dict[str, tuple[float, float]]
 
 
 def _get_max_time(history: list) -> float:
-    """Return the latest timestamp in a history list."""
     max_t = 0.0
     for entry in history:
         if len(entry) >= 1 and isinstance(entry[0], (int, float)):
@@ -90,22 +77,7 @@ def _get_max_time(history: list) -> float:
 
 
 def extract_attack_path(history: list, up_to_time: float | None = None) -> dict:
-    """Replay one run's history and return per-node max access + traversed links.
-
-    Parameters
-    ----------
-    history : list
-        Event history for one simulation run.
-    up_to_time : float or None
-        If given, only consider events with timestamp <= this value.
-
-    Returns
-    -------
-    dict with keys:
-        node_access : dict[str, str]   – highest access name per node
-        traversed   : set[tuple[str,str]] – (source, target) link pairs used
-    """
-    node_access: dict[str, int] = {}  # node_id -> max rank
+    node_access: dict[str, int] = {}
     traversed: set[tuple[str, str]] = set()
 
     for entry in history:
@@ -115,12 +87,10 @@ def extract_attack_path(history: list, up_to_time: float | None = None) -> dict:
         if not isinstance(data, dict):
             continue
 
-        # Time filter
         if up_to_time is not None and isinstance(event_time, (int, float)):
             if event_time > up_to_time:
                 continue
 
-        # Track access changes
         if event_type == "access_changed":
             nid = data.get("node_id")
             new = _normalise_access(data.get("new_access", "NONE"))
@@ -128,7 +98,6 @@ def extract_attack_path(history: list, up_to_time: float | None = None) -> dict:
             if nid and rank > node_access.get(nid, 0):
                 node_access[nid] = rank
 
-        # Track link traversals (successful link actions)
         if event_type == "action_succeeded" and data.get("is_link_action"):
             target = data.get("target")
             postcond_target = data.get("postcondition_target")
@@ -137,13 +106,11 @@ def extract_attack_path(history: list, up_to_time: float | None = None) -> dict:
             source_id = None
             target_id = None
 
-            # Link object
             if target is not None and hasattr(target, "node1") and hasattr(target, "node2"):
                 source_id = target.node1.id
                 target_id = target.node2.id
             elif postcond_target and hasattr(postcond_target, "id"):
                 target_id = postcond_target.id
-                # Try to find source from actor's visible nodes
                 if actor is not None and hasattr(actor, "visible_nodes"):
                     for vn in actor.visible_nodes:
                         nid = vn.id if hasattr(vn, "id") else str(vn)
@@ -161,12 +128,6 @@ def extract_attack_path(history: list, up_to_time: float | None = None) -> dict:
 
 
 class AttackPathPanel:
-    """Tkinter panel that draws the network with attack-path colouring.
-
-    Includes a time slider and play/pause button to animate the attack
-    progression through simulation time.
-    """
-
     def __init__(
         self,
         parent: tk.Widget,
@@ -183,7 +144,6 @@ class AttackPathPanel:
         self._playing = False
         self._after_id: str | None = None
 
-        # Load topology once
         topo = _load_network_topology(network_path)
         self.topo_nodes = topo["nodes"]
         self.topo_links = topo["links"]
@@ -202,12 +162,10 @@ class AttackPathPanel:
 
         self._build_ui()
 
-    # ── UI ─────────────────────────────────────────────────────────────
     def _build_ui(self):
         self.frame = tk.Frame(self.parent, bg=self.bg_color)
         self.frame.pack(fill=tk.BOTH, expand=True)
 
-        # ── Top controls row: run selector ──
         top_frame = tk.Frame(self.frame, bg=self.bg_color)
         top_frame.pack(fill=tk.X, padx=10, pady=5)
 
@@ -225,16 +183,13 @@ class AttackPathPanel:
             combo.pack(side=tk.LEFT, padx=5)
             combo.bind("<<ComboboxSelected>>", lambda _e: self._on_run_changed())
 
-        # ── Matplotlib figure ──
         self.fig, self.ax = plt.subplots(figsize=(10, 8))
         self.canvas = FigureCanvasTkAgg(self.fig, self.frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # ── Bottom controls: play button + time slider ──
         controls_frame = tk.Frame(self.frame, bg=self.bg_color)
         controls_frame.pack(fill=tk.X, padx=10, pady=(0, 2))
 
-        # Play / Pause button
         self.play_btn = tk.Button(
             controls_frame,
             text="\u25b6 Play",
@@ -244,7 +199,6 @@ class AttackPathPanel:
         )
         self.play_btn.pack(side=tk.LEFT, padx=(0, 8))
 
-        # Time label (left of slider)
         self.time_label = tk.Label(
             controls_frame,
             text="t = 0.0 h",
@@ -253,7 +207,6 @@ class AttackPathPanel:
         )
         self.time_label.pack(side=tk.LEFT, padx=(0, 5))
 
-        # Time slider
         max_time = self._current_max_time()
         self.time_var = tk.DoubleVar(value=0.0)
         self.slider = ttk.Scale(
@@ -266,7 +219,6 @@ class AttackPathPanel:
         )
         self.slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        # Max-time label (right of slider)
         self.max_label = tk.Label(
             controls_frame,
             text=f"/ {max_time:.1f} h",
@@ -275,23 +227,19 @@ class AttackPathPanel:
         )
         self.max_label.pack(side=tk.LEFT, padx=(0, 5))
 
-        # ── Matplotlib toolbar (save / zoom / pan) ──
         toolbar_frame = tk.Frame(self.frame)
         toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
         self.toolbar = NavigationToolbar2Tk(self.canvas, toolbar_frame)
         self.toolbar.update()
 
-        # Initial draw at full time
         self._redraw()
 
-    # ── Helpers ────────────────────────────────────────────────────────
     def _get_run_id(self) -> int:
         if hasattr(self, "run_var"):
             return int(self.run_var.get().split()[1]) - 1
         return 0
 
     def _current_max_time(self) -> float:
-        """Max time for the currently selected run."""
         run_id = self._get_run_id()
         history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
         t = _get_max_time(history)
@@ -300,7 +248,6 @@ class AttackPathPanel:
         return t
 
     def _on_run_changed(self):
-        """Called when user picks a different run."""
         self._stop_play()
         max_time = self._current_max_time()
         self.slider.configure(to=max_time if max_time > 0 else 1.0)
@@ -309,10 +256,8 @@ class AttackPathPanel:
         self._redraw()
 
     def _on_slider_moved(self, _value=None):
-        """Called on every slider drag tick."""
         self._redraw()
 
-    # ── Play / Pause ──────────────────────────────────────────────────
     def _toggle_play(self):
         if self._playing:
             self._stop_play()
@@ -322,7 +267,6 @@ class AttackPathPanel:
     def _start_play(self):
         self._playing = True
         self.play_btn.configure(text="\u23f8 Pause")
-        # If already at the end, restart from 0
         max_t = self._current_max_time()
         if self.time_var.get() >= max_t - 0.01:
             self.time_var.set(0.0)
@@ -354,14 +298,12 @@ class AttackPathPanel:
         self._redraw()
         self._after_id = self.frame.after(_PLAY_INTERVAL_MS, self._play_tick)
 
-    # ── Drawing ────────────────────────────────────────────────────────
     def _redraw(self):
         run_id = self._get_run_id()
         history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
         current_time = self.time_var.get()
         path_info = extract_attack_path(history, up_to_time=current_time)
 
-        # Update time label
         self.time_label.configure(text=f"t = {current_time:.1f} h")
 
         ax = self.ax
@@ -373,14 +315,12 @@ class AttackPathPanel:
             self.canvas.draw()
             return
 
-        # Bounds
         xs = [p[0] for p in self.positions.values()]
         ys = [p[1] for p in self.positions.values()]
         margin = 1.5
         ax.set_xlim(min(xs) - margin, max(xs) + margin)
         ax.set_ylim(min(ys) - margin, max(ys) + margin)
 
-        # Draw links
         traversed = path_info["traversed"]
         for n1, n2 in self.topo_links:
             p1 = self.positions.get(n1)
@@ -400,7 +340,6 @@ class AttackPathPanel:
                 zorder=1,
             )
 
-        # Draw nodes
         node_access = path_info["node_access"]
         for nid, pos in self.positions.items():
             access = node_access.get(nid, "NONE")
@@ -426,7 +365,6 @@ class AttackPathPanel:
                 fontweight="bold",
             )
 
-        # Legend
         from matplotlib.lines import Line2D
 
         handles = [
@@ -484,7 +422,6 @@ class AttackPathPanel:
         self.fig.tight_layout()
         self.canvas.draw()
 
-    # ── Cleanup ────────────────────────────────────────────────────────
     def destroy(self):
         self._stop_play()
         try:

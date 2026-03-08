@@ -2,12 +2,6 @@ from typing import Any
 
 
 class SimpleEconomicModel:
-    """Tracks economic impact using action-declared values from JSON definitions.
-
-    All damage, gain, and time-rate values come directly from Action objects
-    (which load them from JSON action files). No formula-based calculation.
-    """
-
     def __init__(self):
         self.total_damage = 0.0
         self.actor_gains: dict[str, float] = {}
@@ -40,12 +34,10 @@ class SimpleEconomicModel:
         self.action_history.append((time, actor_id, action_name, damage, gain))
 
     def register_time_rate(self, actor_id: str, time_damage: float, time_gain: float):
-        """Register ongoing time-proportional rates from a succeeded action."""
         if time_damage != 0 or time_gain != 0:
             self._active_time_rates.append((time_damage, time_gain, actor_id))
 
     def accumulate_time_proportional_impact(self, current_time: float):
-        """Accumulate time-proportional damage/gain from all active rates."""
         if current_time <= self.last_accumulation_time:
             return
         delta_t = current_time - self.last_accumulation_time

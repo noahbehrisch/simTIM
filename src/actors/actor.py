@@ -37,12 +37,10 @@ class Actor:
     def run(self):
         if not self.running:
             return
-        # Deduplicate: only process once per simulation timestep
         current_time = self.simulator.current_time if self.simulator else 0.0
         if current_time == self._last_run_time:
             return
         self._last_run_time = current_time
-        # Loop: fill all available capacity slots in one decision cycle
         self._pending_pairs.clear()
         max_decisions = min(self.capacity, 10) if self.capacity != float("inf") else 10
         decisions_made = 0
@@ -62,7 +60,6 @@ class Actor:
         return f"Actor(id={self.id}, capacity={self.capacity}, budget={self.budget}, incurred_cost={self.incurred_cost}, strategy={self.strategy})"
 
     def can_schedule_action(self) -> bool:
-        # Include pending actions (scheduled but not yet started) in capacity check
         total_ongoing = len(self.ongoing_actions) + self.pending_action_count
         capacity_ok = self.capacity == float("inf") or total_ongoing < self.capacity
         budget_ok = self.budget == float("inf") or self.incurred_cost < self.budget

@@ -1,4 +1,3 @@
-# Utility functions for simTIM
 from .results_printer import (
     export_to_csv,
     export_to_json,

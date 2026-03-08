@@ -13,7 +13,6 @@ class GreedyAttackerStrategy(AttackerStrategy):
     def get_priority(
         self, action: Any, target: Any, access: NodeAccessLevel, attacker: Any
     ) -> float:
-        # Link actions: use expected gain from the action's JSON values
         if hasattr(action, "is_link_action") and action.is_link_action():
             expected_gain = action.one_off_gain * action.success_probability
             if self.consider_cost:
@@ -36,6 +35,4 @@ class GreedyAttackerStrategy(AttackerStrategy):
         return expected_gain
 
     def get_minimum_threshold(self, ongoing_count: int) -> float:
-        """Greedy strategy relies on cost-benefit analysis for natural
-        self-limitation; applies only a light additional threshold."""
         return 5.0 * ongoing_count

@@ -19,9 +19,8 @@ from src.core.network import Link, Node
 from src.utils.version import Version
 
 if TYPE_CHECKING:
-    pass  # NodeAccessLevel already imported above
+    pass
 
-# Import directly from modules to avoid circular imports through src.core.__init__
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,6 @@ class ConditionEvaluator:
         self._simulator = None
 
     def set_simulator(self, simulator):
-        """Set simulator reference for time-based condition checks."""
         self._simulator = simulator
 
     def evaluate_condition(
@@ -74,7 +72,6 @@ class ConditionEvaluator:
             return self._evaluate_network_check(condition, node, network_context)
         elif condition_type == "variable_ref":
             return self._evaluate_variable_ref(condition, node, actor_access, actor_id)
-        # Link action condition types (for actions with action_type: "link")
         elif condition_type == "start_node_access_check":
             return self._evaluate_start_node_access_check(condition, node, actor_id)
         elif condition_type == "end_node_access_check":
@@ -177,7 +174,7 @@ class ConditionEvaluator:
         formula = condition.get("formula")
         if not all([variable, domain, formula]):
             raise ValueError("Exists quantifier requires 'variable', 'domain', and 'formula'")
-        assert domain is not None and formula is not None  # Type narrowing
+        assert domain is not None and formula is not None
         domain_elements = self._get_domain_elements(domain, node, network_context)
         for element in domain_elements:
             old_value = self.variable_scope.get(variable)
@@ -211,7 +208,7 @@ class ConditionEvaluator:
         formula = condition.get("formula")
         if not all([variable, domain, formula]):
             raise ValueError("Forall quantifier requires 'variable', 'domain', and 'formula'")
-        assert domain is not None and formula is not None  # Type narrowing
+        assert domain is not None and formula is not None
         domain_elements = self._get_domain_elements(domain, node, network_context)
         for element in domain_elements:
             old_value = self.variable_scope.get(variable)
@@ -379,8 +376,8 @@ class ConditionEvaluator:
         property_name = condition["property"]
         operator = condition["operator"]
         expected_value = condition["value"]
-        if hasattr(node, "properties") and property_name in node.properties:  # type: ignore[union-attr]
-            actual_value = node.properties[property_name]  # type: ignore[union-attr]
+        if hasattr(node, "properties") and property_name in node.properties:
+            actual_value = node.properties[property_name]
         else:
             actual_value = getattr(node, property_name, None)
         if operator == "equals":
@@ -489,19 +486,9 @@ class ConditionEvaluator:
         else:
             raise ValueError(f"Unknown network check type: {check_type}")
 
-    # =========================================================================
-    # Link Action Condition Types
-    # =========================================================================
-    # These extract the appropriate node from a Link and delegate to existing
-    # condition evaluators. Per TIM paper Section 4.3:
-    # "For a link action, Vφa contains the properties of the start and end node
-    # of the link and the actor's access to the start and end node of the link."
-    # =========================================================================
-
     def _evaluate_start_node_access_check(
         self, condition: dict[str, Any], target, actor_id: str
     ) -> bool:
-        """Check actor's access to start node of a link. Delegates to _evaluate_access_check."""
         node = target.node1 if isinstance(target, Link) else target
         actor_access = get_node_access(node, actor_id)
         return self._evaluate_access_check(condition, actor_access, actor_id)
@@ -509,36 +496,30 @@ class ConditionEvaluator:
     def _evaluate_end_node_access_check(
         self, condition: dict[str, Any], target, actor_id: str
     ) -> bool:
-        """Check actor's access to end node of a link. Delegates to _evaluate_access_check."""
         if not isinstance(target, Link):
             return True
         actor_access = get_node_access(target.node2, actor_id)
         return self._evaluate_access_check(condition, actor_access, actor_id)
 
     def _evaluate_start_node_property_check(self, condition: dict[str, Any], target) -> bool:
-        """Check property on start node of a link. Delegates to _evaluate_property_check."""
         node = target.node1 if isinstance(target, Link) else target
         return self._evaluate_property_check(condition, node)
 
     def _evaluate_end_node_property_check(self, condition: dict[str, Any], target) -> bool:
-        """Check property on end node of a link. Delegates to _evaluate_property_check."""
         if not isinstance(target, Link):
             return True
         return self._evaluate_property_check(condition, target.node2)
 
     def _evaluate_link_property_check(self, condition: dict[str, Any], target) -> bool:
-        """Check property on the link itself. Reuses _evaluate_property_check logic."""
         if not isinstance(target, Link):
             return True
-        # Treat link as a node-like object for property checking
         return self._evaluate_property_check(condition, target)
 
     def _evaluate_time_check(self, condition: dict[str, Any], node: Node) -> bool:
-        """Check time-based conditions (cooldowns). Extends property_check with time math."""
         property_name = condition["property"]
         last_time = node.properties.get(property_name)
         if last_time is None:
-            return True  # Never done before = condition satisfied
+            return True
 
         current_time = self._simulator.current_time if self._simulator else 0.0
         time_since = current_time - last_time
@@ -616,7 +597,6 @@ class ActionExecutor:
         if access_level is None:
             return
         old_access = get_node_access(node, actor_id)
-        # Convert string from JSON to NodeAccessLevel
         if isinstance(access_level, str):
             access_level = validate_node_access(access_level)
         set_node_access(node, actor_id, access_level)
@@ -635,7 +615,6 @@ class ActionExecutor:
     def _execute_set_access_if_none(
         self, action: dict[str, Any], node: Node, actor_id: str
     ) -> None:
-        """Set access only if current access is NONE. Used for discovery actions."""
         current_access = get_node_access(node, actor_id)
         if current_access == NodeAccessLevel.NONE:
             self._execute_set_access(action, node, actor_id)
@@ -643,11 +622,6 @@ class ActionExecutor:
     def _execute_reduce_attacker_access(
         self, action: dict[str, Any], node: Node, defender_id: str
     ) -> None:
-        """Reduce all attackers' access on this node to the specified level.
-
-        Used by defender actions like incident response / system restore.
-        JSON spec: {"type": "reduce_attacker_access", "access_value": "NONE"}
-        """
         target_level = validate_node_access(action.get("access_value", "NONE"))
         if not self._simulator:
             return
@@ -658,10 +632,8 @@ class ActionExecutor:
             if current_access > target_level:
                 set_node_access(node, actor.id, target_level)
                 self._simulator.record_access_change(node, actor.id, current_access, target_level)
-                # Remove from compromised_nodes if dropping below USER
                 if target_level < NodeAccessLevel.USER and hasattr(actor, "compromised_nodes"):
                     actor.compromised_nodes.discard(node.id)
-                # Remove from visible_nodes if dropping to NONE
                 if target_level == NodeAccessLevel.NONE and hasattr(actor, "visible_nodes"):
                     actor.visible_nodes.discard(node)
 
@@ -669,7 +641,6 @@ class ActionExecutor:
         property_name = action["property"]
         value = action["value"]
 
-        # Handle special value placeholders
         if isinstance(value, str) and value.startswith("@"):
             value = self._resolve_special_value(value, node)
 
@@ -756,7 +727,6 @@ class ActionExecutor:
         logger.debug(f"set_links_access on node {node.id} by {actor_id}")
         logger.debug(f"  Node has {len(links)} links")
         access_value = action["access_value"]
-        # Convert string from JSON to LinkAccessLevel
         if isinstance(access_value, str):
             access_value = validate_link_access(access_value)
         discovered_nodes = []
@@ -817,15 +787,6 @@ class ActionExecutor:
             node.capabilities.remove(capability)
 
     def _resolve_special_value(self, value: str, node: Node) -> Any:
-        """
-        Resolve special value placeholders like @current_time, @node_id, etc.
-
-        Supported placeholders:
-        - @current_time: Current simulation time
-        - @node_id: ID of the current node
-        - @start_node_id: ID of start node (for link actions)
-        - @end_node_id: ID of end node (for link actions)
-        """
         if value == "@current_time":
             if hasattr(self, "_simulator") and self._simulator:
                 return self._simulator.current_time
@@ -841,7 +802,6 @@ class ActionExecutor:
                 return getattr(node.node2, "id", str(node.node2))
             return getattr(node, "id", str(node))
         else:
-            # Unknown placeholder, return as-is
             return value
 
 

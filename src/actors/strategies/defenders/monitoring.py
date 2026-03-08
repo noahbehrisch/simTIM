@@ -42,6 +42,4 @@ class MonitoringDefenderStrategy(DefenderStrategy):
         return priority
 
     def get_minimum_threshold(self, ongoing_count: int) -> float:
-        """Monitoring strategy favors breadth of coverage, applying
-        light selectivity for additional actions."""
         return 30.0 * ongoing_count

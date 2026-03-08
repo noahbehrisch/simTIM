@@ -169,14 +169,12 @@ class BaseTimelinePlotEngine(BasePlotEngine):
         if not access_events:
             return timeline
 
-        # Track access per (node_id, actor_id) to avoid cross-actor overwrites
         access_map: dict[tuple[str, str], str] = {}
         for t in sorted({e[0] for e in access_events}):
             for event_time, node_id, actor_id, new_access in access_events:
                 if event_time == t and node_id:
                     access_map[(node_id, actor_id)] = new_access
 
-            # Compute per-node max access across all actors
             node_max: dict[str, str] = {}
             for (nid, _aid), acc in access_map.items():
                 prev = node_max.get(nid, "NONE")
@@ -290,7 +288,7 @@ class BaseViolinPlotEngine(BasePlotEngine):
         )
 
         if color and "bodies" in parts:
-            for pc in parts["bodies"]:  # type: ignore[attr-defined]
+            for pc in parts["bodies"]:
                 pc.set_facecolor(color)
                 pc.set_alpha(alpha)
 

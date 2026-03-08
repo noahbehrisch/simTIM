@@ -61,6 +61,4 @@ class BalancedDefenderStrategy(DefenderStrategy):
         return priority
 
     def get_minimum_threshold(self, ongoing_count: int) -> float:
-        """Balanced strategy applies moderate selectivity, weighing
-        both proactive and reactive value for concurrent actions."""
         return 40.0 * ongoing_count

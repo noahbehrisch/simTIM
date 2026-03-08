@@ -1,33 +1,12 @@
-"""
-Action classes for TIM simulation.
-
-This module defines the Action base class as described in the TIM paper (Section 4.3-4.4).
-
-Per TIM paper:
-- An action a ∈ A is represented as a tuple a = (φa, ψa, ca, da, pa)
-  - φa: precondition (SMT formula, implemented via JSON conditions)
-  - ψa: postcondition (set of assignments)
-  - ca: cost of performing the action
-  - da: duration of the action
-  - pa: success probability
-
-Action Types:
-- Node actions (A^(node)): Applied to a single node
-- Link actions (A^(link)): Applied to a link, postcondition affects the END node
-"""
-
 from __future__ import annotations
 
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-# Use TYPE_CHECKING to avoid circular imports
-# Node is only needed for type hints, not at runtime
 if TYPE_CHECKING:
     from src.core.access_levels import NodeAccessLevel
     from src.core.network import Node
 
-# Type alias for the callback signature used in preconditions/postconditions
 AccessCallback = Callable[["Node", "NodeAccessLevel", str], Any]
 
 
@@ -85,14 +64,6 @@ class Action:
         return self.action_type == "link"
 
     def to_json(self) -> dict[str, Any]:
-        """Convert action to JSON-serializable dict.
-
-        Returns:
-            Dictionary containing action configuration.
-
-        Raises:
-            ValueError: If action was created programmatically without JSON source data.
-        """
         if hasattr(self, "_json_data") and self._json_data:
             return self._json_data.copy()
 

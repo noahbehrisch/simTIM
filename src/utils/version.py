@@ -2,10 +2,6 @@ import re
 
 
 class Version:
-    """
-    A class with utilites for parsing and comparing software version strings.
-    """
-
     def __init__(self, version_string: str):
         self.version_string = version_string.strip()
         self._parse_version()

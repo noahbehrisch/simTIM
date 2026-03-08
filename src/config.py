@@ -5,7 +5,6 @@ from pathlib import Path
 
 
 def _get_env(key: str, default: str, cast_type: type = str):
-    """Get environment variable with SIMTIM_ prefix."""
     env_key = f"SIMTIM_{key.upper()}"
     value = os.environ.get(env_key, default)
     if cast_type is bool:
@@ -88,7 +87,6 @@ class GUIConfig:
     default_tab: str = "simulation"
 
 
-# Global config instances
 sim_config = SimConfig()
 path_config = PathConfig()
 detection_config = DetectionConfig()
@@ -111,7 +109,6 @@ def save_config_to_file(filepath: str) -> None:
         "detection": asdict(detection_config),
         "gui": asdict(gui_config),
     }
-    # Handle infinity serialization
     config["simulation"]["default_budget"] = (
         "inf"
         if config["simulation"]["default_budget"] == float("inf")

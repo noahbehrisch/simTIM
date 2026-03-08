@@ -16,10 +16,6 @@ _network_loader = NetworkLoader()
 
 
 class SimulationOrchestrator:
-    """
-    Called by SimulationRunner. Sets up config, actors, network, then runs Simulator.
-    """
-
     def __init__(
         self,
         path_to_network_config: str,

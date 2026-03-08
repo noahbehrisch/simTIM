@@ -27,7 +27,6 @@ def main():
 
 
 def print_help():
-    """Print command-line help."""
     print("""
 simTIM - Cybersecurity Simulation Tool
 ======================================
@@ -86,10 +85,8 @@ def run_demo():
     )
 
     if histories:
-        # Print detailed event timeline and summary to terminal
         print_event_history(histories, verbose=False, show_timeline=True)
 
-        # Also print quick summary table
         print_quick_summary(histories)
 
         print()
@@ -103,7 +100,6 @@ def run_demo():
 
 
 def run_cli():
-    """Run an interactive CLI simulation."""
     from src.core.simulation_runner import SimulationRunner
     from src.networks import NetworkLoader
     from src.utils.results_printer import (
@@ -120,7 +116,6 @@ def run_cli():
     print("simTIM - Interactive CLI Mode")
     print("=" * 70)
 
-    # Select network
     print("\nAvailable networks:")
     for i, network in enumerate(available_networks, 1):
         print(f"  {i}. {network}")
@@ -138,7 +133,6 @@ def run_cli():
         except ValueError:
             print("Please enter a number.")
 
-    # Get simulation parameters
     print("\n" + "-" * 50)
     print("Simulation Parameters")
     print("-" * 50)
@@ -159,7 +153,6 @@ def run_cli():
         attacker_strategy = "escalation"
         defender_strategy = "balanced"
 
-    # Run simulation
     print("\n" + "=" * 70)
     print("Running simulation...")
     print("=" * 70)
@@ -193,11 +186,9 @@ def run_cli():
         print("Simulation failed!")
         return 1
 
-    # Print results
     print_event_history(histories, verbose=False, show_timeline=True)
     print_quick_summary(histories)
 
-    # Export options
     print("\n" + "-" * 50)
     print("Export Options")
     print("-" * 50)

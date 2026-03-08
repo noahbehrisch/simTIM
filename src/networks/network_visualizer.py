@@ -6,8 +6,6 @@ from src.visualization.theme import get_theme
 
 
 class NetworkVisualizer:
-    """Visualizes network topology using matplotlib."""
-
     def __init__(self, network):
         self.network = network
         self.node_positions = {}
@@ -26,15 +24,12 @@ class NetworkVisualizer:
         radius = 5
         for i, node_id in enumerate(self.network.nodes):
             node = self.network.nodes[node_id]
-            # Check for saved coordinates in properties
             x = node.properties.get("x")
             y = node.properties.get("y")
 
             if x is not None and y is not None:
-                # Use saved coordinates (scale down for matplotlib)
                 self.node_positions[node_id] = (x / 50, y / 50)
             else:
-                # Fall back to circular layout
                 angle = 2 * math.pi * i / num_nodes
                 self.node_positions[node_id] = (
                     radius * math.cos(angle),
@@ -57,14 +52,12 @@ class NetworkVisualizer:
             ax.text(0.5, 0.5, "No nodes to display", ha="center", va="center")
             return
 
-        # Calculate bounds
         all_x = [pos[0] for pos in self.node_positions.values()]
         all_y = [pos[1] for pos in self.node_positions.values()]
         margin = 1.5
         ax.set_xlim(min(all_x) - margin, max(all_x) + margin)
         ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
 
-        # Draw links first (behind nodes)
         for link in self.network.links:
             node1_pos = self.node_positions.get(link.node1.id)
             node2_pos = self.node_positions.get(link.node2.id)
@@ -78,7 +71,6 @@ class NetworkVisualizer:
                     zorder=1,
                 )
 
-        # Draw nodes
         for node_id, position in self.node_positions.items():
             color = self._get_node_color(node_id)
             ax.scatter(
@@ -101,7 +93,6 @@ class NetworkVisualizer:
                 fontweight="bold",
             )
 
-        # Hide axes for cleaner look
         ax.set_xticks([])
         ax.set_yticks([])
         ax.spines["top"].set_visible(False)
@@ -110,12 +101,10 @@ class NetworkVisualizer:
         ax.spines["left"].set_visible(False)
 
     def visualize(self):
-        """Display the network in a matplotlib window."""
         fig, ax = plt.subplots(figsize=(10, 8))
         fig.suptitle("Network Topology", fontsize=14, fontweight="bold")
         self._draw_network(ax)
 
-        # Add legend
         from matplotlib.patches import Patch
 
         legend_elements = [
@@ -128,6 +117,5 @@ class NetworkVisualizer:
         plt.show()
 
     def update_plot(self):
-        """Refresh the plot."""
         plt.clf()
         self.visualize()

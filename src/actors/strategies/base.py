@@ -13,7 +13,6 @@ class AttackerStrategy(ABC):
         self.name = name
 
     def choose_action(self, attacker: Any, network_state: Any) -> tuple[Any, Any] | None:
-        # Determine threshold based on current + pending concurrent actions
         ongoing_count = 0
         if hasattr(attacker, "simulator") and attacker.simulator:
             ongoing_count = sum(
@@ -30,14 +29,12 @@ class AttackerStrategy(ABC):
         best: tuple[Any, Any] | None = None
         best_priority: float = -1
 
-        # Evaluate link actions on visible links
         visible_links = list(getattr(attacker, "visible_links", set()))
         for action in attacker.available_actions:
             if hasattr(action, "is_link_action") and action.is_link_action():
                 for link in visible_links:
                     if self._is_action_ongoing(attacker, action, link):
                         continue
-                    # Use start node access for precondition check
                     start_access = get_node_access(link.node1, attacker.id)
                     try:
                         if action.precondition(link, start_access, attacker.id):
@@ -54,7 +51,6 @@ class AttackerStrategy(ABC):
                         )
                         continue
 
-        # Evaluate node actions on visible nodes
         for action in attacker.available_actions:
             if hasattr(action, "is_link_action") and action.is_link_action():
                 continue
@@ -78,7 +74,6 @@ class AttackerStrategy(ABC):
                         )
                         continue
 
-        # Only return the best action if its priority meets the threshold
         if best and best_priority >= threshold:
             return best
         if best:
@@ -90,7 +85,6 @@ class AttackerStrategy(ABC):
 
     def _is_action_ongoing(self, attacker, action, target) -> bool:
         target_id = getattr(target, "id", str(target))
-        # Check pending pairs from current decision loop
         if (action.name, target_id) in getattr(attacker, "_pending_pairs", set()):
             return True
         if not hasattr(attacker, "simulator") or not attacker.simulator:
@@ -108,12 +102,6 @@ class AttackerStrategy(ABC):
         return "unknown"
 
     def get_minimum_threshold(self, ongoing_count: int) -> float:
-        """Return the minimum priority required to launch an additional action.
-
-        Raises the bar for each additional concurrent action, preventing
-        actors with high or infinite capacity from flooding the simulation.
-        Subclasses override this to tune strategic selectivity.
-        """
         return 50.0 * ongoing_count
 
     @abstractmethod
@@ -127,7 +115,6 @@ class DefenderStrategy(ABC):
         self.detection_window_hours = detection_window_hours
 
     def choose_action(self, defender: Any, network_state: Any) -> tuple[Any, Any] | None:
-        # Determine threshold based on current + pending concurrent actions
         ongoing_count = 0
         if hasattr(defender, "simulator") and defender.simulator:
             ongoing_count = sum(
@@ -187,7 +174,6 @@ class DefenderStrategy(ABC):
 
     def _is_action_ongoing(self, defender, action, target) -> bool:
         target_id = getattr(target, "id", str(target))
-        # Check pending pairs from current decision loop
         if (action.name, target_id) in getattr(defender, "_pending_pairs", set()):
             return True
         if not hasattr(defender, "simulator") or not defender.simulator:
@@ -219,11 +205,6 @@ class DefenderStrategy(ABC):
         return "Unknown"
 
     def get_minimum_threshold(self, ongoing_count: int) -> float:
-        """Return the minimum priority required to launch an additional action.
-
-        Raises the bar for each additional concurrent action.
-        Subclasses override this to tune strategic selectivity.
-        """
         return 30.0 * ongoing_count
 
     @abstractmethod

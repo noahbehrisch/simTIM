@@ -236,7 +236,6 @@ class NodeDialog:
         ).grid(row=current_row, column=0, columnspan=2, pady=20)
 
     def edit_node_dialog(self, node_id):
-        """Open a dialog to edit an existing node."""
         if node_id not in self.nodes:
             return
 
@@ -453,7 +452,6 @@ class NodeDialog:
             services = [service for service, var in fields["services_vars"].items() if var.get()]
             assets = [asset for asset, var in fields["assets_vars"].items() if var.get()]
 
-            # Preserve position
             x = node.get("x", 0)
             y = node.get("y", 0)
 

@@ -61,7 +61,6 @@ class Defender(Actor):
                 )
                 return True
             else:
-                # Precondition failed on re-check; mark pair to avoid re-selecting it
                 self._pending_pairs.add((action.name, getattr(target, "id", str(target))))
                 logger.warning(
                     f"Defender {self.id}: Precondition failed for {action.name} on {target.id}"
@@ -78,7 +77,6 @@ class Defender(Actor):
     def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
-        # Reset dedup and schedule immediate re-evaluation
         if self.running and self.simulator:
             self._last_run_time = -1.0
             self.simulator.schedule_event(

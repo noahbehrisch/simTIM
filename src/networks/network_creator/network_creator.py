@@ -38,7 +38,7 @@ class NetworkCreator(
         self.drag_start_y = 0
         self.selection_box_active = False
         self.selection_box_start = None
-        self.snap_size = 60  # grid_size is already used by tkinter
+        self.snap_size = 60
         self.zoom_scale = 1.0
         self.min_zoom = 0.25
         self.max_zoom = 4.0

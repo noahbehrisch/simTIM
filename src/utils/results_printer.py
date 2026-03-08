@@ -1,10 +1,3 @@
-"""
-Utilities for printing and exporting simulation results.
-
-This module provides functions to display simulation results in the terminal
-and export them to various formats (CSV, JSON) for further analysis.
-"""
-
 import csv
 import json
 from pathlib import Path
@@ -18,14 +11,6 @@ def print_event_history(
     verbose: bool = False,
     show_timeline: bool = True,
 ) -> None:
-    """
-    Print simulation event histories to the terminal in a readable format.
-
-    Args:
-        histories: List of simulation run histories
-        verbose: If True, show all event details; if False, show summary only
-        show_timeline: If True, show chronological event timeline
-    """
     print("\n" + "=" * 70)
     print("SIMULATION RESULTS")
     print("=" * 70)
@@ -35,7 +20,6 @@ def print_event_history(
         print(f"RUN {run_idx + 1} OF {len(histories)}")
         print(f"{'─' * 70}")
 
-        # Parse and analyze events
         events_by_type: dict[str, list] = {}
         timeline: list[dict[str, Any]] = []
         stats = {
@@ -56,27 +40,22 @@ def print_event_history(
             if time is None:
                 continue
 
-            # Categorize event
             if event_type not in events_by_type:
                 events_by_type[event_type] = []
             events_by_type[event_type].append((time, data))
 
-            # Build timeline entry
             entry = _build_timeline_entry(time, event_type, data, stats)
             if entry:
                 timeline.append(entry)
 
-        # Print timeline if requested
         if show_timeline and timeline:
             print("\n📅 EVENT TIMELINE:")
             print("-" * 50)
             for entry in sorted(timeline, key=lambda x: x["time"]):
                 _print_timeline_entry(entry, verbose)
 
-        # Print summary statistics
         _print_run_summary(stats, len(history))
 
-    # Print overall summary if multiple runs
     if len(histories) > 1:
         _print_overall_summary(histories)
 
@@ -84,7 +63,6 @@ def print_event_history(
 def _build_timeline_entry(
     time: float, event_type: str, data: dict, stats: dict
 ) -> dict[str, Any] | None:
-    """Build a timeline entry from an event and update stats."""
     if not isinstance(data, dict):
         return None
 
@@ -178,13 +156,11 @@ def _build_timeline_entry(
 
 
 def _print_timeline_entry(entry: dict[str, Any], verbose: bool) -> None:
-    """Print a single timeline entry."""
     time_str = format_time(entry["time"])
     print(f"  [{time_str}] {entry['icon']} {entry['description']}")
 
 
 def _print_run_summary(stats: dict, total_events: int) -> None:
-    """Print summary statistics for a single run."""
     print("\n📊 RUN SUMMARY:")
     print("-" * 50)
     print(f"  Total events:         {total_events}")
@@ -201,7 +177,6 @@ def _print_run_summary(stats: dict, total_events: int) -> None:
     print(f"  Attacker gains:       ${stats['total_gains']:,.2f}")
     print(f"  Action costs:         ${stats['total_costs']:,.2f}")
 
-    # Attack success rate
     total_attacks = stats["successful_attacks"] + stats["failed_attacks"]
     if total_attacks > 0:
         success_rate = (stats["successful_attacks"] / total_attacks) * 100
@@ -209,7 +184,6 @@ def _print_run_summary(stats: dict, total_events: int) -> None:
 
 
 def _print_overall_summary(histories: list[list]) -> None:
-    """Print overall summary across all runs."""
     print("\n" + "=" * 70)
     print("OVERALL SUMMARY (ALL RUNS)")
     print("=" * 70)
@@ -340,7 +314,6 @@ def export_to_json(
                 event_record["actor"] = getattr(actor, "id", None) if actor else None
                 event_record["target"] = getattr(target, "id", None) if target else None
 
-                # Update summary
                 is_attacker = (
                     actor is not None and hasattr(actor, "is_attacker") and actor.is_attacker
                 )
@@ -374,7 +347,6 @@ def export_to_json(
 
         result["runs"].append(run_data)
 
-    # Add overall summary if requested
     if include_summary and result["runs"]:
         total_damage = sum(r["summary"]["total_damage"] for r in result["runs"])
         total_attacks = sum(r["summary"]["successful_attacks"] for r in result["runs"])

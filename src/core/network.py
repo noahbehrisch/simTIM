@@ -52,7 +52,6 @@ class Link:
         self.access: dict[str, LinkAccessLevel] = {}
 
     def get_other_node(self, node: Node) -> Node | None:
-        """Return the node on the other end of this link."""
         if self.node1.id == node.id:
             return self.node2
         elif self.node2.id == node.id:
@@ -70,7 +69,6 @@ class Network:
     links: list[Link] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    # Properties
     @property
     def nodes_list(self) -> list[Node]:
         return list(self.nodes.values())
@@ -87,7 +85,6 @@ class Network:
     def link_count(self) -> int:
         return len(self.links)
 
-    # Node functions
     def get_node(self, node_id: str) -> Node | None:
         return self.nodes.get(node_id)
 
@@ -102,7 +99,6 @@ class Network:
             ]
         return node
 
-    # Link functions
     def add_link(self, link: Link) -> None:
         if link not in self.links:
             self.links.append(link)
@@ -116,7 +112,6 @@ class Network:
     def get_links_for_node(self, node_id: str) -> list[Link]:
         return [link for link in self.links if link.node1.id == node_id or link.node2.id == node_id]
 
-    # Dunder methods
     def __len__(self) -> int:
         return len(self.nodes)
 

@@ -72,7 +72,6 @@ class FileOperations:
                 self.links = []
                 for i, node in enumerate(data.get("nodes", [])):
                     node_id = node["id"]
-                    # Use saved coordinates if available, otherwise calculate circular layout
                     if "x" in node and "y" in node:
                         x = node["x"]
                         y = node["y"]

@@ -1,9 +1,3 @@
-"""
-Actor factory module.
-
-Creates Actor instances from configurations.
-"""
-
 import logging
 from dataclasses import dataclass, field
 from typing import Any
@@ -16,58 +10,39 @@ logger = logging.getLogger(__name__)
 
 
 class ActorCreationError(Exception):
-    """Raised when actor creation fails."""
-
     pass
 
 
 @dataclass
 class ActorValidationResult:
-    """Result of actor configuration validation."""
-
     valid: bool
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
 
 class ActorValidator:
-    """Validates actor configurations."""
-
     VALID_ROLES = {"attacker", "defender"}
     REQUIRED_FIELDS = {"id", "role"}
 
     def validate(self, config: dict[str, Any]) -> ActorValidationResult:
-        """
-        Validate an actor configuration.
-
-        Args:
-            config: Actor configuration dictionary
-
-        Returns:
-            ActorValidationResult with validation status
-        """
         errors: list[str] = []
         warnings: list[str] = []
 
-        # Check type
         if not isinstance(config, dict):
             return ActorValidationResult(
                 valid=False,
                 errors=["Actor configuration must be a dictionary"],
             )
 
-        # Check required fields
         for field_name in self.REQUIRED_FIELDS:
             if field_name not in config:
                 errors.append(f"Missing required field: {field_name}")
 
-        # Validate id
         actor_id = config.get("id")
         if actor_id is not None:
             if not isinstance(actor_id, str) or not actor_id.strip():
                 errors.append("'id' must be a non-empty string")
 
-        # Validate role
         role = config.get("role")
         if role is not None:
             if not isinstance(role, str):
@@ -75,7 +50,6 @@ class ActorValidator:
             elif role.lower() not in self.VALID_ROLES:
                 errors.append(f"Invalid role '{role}'. Must be one of: {self.VALID_ROLES}")
 
-        # Validate optional fields
         self._validate_capacity(config, errors, warnings)
         self._validate_budget(config, errors, warnings)
         self._validate_strategy(config, errors, warnings)
@@ -92,7 +66,6 @@ class ActorValidator:
         errors: list[str],
         warnings: list[str],
     ) -> None:
-        """Validate capacity field."""
         capacity = config.get("capacity")
         if capacity is not None:
             if capacity != float("inf"):
@@ -107,7 +80,6 @@ class ActorValidator:
         errors: list[str],
         warnings: list[str],
     ) -> None:
-        """Validate budget field."""
         budget = config.get("budget")
         if budget is not None:
             if budget != float("inf"):
@@ -122,38 +94,17 @@ class ActorValidator:
         errors: list[str],
         warnings: list[str],
     ) -> None:
-        """Validate strategy field."""
         strategy = config.get("strategy")
         if strategy is not None and not isinstance(strategy, str):
             errors.append("'strategy' must be a string")
 
 
 class ActorFactory:
-    """
-    Creates Actor instances from configurations.
-
-    Responsibilities:
-    - Create Attacker and Defender instances
-    - Apply strategy components
-    - Validate configurations
-
-    Does NOT handle:
-    - Actor registration or management
-    - Simulation integration
-    """
-
     def __init__(self, validator: ActorValidator | None = None):
-        """
-        Initialize the factory.
-
-        Args:
-            validator: Optional validator instance
-        """
         self._validator = validator or ActorValidator()
 
     @property
     def validator(self) -> ActorValidator:
-        """Get the validator instance."""
         return self._validator
 
     def create(
@@ -161,19 +112,6 @@ class ActorFactory:
         config: dict[str, Any],
         validate: bool = True,
     ) -> Actor:
-        """
-        Create an Actor from configuration.
-
-        Args:
-            config: Actor configuration dictionary
-            validate: Whether to validate before creation
-
-        Returns:
-            Configured Actor instance (Attacker or Defender)
-
-        Raises:
-            ActorCreationError: If validation fails or creation encounters error
-        """
         if validate:
             result = self._validator.validate(config)
             if not result.valid:
@@ -200,7 +138,6 @@ class ActorFactory:
             raise ActorCreationError(f"Error creating actor: {e}") from e
 
     def _create_attacker(self, config: dict[str, Any]) -> Attacker:
-        """Create an Attacker from configuration."""
         attacker = Attacker(
             id=config["id"],
             strategy=config.get("strategy", "greedy"),
@@ -208,7 +145,6 @@ class ActorFactory:
             budget=config.get("budget", float("inf")),
         )
 
-        # Apply additional properties
         if "decision_interval" in config:
             attacker.decision_interval = config["decision_interval"]
 
@@ -216,7 +152,6 @@ class ActorFactory:
         return attacker
 
     def _create_defender(self, config: dict[str, Any]) -> Defender:
-        """Create a Defender from configuration."""
         defender = Defender(
             id=config["id"],
             strategy=config.get("strategy", "reactive"),
@@ -224,7 +159,6 @@ class ActorFactory:
             budget=config.get("budget", float("inf")),
         )
 
-        # Apply additional properties
         if "decision_interval" in config:
             defender.decision_interval = config["decision_interval"]
 
@@ -239,11 +173,6 @@ class ActorFactory:
         budget: float = float("inf"),
         **kwargs: Any,
     ) -> Attacker:
-        """
-        Create an Attacker with explicit parameters.
-
-        Convenience method for creating attackers without config dict.
-        """
         config = {
             "id": id,
             "role": "attacker",
@@ -252,7 +181,7 @@ class ActorFactory:
             "budget": budget,
             **kwargs,
         }
-        return self.create(config)  # type: ignore
+        return self.create(config)  # type: ignore[return-value]
 
     def create_defender(
         self,
@@ -262,11 +191,6 @@ class ActorFactory:
         budget: float = float("inf"),
         **kwargs: Any,
     ) -> Defender:
-        """
-        Create a Defender with explicit parameters.
-
-        Convenience method for creating defenders without config dict.
-        """
         config = {
             "id": id,
             "role": "defender",
@@ -275,18 +199,9 @@ class ActorFactory:
             "budget": budget,
             **kwargs,
         }
-        return self.create(config)  # type: ignore
+        return self.create(config)  # type: ignore[return-value]
 
     def to_config(self, actor: Actor) -> dict[str, Any]:
-        """
-        Convert an Actor back to configuration format.
-
-        Args:
-            actor: Actor to serialize
-
-        Returns:
-            Configuration dictionary
-        """
         config = {
             "id": actor.id,
             "role": actor.role,
@@ -301,20 +216,14 @@ class ActorFactory:
         return config
 
 
-# =============================================================================
-# Global instance and convenience functions
-# =============================================================================
-
 _factory = ActorFactory()
 
 
 def get_actor_factory() -> ActorFactory:
-    """Get the global actor factory."""
     return _factory
 
 
 def create_actor(config: dict[str, Any]) -> Actor:
-    """Create an actor from configuration (convenience function)."""
     return _factory.create(config)
 
 
@@ -323,7 +232,6 @@ def create_attacker(
     strategy: str = "greedy",
     **kwargs: Any,
 ) -> Attacker:
-    """Create an attacker (convenience function)."""
     return _factory.create_attacker(id, strategy, **kwargs)
 
 
@@ -332,5 +240,4 @@ def create_defender(
     strategy: str = "reactive",
     **kwargs: Any,
 ) -> Defender:
-    """Create a defender (convenience function)."""
     return _factory.create_defender(id, strategy, **kwargs)

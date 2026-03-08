@@ -33,9 +33,9 @@ class ResultsWindow:
         self.parent = parent
         self.all_histories = all_histories
         self.scenario_results = scenario_results
-        self.sim_time = sim_time  # Store simulation duration for consistent X-axis
-        self.total_nodes = total_nodes  # Total nodes in network for consistent Y-axis
-        self.network_path = network_path  # Path to network JSON for attack path viz
+        self.sim_time = sim_time
+        self.total_nodes = total_nodes
+        self.network_path = network_path
         self.bg_color = theme_colors["bg_color"]
         self.button_fg = theme_colors["button_fg"]
         self.runs_data = []
@@ -91,7 +91,6 @@ class ResultsWindow:
                             action_name = data["action"].name
                         if "target" in data and hasattr(data["target"], "id"):
                             target_id = data["target"].id
-                # Only include action completion events, not start events
                 if event_type not in [
                     "action_succeeded",
                     "action_failed",
@@ -107,7 +106,6 @@ class ResultsWindow:
                     "action_interrupted_by_detection",
                 ]:
                     continue
-                # Determine success/failure based on event type
                 is_success = event_type == "action_succeeded"
                 is_detection = event_type == "attack_detected"
                 is_failure = event_type in [
@@ -160,7 +158,6 @@ class ResultsWindow:
             self.runs_data.append(run_events)
 
     def _extract_cost(self, event: dict[str, Any]) -> float:
-        """Extract cost from pre-computed economics embedded in event data."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
             economics = raw_data.get("economics")
@@ -169,7 +166,6 @@ class ResultsWindow:
         return 0.0
 
     def _extract_gain(self, event: dict[str, Any]) -> float:
-        """Extract gain from pre-computed economics embedded in event data."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
             economics = raw_data.get("economics")
@@ -178,7 +174,6 @@ class ResultsWindow:
         return 0.0
 
     def _extract_damage(self, event: dict[str, Any]) -> float:
-        """Extract damage from pre-computed economics embedded in event data."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
             economics = raw_data.get("economics")
@@ -488,7 +483,6 @@ class ResultsWindow:
                 cum_damage.append(total_damage)
 
             if times:
-                # Extend data to simulation end time for consistent X-axis
                 if self.sim_time and times[-1] < self.sim_time:
                     times.append(self.sim_time)
                     cum_cost.append(cum_cost[-1])
@@ -525,7 +519,6 @@ class ResultsWindow:
                 ax.legend(loc="upper left")
                 ax.grid(True, alpha=0.3)
 
-                # Set X-axis to full simulation time
                 if self.sim_time:
                     ax.set_xlim(0, self.sim_time * 1.02)
 
@@ -578,7 +571,6 @@ class ResultsWindow:
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        # Track access per (node_id, actor_id) to avoid cross-actor overwrites
         access_map: dict[tuple[str, str], str] = {}
         times = []
         admin_counts = []
@@ -601,10 +593,9 @@ class ResultsWindow:
                     key = (node_id, actor_id)
                     old = access_map.get(key, "NONE")
                     if old == new_access:
-                        continue  # no actual change
+                        continue
                     access_map[key] = new_access
 
-                    # Compute per-node max access across all actors
                     node_max: dict[str, str] = {}
                     for (nid, _aid), acc in access_map.items():
                         prev = node_max.get(nid, "NONE")
@@ -621,7 +612,6 @@ class ResultsWindow:
                     visible_counts.append(visible)
 
         if times:
-            # Use simulation time for consistent X-axis, fall back to max event time
             plot_max_time = (
                 self.sim_time
                 if self.sim_time
@@ -632,7 +622,6 @@ class ResultsWindow:
                 )
             )
 
-            # Extend data to simulation end time to avoid whitespace
             if self.sim_time and times[-1] < self.sim_time:
                 times.append(self.sim_time)
                 admin_counts.append(admin_counts[-1])
@@ -686,7 +675,6 @@ class ResultsWindow:
                 fontsize=12,
                 color="gray",
             )
-            # Still set consistent axes even with no data
             if self.sim_time:
                 ax.set_xlim(0, self.sim_time * 1.02)
             if self.total_nodes:
@@ -730,14 +718,10 @@ class ResultsWindow:
                 bg=self.bg_color,
             ).pack(expand=True)
 
-    # ── Dashboard ──────────────────────────────────────────────────────
-
     def _create_dashboard_tab(self):
-        """Overview tab with all key visualizations on a single page."""
         tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
         self.notebook.add(tab_frame, text="Dashboard")
 
-        # ── Top controls: run selector ──
         top = tk.Frame(tab_frame, bg=self.bg_color)
         top.pack(fill=tk.X, padx=10, pady=5)
         tk.Label(top, text="Select Run:", bg=self.bg_color, fg=self.button_fg).pack(
@@ -751,11 +735,9 @@ class ResultsWindow:
         combo.pack(side=tk.LEFT, padx=5)
         combo.bind("<<ComboboxSelected>>", lambda _e: self._dash_on_run_changed())
 
-        # ── Main area: PanedWindow (plots top, event log bottom) ──
         paned = tk.PanedWindow(tab_frame, orient=tk.VERTICAL, bg=self.bg_color, sashwidth=4)
         paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 5))
 
-        # Top pane — 2×2 matplotlib grid
         plot_pane = tk.Frame(paned, bg=self.bg_color)
         paned.add(plot_pane, minsize=300)
 
@@ -763,7 +745,6 @@ class ResultsWindow:
         self._dash_canvas = FigureCanvasTkAgg(self._dash_fig, plot_pane)
         self._dash_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # Controls row: play button + slider
         ctrl = tk.Frame(plot_pane, bg=self.bg_color)
         ctrl.pack(fill=tk.X, padx=5, pady=(0, 2))
 
@@ -804,7 +785,6 @@ class ResultsWindow:
         )
         self._dash_max_label.pack(side=tk.LEFT, padx=(0, 5))
 
-        # Bottom pane — scrollable event log
         log_pane = tk.Frame(paned, bg=self.bg_color)
         paned.add(log_pane, minsize=80)
 
@@ -831,7 +811,6 @@ class ResultsWindow:
         self._dash_log.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # ── Network topology for the attack-path subplot ──
         self._dash_topo_links: list[tuple[str, str]] = []
         self._dash_positions: dict[str, tuple[float, float]] = {}
         if self.network_path:
@@ -841,24 +820,17 @@ class ResultsWindow:
             self._dash_topo_links = topo["links"]
             self._dash_positions = _compute_positions(topo["nodes"])
 
-        # ── Engine + animation state ──
         self._dash_engine = TimeSeriesPlotEngine()
         self._dash_playing = False
         self._dash_after_id: str | None = None
 
-        # Precompute timeline data for run 1, then draw
         self._dash_precompute()
         self._dash_redraw_all()
 
-    # ── Dashboard: precompute timelines ────────────────────────────────
-
     def _dash_precompute(self):
-        """Build sorted event list for the log (called once per run change)."""
         run_id = self._dash_get_run_id()
         run_events = self.runs_data[run_id] if run_id < len(self.runs_data) else []
         self._dash_sorted_events = sorted(run_events, key=lambda x: x["time"])
-
-    # ── Dashboard: helpers ─────────────────────────────────────────────
 
     def _dash_get_run_id(self) -> int:
         return int(self._dash_run_var.get().split()[1]) - 1
@@ -884,8 +856,6 @@ class ResultsWindow:
 
     def _dash_on_slider(self, _value=None):
         self._dash_redraw_attack_path()
-
-    # ── Dashboard: play / pause ────────────────────────────────────────
 
     def _dash_toggle_play(self):
         if self._dash_playing:
@@ -927,10 +897,7 @@ class ResultsWindow:
         self._dash_redraw_attack_path()
         self._dash_after_id = self.window.after(80, self._dash_play_tick)
 
-    # ── Dashboard: drawing ─────────────────────────────────────────────
-
     def _dash_redraw_all(self):
-        """Full redraw of every subplot and the event log."""
         run_id = self._dash_get_run_id()
         ct = self._dash_time_var.get()
         self._dash_time_label.configure(text=f"t = {ct:.1f} h")
@@ -948,7 +915,6 @@ class ResultsWindow:
         self._dash_canvas.draw()
 
     def _dash_redraw_attack_path(self):
-        """Redraw only the attack-path subplot (called by slider/play)."""
         run_id = self._dash_get_run_id()
         ct = self._dash_time_var.get()
         self._dash_time_label.configure(text=f"t = {ct:.1f} h")
@@ -1000,7 +966,6 @@ class ResultsWindow:
             cum_damage.append(td)
 
         if times:
-            # Extend data to simulation end time
             if self.sim_time and times[-1] < self.sim_time:
                 times.append(self.sim_time)
                 cum_cost.append(cum_cost[-1])
@@ -1079,7 +1044,6 @@ class ResultsWindow:
 
         if times:
             plot_max_time = self.sim_time if self.sim_time else max(times)
-            # Extend data to simulation end time
             if self.sim_time and times[-1] < self.sim_time:
                 times.append(self.sim_time)
                 admin_counts.append(admin_counts[-1])
@@ -1635,18 +1599,14 @@ class ResultsWindow:
             traceback.print_exc()
 
     def _on_close(self):
-        """Clean up matplotlib resources before closing to prevent thread errors."""
         try:
-            # Stop dashboard animation
             if hasattr(self, "_dash_playing") and self._dash_playing:
                 self._dash_stop_play()
-            # Clean up attack path panel
             if hasattr(self, "_attack_path_panel") and self._attack_path_panel is not None:
                 try:
                     self._attack_path_panel.destroy()
                 except Exception:
                     pass
-            # Destroy canvas widgets first to release tkinter resources
             for canvas_attr in [
                 "events_canvas",
                 "money_canvas",
@@ -1660,10 +1620,8 @@ class ResultsWindow:
                         canvas.get_tk_widget().destroy()
                     except Exception:
                         pass
-            # Then close all matplotlib figures
             plt.close("all")
         except Exception as e:
-            # Log but don't crash on cleanup failure
             import logging
 
             logging.getLogger(__name__).debug(f"Error closing plots: {e}")

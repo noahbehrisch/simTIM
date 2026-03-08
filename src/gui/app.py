@@ -25,7 +25,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self._is_closing = False
-        self._results_window = None  # Track results window for proper cleanup
+        self._results_window = None
         self.theme = Theme()
         self.title("simTIM GUI")
         self.geometry("1400x800")
@@ -57,8 +57,8 @@ class App(tk.Tk):
         ]
         self.tabs = {}
         self.current_tab = None
-        self.last_sim_time = None  # Store last simulation time for results window
-        self.last_total_nodes = None  # Store total nodes for consistent Y-axis
+        self.last_sim_time = None
+        self.last_total_nodes = None
         self.theme_colors = self.theme.get_theme_colors()
         self.create_tabs()
         self.sidebar = Sidebar(
@@ -151,11 +151,8 @@ class App(tk.Tk):
             self.node_options = []
 
     def _on_closing(self):
-        """Handle window close event to prevent Tkinter thread errors."""
         self._is_closing = True
-        # Close results window first to properly clean up its matplotlib resources
         self._close_results_window()
-        # Close all remaining matplotlib figures to prevent thread cleanup errors
         try:
             import matplotlib.pyplot as plt
 
@@ -248,7 +245,6 @@ class App(tk.Tk):
         self.network_tab.open_create_network_window()
 
     def _close_results_window(self):
-        """Close any existing results window to free matplotlib resources."""
         if self._results_window is not None:
             try:
                 self._results_window._on_close()
@@ -301,7 +297,6 @@ class App(tk.Tk):
         path_to_network_config = network_config["file_path"]
         self.last_network_path = path_to_network_config
 
-        # Count nodes in the network for consistent Y-axis in plots
         try:
             import json
 

@@ -1,17 +1,9 @@
-"""
-Network validation module.
-
-Provides validation for network JSON configurations with detailed error reporting.
-"""
-
 from dataclasses import dataclass, field
 from typing import Any
 
 
 @dataclass
 class NetworkValidationResult:
-    """Result of a network validation operation."""
-
     valid: bool
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -20,7 +12,6 @@ class NetworkValidationResult:
         return self.valid
 
     def merge(self, other: "NetworkValidationResult") -> "NetworkValidationResult":
-        """Merge another validation result into this one."""
         return NetworkValidationResult(
             valid=self.valid and other.valid,
             errors=self.errors + other.errors,
@@ -29,47 +20,24 @@ class NetworkValidationResult:
 
 
 class NetworkValidator:
-    """
-    Validates network JSON configurations.
-
-    Separates validation logic from network creation, allowing for:
-    - Reusable validation rules
-    - Custom validation extensions
-    - Clear error reporting
-    """
-
     def validate(self, config: dict[str, Any]) -> NetworkValidationResult:
-        """
-        Validate a network configuration.
-
-        Args:
-            config: Dictionary containing network configuration
-
-        Returns:
-            NetworkValidationResult with errors and warnings
-        """
         result = NetworkValidationResult(valid=True)
 
-        # Basic structure check
         if not isinstance(config, dict):
             return NetworkValidationResult(
                 valid=False,
                 errors=["Network configuration must be a dictionary"],
             )
 
-        # Validate nodes
         result = result.merge(self._validate_nodes(config))
 
-        # Validate links
         result = result.merge(self._validate_links(config))
 
-        # Check for exposed nodes
         result = result.merge(self._validate_entry_points(config))
 
         return result
 
     def _validate_nodes(self, config: dict[str, Any]) -> NetworkValidationResult:
-        """Validate the nodes section."""
         errors = []
         warnings = []
 
@@ -94,14 +62,12 @@ class NetworkValidator:
         return NetworkValidationResult(valid=len(errors) == 0, errors=errors, warnings=warnings)
 
     def _validate_single_node(self, node: Any, index: int, seen_ids: set[str]) -> list[str]:
-        """Validate a single node configuration."""
         errors = []
 
         if not isinstance(node, dict):
             errors.append(f"Node {index} must be a dictionary")
             return errors
 
-        # Validate ID
         if "id" not in node:
             errors.append(f"Node {index} missing required 'id' field")
         elif not isinstance(node["id"], str) or not node["id"]:
@@ -113,7 +79,6 @@ class NetworkValidator:
 
         node_ref = node.get("id", index)
 
-        # Validate optional fields
         if "software" in node and not isinstance(node["software"], dict):
             errors.append(f"Node {node_ref}: 'software' must be a dictionary")
 
@@ -132,16 +97,14 @@ class NetworkValidator:
         return errors
 
     def _validate_links(self, config: dict[str, Any]) -> NetworkValidationResult:
-        """Validate the links section."""
         errors = []
 
         if "links" not in config:
-            return NetworkValidationResult(valid=True)  # Links are optional
+            return NetworkValidationResult(valid=True)
 
         if not isinstance(config["links"], list):
             return NetworkValidationResult(valid=False, errors=["'links' must be a list"])
 
-        # Collect valid node IDs
         node_ids = {
             node["id"]
             for node in config.get("nodes", [])
@@ -155,14 +118,12 @@ class NetworkValidator:
         return NetworkValidationResult(valid=len(errors) == 0, errors=errors)
 
     def _validate_single_link(self, link: Any, index: int, node_ids: set[str]) -> list[str]:
-        """Validate a single link configuration."""
         errors = []
 
         if not isinstance(link, dict):
             errors.append(f"Link {index} must be a dictionary")
             return errors
 
-        # Validate node references
         if "node1" not in link:
             errors.append(f"Link {index} missing required 'node1' field")
         elif link["node1"] not in node_ids:
@@ -173,7 +134,6 @@ class NetworkValidator:
         elif link["node2"] not in node_ids:
             errors.append(f"Link {index} references unknown node: {link['node2']}")
 
-        # Validate optional fields
         if "bidirectional" in link and not isinstance(link["bidirectional"], bool):
             errors.append(f"Link {index}: 'bidirectional' must be a boolean")
 
@@ -186,7 +146,6 @@ class NetworkValidator:
         return errors
 
     def _validate_entry_points(self, config: dict[str, Any]) -> NetworkValidationResult:
-        """Check that the network has at least one entry point for attackers."""
         warnings = []
 
         has_exposed = any(

@@ -131,7 +131,7 @@ class EventBus:
                 try:
                     weak_ref = WeakMethod(callback)
                 except TypeError:
-                    weak_ref = ref(callback)  # type: ignore[assignment]
+                    weak_ref = ref(callback)
 
             subscription = Subscription(
                 callback=callback,

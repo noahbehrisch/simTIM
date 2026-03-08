@@ -47,6 +47,4 @@ class ReactiveDefenderStrategy(DefenderStrategy):
         return priority
 
     def get_minimum_threshold(self, ongoing_count: int) -> float:
-        """Reactive strategy focuses resources on detected threats,
-        requiring stronger justification for each additional action."""
         return 50.0 * ongoing_count
