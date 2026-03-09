@@ -95,7 +95,7 @@ def extract_attack_path(history: list, up_to_time: float | None = None) -> dict:
             nid = data.get("node_id")
             new = _normalise_access(data.get("new_access", "NONE"))
             rank = ACCESS_RANK.get(new, 0)
-            if nid and rank > node_access.get(nid, 0):
+            if nid:
                 node_access[nid] = rank
 
         if event_type == "action_succeeded" and data.get("is_link_action"):

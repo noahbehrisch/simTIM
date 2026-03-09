@@ -289,6 +289,7 @@ class Simulator:
         if hasattr(actor, "is_attacker") and actor.is_attacker:
             self._schedule_detection_check(event_data)
         self._publish_event(EventType.ACTION_STARTED, event_data)
+        actor.record_action_cost(action, self.current_time)
         actor.schedule_action(action)
 
     def handle_action_finished(self, time, data):
@@ -429,6 +430,12 @@ class Simulator:
         target = action_data["target"]
         actor = action_data["actor"]
         actor_access = action_data.get("actor_access")
+
+        cost = float(action.cost) if hasattr(action, "cost") else 0.0
+        damage = action.get_one_off_damage(target, actor_access, actor.id)
+        gain = action.get_one_off_gain(target, actor_access, actor.id)
+        time_damage = action.get_time_damage(target, actor_access, actor.id)
+        time_gain = action.get_time_gain(target, actor_access, actor.id)
 
         cost = float(action.cost) if hasattr(action, "cost") else 0.0
         damage = action.get_one_off_damage(target, actor_access, actor.id)

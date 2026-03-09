@@ -51,6 +51,11 @@ class Link:
         self.latency = latency
         self.access: dict[str, LinkAccessLevel] = {}
 
+    @property
+    def id(self) -> str:
+        direction = "<->" if self.bidirectional else "->"
+        return f"{self.node1.id}{direction}{self.node2.id}"
+
     def get_other_node(self, node: Node) -> Node | None:
         if self.node1.id == node.id:
             return self.node2
