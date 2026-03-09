@@ -37,7 +37,7 @@ class SimConfig:
         default_factory=lambda: _get_env("DEFAULT_BUDGET", "100000", float)
     )
     default_network: str = field(
-        default_factory=lambda: _get_env("DEFAULT_NETWORK", "poc_network.json")
+        default_factory=lambda: _get_env("DEFAULT_NETWORK", "demo_network.json")
     )
     damage_multiplier: float = field(
         default_factory=lambda: _get_env("DAMAGE_MULTIPLIER", "1.0", float)

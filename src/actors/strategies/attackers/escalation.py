@@ -33,6 +33,20 @@ class EscalationAttackerStrategy(AttackerStrategy):
             return 50.0
 
         if access == NodeAccessLevel.ADMIN:
+            if tactic == "credential-access":
+                return 500.0
+            if tactic == "defense-evasion":
+                return 400.0
+            if tactic == "command-and-control":
+                return 350.0
+            if tactic == "collection":
+                return 300.0
+            if tactic == "exfiltration":
+                return 250.0
+            if tactic == "impact":
+                return 200.0
+            if tactic == "persistence":
+                return 150.0
             return 10.0
 
         return 1.0

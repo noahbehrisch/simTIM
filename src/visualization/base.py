@@ -117,17 +117,14 @@ class BaseTimelinePlotEngine(BasePlotEngine):
 
         timeline: dict[str, list[Any]] = {
             "times": [],
-            "cumulative_costs": [],
-            "cumulative_gains": [],
-            "cumulative_damage": [],
-            "attacker_costs": [],
-            "defender_costs": [],
+            "system_damage": [],
+            "attacker_gain": [],
+            "defender_cost": [],
         }
-        totals = {"cost": 0, "gain": 0, "damage": 0, "attacker_cost": 0, "defender_cost": 0}
+        totals = {"gain": 0, "damage": 0, "attacker_cost": 0, "defender_cost": 0}
 
         for event in economic_events:
             if event["type"] == "cost":
-                totals["cost"] += event["value"]
                 if event["actor_type"] == "attacker":
                     totals["attacker_cost"] += event["value"]
                 else:
@@ -138,11 +135,9 @@ class BaseTimelinePlotEngine(BasePlotEngine):
                 totals["damage"] += event["value"]
 
             timeline["times"].append(event["time"])
-            timeline["cumulative_costs"].append(totals["cost"])
-            timeline["cumulative_gains"].append(totals["gain"])
-            timeline["cumulative_damage"].append(totals["damage"])
-            timeline["attacker_costs"].append(totals["attacker_cost"])
-            timeline["defender_costs"].append(totals["defender_cost"])
+            timeline["system_damage"].append(totals["damage"])
+            timeline["attacker_gain"].append(totals["gain"] - totals["attacker_cost"])
+            timeline["defender_cost"].append(totals["defender_cost"])
 
         return timeline
 

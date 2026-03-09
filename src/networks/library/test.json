@@ -46,6 +46,7 @@
         "web_logs",
         "ssl_certificates"
       ],
+      "vulnerabilities": ["CVE-2021-41773", "CVE-2024-27316"],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -57,7 +58,8 @@
           "22"
         ],
         "exposed_to_internet": true,
-        "backup_frequency": "daily"
+        "backup_frequency": "daily",
+        "service_ssh": true
       }
     },
     {
@@ -79,6 +81,7 @@
         "spam_filter",
         "mail_logs"
       ],
+      "vulnerabilities": ["CVE-2023-51764"],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -90,7 +93,8 @@
           "993",
           "443"
         ],
-        "encryption": "TLS 1.3"
+        "encryption": "TLS 1.3",
+        "service_ssh": true
       }
     },
     {
@@ -136,13 +140,16 @@
         "group_policies",
         "dns_records"
       ],
+      "vulnerabilities": ["CVE-2020-1472", "CVE-2021-34527"],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "172.16.20.0/24",
         "ip_address": "172.16.20.10",
         "domain_role": "primary_dc",
-        "backup_frequency": "hourly"
+        "backup_frequency": "hourly",
+        "service_rdp": true,
+        "service_smb": true
       }
     },
     {
@@ -163,13 +170,16 @@
         "user_profiles",
         "project_data"
       ],
+      "vulnerabilities": ["CVE-2017-0144", "CVE-2019-0708"],
       "properties": {
         "critical": false,
         "physical_security": "high",
         "network_segment": "172.16.20.0/24",
         "ip_address": "172.16.20.20",
         "storage_capacity": "10TB",
-        "encryption": "BitLocker"
+        "encryption": "BitLocker",
+        "service_rdp": true,
+        "service_smb": true
       }
     },
     {
@@ -190,6 +200,7 @@
         "audit_logs",
         "business_intelligence"
       ],
+      "vulnerabilities": ["CVE-2020-1472"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -200,7 +211,8 @@
         "compliance": [
           "PCI-DSS",
           "SOX"
-        ]
+        ],
+        "service_rdp": true
       }
     },
     {
@@ -219,13 +231,15 @@
         "disaster_recovery_data",
         "backup_catalog"
       ],
+      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "172.16.20.0/24",
         "ip_address": "172.16.20.30",
         "storage_capacity": "50TB",
-        "offsite_replication": true
+        "offsite_replication": true,
+        "service_ssh": true
       }
     },
     {
@@ -245,6 +259,7 @@
         "threat_intelligence",
         "forensic_evidence"
       ],
+      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -254,7 +269,8 @@
         "compliance": [
           "SOC2",
           "PCI-DSS"
-        ]
+        ],
+        "service_ssh": true
       }
     },
     {
@@ -276,6 +292,7 @@
         "payroll_spreadsheets",
         "personnel_files"
       ],
+      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -283,7 +300,9 @@
         "ip_address": "172.16.50.15",
         "department": "Human Resources",
         "user": "alice.johnson",
-        "admin_rights": false
+        "admin_rights": false,
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
@@ -305,6 +324,7 @@
         "vendor_information",
         "tax_documents"
       ],
+      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -312,7 +332,9 @@
         "ip_address": "172.16.50.25",
         "department": "Finance",
         "user": "bob.chen",
-        "admin_rights": false
+        "admin_rights": false,
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
@@ -334,6 +356,7 @@
         "system_documentation",
         "privileged_credentials"
       ],
+      "vulnerabilities": ["CVE-2023-36884"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -345,7 +368,9 @@
         "privileged_access": [
           "domain_controller_01",
           "sql_server_01"
-        ]
+        ],
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
@@ -359,8 +384,10 @@
         "services": []
       },
       "assets": [],
+      "vulnerabilities": ["CVE-2022-0847"],
       "properties": {
-        "exposed_to_internet": false
+        "exposed_to_internet": false,
+        "service_ssh": true
       }
     }
   ],

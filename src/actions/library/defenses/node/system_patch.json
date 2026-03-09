@@ -10,6 +10,7 @@
   "cost": 300,
   "duration": 1.5,
   "success_probability": 0.95,
+  "enabled_by_default": true,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -47,9 +48,9 @@
     "value": 0.0
   },
   "damage_gain": {
-    "one_off_damage": -150.0,
+    "one_off_damage": 0.0,
     "one_off_gain": 0.0,
-    "time_damage": -30.0,
+    "time_damage": 0.0,
     "time_gain": 0.0
   }
 }

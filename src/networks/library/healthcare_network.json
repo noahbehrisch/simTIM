@@ -68,6 +68,7 @@
         "lab_results",
         "phi_database"
       ],
+      "vulnerabilities": ["CVE-2020-1472", "CVE-2021-34527"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -79,7 +80,8 @@
           "HIPAA",
           "HITECH"
         ],
-        "phi_storage": true
+        "phi_storage": true,
+        "service_rdp": true
       }
     },
     {
@@ -100,6 +102,7 @@
         "dicom_data",
         "imaging_metadata"
       ],
+      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -107,7 +110,8 @@
         "ip_address": "10.10.20.20",
         "storage_capacity": "100TB",
         "dicom_compliant": true,
-        "phi_storage": true
+        "phi_storage": true,
+        "service_ssh": true
       }
     },
     {
@@ -128,13 +132,15 @@
         "insurance_data",
         "scheduling_system"
       ],
+      "vulnerabilities": ["CVE-2017-0144"],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "10.10.30.0/24",
         "ip_address": "10.10.30.10",
         "legacy_system": true,
-        "end_of_life": "2025-01-14"
+        "end_of_life": "2025-01-14",
+        "service_rdp": true
       }
     },
     {
@@ -155,6 +161,7 @@
         "device_logs",
         "calibration_data"
       ],
+      "vulnerabilities": ["CVE-2019-0708"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -162,7 +169,8 @@
         "ip_address": "10.10.100.10",
         "fda_approved": true,
         "maintenance_contract": "siemens_gold",
-        "patch_restrictions": "vendor_approved_only"
+        "patch_restrictions": "vendor_approved_only",
+        "service_rdp": true
       }
     },
     {
@@ -183,6 +191,7 @@
         "dose_records",
         "patient_positioning"
       ],
+      "vulnerabilities": ["CVE-2019-0708", "CVE-2017-0144"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -190,7 +199,8 @@
         "ip_address": "10.10.100.20",
         "fda_approved": true,
         "end_of_life_os": true,
-        "isolated_network": true
+        "isolated_network": true,
+        "service_rdp": true
       }
     },
     {
@@ -265,6 +275,7 @@
         "nursing_notes",
         "care_plans"
       ],
+      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -273,7 +284,9 @@
         "department": "ICU_Nursing",
         "user": "nurse.thompson",
         "admin_rights": false,
-        "mobile_cart": true
+        "mobile_cart": true,
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
@@ -295,6 +308,7 @@
         "prescription_orders",
         "medical_research"
       ],
+      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -306,7 +320,9 @@
         "privileged_access": [
           "ehr_server_primary",
           "pacs_server"
-        ]
+        ],
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
@@ -328,6 +344,7 @@
         "security_policies",
         "audit_logs"
       ],
+      "vulnerabilities": ["CVE-2023-36884"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -340,7 +357,9 @@
           "ehr_server_primary",
           "his_server",
           "pacs_server"
-        ]
+        ],
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     }
   ],

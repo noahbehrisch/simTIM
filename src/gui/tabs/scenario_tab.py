@@ -11,7 +11,7 @@ class ScenarioTab(BaseTab):
         self.scenarios = []
         self.on_scenarios_changed = None
         self.enabled_var = tk.BooleanVar(value=False)
-        self.variable_type = tk.StringVar(value="attack_duration")
+        self.variable_type = tk.StringVar(value="attacker_strategy")
         self.app = parent
         self.attacker_strategies = list_attacker_strategies()
         self.defender_strategies = list_defender_strategies()

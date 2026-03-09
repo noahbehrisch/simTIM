@@ -359,8 +359,9 @@ class Simulator:
         target = action_data["target"]
         actor = action_data["actor"]
         actor_access = action_data.get("actor_access", "NONE")
+        detection_node = target.node2 if isinstance(target, Link) else target
         detection_time = self.detection_engine.calculate_detection_time(
-            action, target, actor_access, actor, action.duration
+            action, detection_node, actor_access, actor, action.duration
         )
         if detection_time is not None:
             engine_config = self.detection_engine.get_configuration_summary()
@@ -370,7 +371,7 @@ class Simulator:
                 {
                     "detected_action": action,
                     "detected_actor": actor,
-                    "detected_target": target,
+                    "detected_target": detection_node,
                     "detection_time": self.current_time + detection_time,
                     "detection_method": engine_config["engine_type"],
                     "cdf_type": engine_config.get("cdf_formula", "unknown"),

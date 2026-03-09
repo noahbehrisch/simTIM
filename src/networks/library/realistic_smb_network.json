@@ -45,6 +45,7 @@
         "customer_inquiries",
         "marketing_content"
       ],
+      "vulnerabilities": ["CVE-2021-41773", "CVE-2021-4034"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -55,7 +56,8 @@
           "443"
         ],
         "outdated_cms": true,
-        "exposed_to_internet": true
+        "exposed_to_internet": true,
+        "service_ssh": true
       }
     },
     {
@@ -77,13 +79,16 @@
         "email_database",
         "company_data"
       ],
+      "vulnerabilities": ["CVE-2017-0144", "CVE-2020-1472"],
       "properties": {
         "critical": true,
         "physical_security": "medium",
         "network_segment": "192.168.20.0/24",
         "ip_address": "192.168.20.10",
         "domain_controller": true,
-        "exchange_server": true
+        "exchange_server": true,
+        "service_rdp": true,
+        "service_smb": true
       }
     },
     {
@@ -108,7 +113,8 @@
         "network_segment": "192.168.20.0/24",
         "ip_address": "192.168.20.20",
         "raid_level": "RAID 5",
-        "remote_access": true
+        "remote_access": true,
+        "service_ssh": true
       }
     },
     {
@@ -154,6 +160,7 @@
         "employee_reviews",
         "customer_lists"
       ],
+      "vulnerabilities": ["CVE-2021-34527", "CVE-2023-36884"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -162,7 +169,8 @@
         "department": "Management",
         "user": "john.manager",
         "admin_rights": true,
-        "mobile_device": true
+        "mobile_device": true,
+        "service_rdp": true
       }
     },
     {
@@ -183,6 +191,7 @@
         "email_access",
         "customer_data"
       ],
+      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -191,7 +200,8 @@
         "department": "Sales",
         "user": "mary.sales",
         "admin_rights": false,
-        "outdated_software": true
+        "outdated_software": true,
+        "service_rdp": true
       }
     },
     {
@@ -212,6 +222,7 @@
         "vendor_invoices",
         "tax_documents"
       ],
+      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -219,7 +230,8 @@
         "ip_address": "192.168.20.70",
         "department": "Accounting",
         "user": "steve.accounting",
-        "admin_rights": false
+        "admin_rights": false,
+        "service_rdp": true
       }
     }
   ],

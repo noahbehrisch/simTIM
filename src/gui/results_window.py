@@ -462,44 +462,53 @@ class ResultsWindow:
         fig, ax = plt.subplots(figsize=(12, 6))
 
         if run_events:
-            times = []
-            cum_cost = []
-            cum_gain = []
-            cum_damage = []
+            times: list[float] = []
+            damage_line: list[float] = []
+            atk_gain_line: list[float] = []
+            def_cost_line: list[float] = []
 
             sorted_events = sorted(run_events, key=lambda x: x["time"])
-            total_cost: float = 0.0
-            total_gain: float = 0.0
             total_damage: float = 0.0
+            atk_gain: float = 0.0
+            atk_cost: float = 0.0
+            def_cost: float = 0.0
 
             for event in sorted_events:
                 if event["success"]:
-                    total_cost += self._extract_cost(event)
-                    total_gain += self._extract_gain(event)
-                    total_damage += self._extract_damage(event)
+                    actor = event.get("raw_data", {}).get("actor")
+                    is_atk = getattr(actor, "is_attacker", False) if actor else False
+                    cost = self._extract_cost(event)
+                    gain = self._extract_gain(event)
+                    damage = self._extract_damage(event)
+                    total_damage += damage
+                    if is_atk:
+                        atk_gain += gain
+                        atk_cost += cost
+                    else:
+                        def_cost += cost
                 times.append(event["time"])
-                cum_cost.append(total_cost)
-                cum_gain.append(total_gain)
-                cum_damage.append(total_damage)
+                damage_line.append(total_damage)
+                atk_gain_line.append(atk_gain - atk_cost)
+                def_cost_line.append(def_cost)
 
             if times:
                 if self.sim_time and times[-1] < self.sim_time:
                     times.append(self.sim_time)
-                    cum_cost.append(cum_cost[-1])
-                    cum_gain.append(cum_gain[-1])
-                    cum_damage.append(cum_damage[-1])
+                    damage_line.append(damage_line[-1])
+                    atk_gain_line.append(atk_gain_line[-1])
+                    def_cost_line.append(def_cost_line[-1])
 
                 ax.step(
                     times,
-                    cum_cost,
+                    damage_line,
                     where="post",
-                    label="Cumulative Cost",
-                    color=self.viz_theme.get_color("cost"),
+                    label="System Damage",
+                    color=self.viz_theme.get_color("damage"),
                     linewidth=2,
                 )
                 ax.step(
                     times,
-                    cum_gain,
+                    atk_gain_line,
                     where="post",
                     label="Attacker Gain",
                     color=self.viz_theme.get_color("gain"),
@@ -507,10 +516,10 @@ class ResultsWindow:
                 )
                 ax.step(
                     times,
-                    cum_damage,
+                    def_cost_line,
                     where="post",
-                    label="System Damage",
-                    color=self.viz_theme.get_color("damage"),
+                    label="Defender Cost",
+                    color=self.viz_theme.get_color("defender"),
                     linewidth=2,
                 )
                 ax.set_xlabel("Time (hours)")
@@ -951,49 +960,58 @@ class ResultsWindow:
         sorted_events = sorted(run_events, key=lambda x: x["time"])
 
         times: list[float] = []
-        cum_cost: list[float] = []
-        cum_gain: list[float] = []
-        cum_damage: list[float] = []
-        tc = tg = td = 0.0
+        damage_line: list[float] = []
+        atk_gain_line: list[float] = []
+        def_cost_line: list[float] = []
+        total_damage = atk_gain = atk_cost = def_cost = 0.0
+
         for ev in sorted_events:
             if ev["success"]:
-                tc += self._extract_cost(ev)
-                tg += self._extract_gain(ev)
-                td += self._extract_damage(ev)
+                actor = ev.get("raw_data", {}).get("actor")
+                is_atk = getattr(actor, "is_attacker", False) if actor else False
+                cost = self._extract_cost(ev)
+                gain = self._extract_gain(ev)
+                damage = self._extract_damage(ev)
+                total_damage += damage
+                if is_atk:
+                    atk_gain += gain
+                    atk_cost += cost
+                else:
+                    def_cost += cost
             times.append(ev["time"])
-            cum_cost.append(tc)
-            cum_gain.append(tg)
-            cum_damage.append(td)
+            damage_line.append(total_damage)
+            atk_gain_line.append(atk_gain - atk_cost)
+            def_cost_line.append(def_cost)
 
         if times:
             if self.sim_time and times[-1] < self.sim_time:
                 times.append(self.sim_time)
-                cum_cost.append(cum_cost[-1])
-                cum_gain.append(cum_gain[-1])
-                cum_damage.append(cum_damage[-1])
+                damage_line.append(damage_line[-1])
+                atk_gain_line.append(atk_gain_line[-1])
+                def_cost_line.append(def_cost_line[-1])
 
             ax.step(
                 times,
-                cum_cost,
+                damage_line,
                 where="post",
-                label="Cost",
-                color=self.viz_theme.get_color("cost"),
+                label="System Damage",
+                color=self.viz_theme.get_color("damage"),
                 linewidth=1.5,
             )
             ax.step(
                 times,
-                cum_gain,
+                atk_gain_line,
                 where="post",
-                label="Gain",
+                label="Attacker Gain",
                 color=self.viz_theme.get_color("gain"),
                 linewidth=1.5,
             )
             ax.step(
                 times,
-                cum_damage,
+                def_cost_line,
                 where="post",
-                label="Damage",
-                color=self.viz_theme.get_color("damage"),
+                label="Defender Cost",
+                color=self.viz_theme.get_color("defender"),
                 linewidth=1.5,
             )
             ax.legend(loc="upper left", fontsize=7)

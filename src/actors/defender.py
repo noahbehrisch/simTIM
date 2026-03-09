@@ -44,8 +44,13 @@ class Defender(Actor):
         decision = self.choose_best_action(network_state)
         if decision:
             action, target = decision
-            actor_access = get_node_access(target, self.id)
-            logger.info(f"Defender {self.id} scheduling {action.name} on {target.id}")
+            if hasattr(action, "is_link_action") and action.is_link_action():
+                actor_access = get_node_access(target.node1, self.id)
+            else:
+                actor_access = get_node_access(target, self.id)
+            logger.info(
+                f"Defender {self.id} scheduling {action.name} on {getattr(target, 'id', str(target))}"
+            )
             if action.precondition(target, actor_access, self.id):
                 self.pending_action_count += 1
                 self._pending_pairs.add((action.name, getattr(target, "id", str(target))))
@@ -105,15 +110,12 @@ class Defender(Actor):
                 "detection_method": detection_data.get("detection_method", "unknown"),
             }
         )
-        if hasattr(self, "available_actions"):
-            defensive_actions = [
-                action
-                for action in self.available_actions
-                if "patch" in action.name.lower() or "firewall" in action.name.lower()
-            ]
-            if defensive_actions and self.can_schedule_action():
-                response_action = defensive_actions[0]
-                self._execute_defensive_action(response_action, detected_target)
+        if self.can_schedule_action() and self.simulator:
+            self.simulator.schedule_event(
+                self.simulator.current_time,
+                "actor_run",
+                {"actor": self},
+            )
 
     def record_detection_economics(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
         timestamp = getattr(self.simulator, "current_time", 0.0)

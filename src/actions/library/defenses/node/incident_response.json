@@ -13,7 +13,7 @@
   "cost": 5000,
   "duration": 4.0,
   "success_probability": 0.75,
-  "enabled_by_default": false,
+  "enabled_by_default": true,
   "precondition": {
     "type": "compound",
     "operator": "AND",

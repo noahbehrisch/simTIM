@@ -14,15 +14,39 @@
   "cost": 100,
   "duration": 1.0,
   "success_probability": 0.9,
+  "enabled_by_default": true,
   "precondition": {
-    "type": "access_check",
-    "operator": "equals",
-    "value": "ADMIN"
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "access_check",
+        "operator": "equals",
+        "value": "ADMIN"
+      },
+      {
+        "type": "property_check",
+        "property": "firewall_updated",
+        "operator": "not_equals",
+        "value": true
+      }
+    ]
   },
   "postcondition": {
-    "type": "increment_counter",
-    "counter": "firewall_rules",
-    "increment": 1
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "firewall_updated",
+        "value": true
+      },
+      {
+        "type": "increment_counter",
+        "counter": "firewall_rules",
+        "increment": 1
+      }
+    ]
   },
   "detection_probability": {
     "type": "constant",
@@ -30,7 +54,7 @@
   },
   "damage_gain": {
     "one_off_damage": 0.0,
-    "one_off_gain": 30.0,
+    "one_off_gain": 0.0,
     "time_damage": 0.0,
     "time_gain": 0.0
   }

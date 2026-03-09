@@ -14,7 +14,8 @@ class GreedyAttackerStrategy(AttackerStrategy):
         self, action: Any, target: Any, access: NodeAccessLevel, attacker: Any
     ) -> float:
         if hasattr(action, "is_link_action") and action.is_link_action():
-            expected_gain = action.one_off_gain * action.success_probability
+            one_off_gain = action.get_one_off_gain(target, access, attacker.id)
+            expected_gain = one_off_gain * action.success_probability
             if self.consider_cost:
                 return expected_gain - action.cost
             return expected_gain

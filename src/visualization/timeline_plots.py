@@ -36,37 +36,21 @@ class TimeSeriesPlotEngine(BaseTimelinePlotEngine):
         if not timeline["times"]:
             return self._create_empty_plot("No economic data available", title)
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-        fig.suptitle(title, fontsize=14)
+        fig, ax = plt.subplots(figsize=(12, 6))
         times = timeline["times"]
 
         self._draw_step_line(
-            ax1, times, timeline["attacker_costs"], "Attacker Costs", self.colors["attacker"]
+            ax, times, timeline["system_damage"], "System Damage", self.colors["damage"]
         )
         self._draw_step_line(
-            ax1, times, timeline["defender_costs"], "Defender Costs", self.colors["defender"]
+            ax, times, timeline["attacker_gain"], "Attacker Gain", self.colors["gain"]
         )
         self._draw_step_line(
-            ax1,
-            times,
-            timeline["cumulative_costs"],
-            "Total Costs",
-            self.colors["cost"],
-            linestyle="--",
+            ax, times, timeline["defender_cost"], "Defender Cost", self.colors["defender"]
         )
-        self._format_currency_axis(ax1)
-        ax1.legend(loc="upper left")
-        self._setup_axes(ax1, "", "Cumulative Cost ($)", "", max_time)
-
-        self._draw_step_line(
-            ax2, times, timeline["cumulative_gains"], "Attacker Gains", self.colors["gain"]
-        )
-        self._draw_step_line(
-            ax2, times, timeline["cumulative_damage"], "System Damage", self.colors["damage"]
-        )
-        self._format_currency_axis(ax2)
-        ax2.legend(loc="upper left")
-        self._setup_axes(ax2, "Time (hours)", "Cumulative Value ($)", "", max_time)
+        self._format_currency_axis(ax)
+        ax.legend(loc="upper left")
+        self._setup_axes(ax, "Time (hours)", "Value ($)", title, max_time)
 
         plt.tight_layout()
         return fig
@@ -142,24 +126,23 @@ class TimeSeriesPlotEngine(BaseTimelinePlotEngine):
             self._draw_step_line(
                 ax2,
                 money["times"],
-                money["attacker_costs"],
-                "Attacker Cost",
-                self.colors["attacker"],
+                money["system_damage"],
+                "System Damage",
+                self.colors["damage"],
             )
             self._draw_step_line(
                 ax2,
                 money["times"],
-                money["defender_costs"],
-                "Defender Cost",
-                self.colors["defender"],
-            )
-            self._draw_step_line(
-                ax2,
-                money["times"],
-                money["cumulative_gains"],
+                money["attacker_gain"],
                 "Attacker Gain",
                 self.colors["gain"],
-                linestyle="--",
+            )
+            self._draw_step_line(
+                ax2,
+                money["times"],
+                money["defender_cost"],
+                "Defender Cost",
+                self.colors["defender"],
             )
         self._format_currency_axis(ax2)
         ax2.legend(loc="upper left", ncol=3, fontsize=8)

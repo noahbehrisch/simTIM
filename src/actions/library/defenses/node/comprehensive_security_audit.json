@@ -24,44 +24,10 @@
         "value": "ADMIN"
       },
       {
-        "type": "forall",
-        "variable": "vuln",
-        "domain": {
-          "type": "vulnerabilities"
-        },
-        "formula": {
-          "type": "negation",
-          "condition": {
-            "type": "variable_ref",
-            "variable": "vuln",
-            "property": "severity",
-            "operator": "equals",
-            "value": "critical"
-          }
-        }
-      },
-      {
-        "type": "implication",
-        "premise": {
-          "type": "network_check",
-          "check_type": "neighbor_count",
-          "operator": "greater_than",
-          "value": 3
-        },
-        "conclusion": {
-          "type": "exists",
-          "variable": "neighbor",
-          "domain": {
-            "type": "neighbors"
-          },
-          "formula": {
-            "type": "variable_ref",
-            "variable": "neighbor",
-            "property": "compromised",
-            "operator": "equals",
-            "value": false
-          }
-        }
+        "type": "vulnerability_check",
+        "check_type": "count",
+        "operator": "greater_than",
+        "value": 0
       }
     ]
   },
@@ -91,8 +57,8 @@
   },
   "damage_gain": {
     "one_off_damage": 0.0,
-    "one_off_gain": 100.0,
+    "one_off_gain": 0.0,
     "time_damage": 0.0,
-    "time_gain": 10.0
+    "time_gain": 0.0
   }
 }

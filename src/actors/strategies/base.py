@@ -157,15 +157,34 @@ class DefenderStrategy(ABC):
                         )
                         continue
 
+        visible_links = list(getattr(defender, "visible_links", set()))
+        for action in defender.available_actions:
+            if hasattr(action, "is_link_action") and action.is_link_action():
+                for link in visible_links:
+                    if self._is_action_ongoing(defender, action, link):
+                        continue
+                    start_access = get_node_access(link.node1, defender.id)
+                    try:
+                        if action.precondition(link, start_access, defender.id):
+                            priority = self.get_priority(
+                                action, link.node1, detected_node_ids, network_state
+                            )
+                            if priority > best_priority:
+                                best = (action, link)
+                                best_priority = priority
+                    except Exception as e:
+                        logger.debug(f"Precondition check failed for {action.name} on {link}: {e}")
+                        continue
+
         if best and best_priority >= threshold:
             logger.debug(
-                f"Defender {defender.id} chose {best[0].name} on {best[1].id} "
+                f"Defender {defender.id} chose {best[0].name} on {getattr(best[1], 'id', str(best[1]))} "
                 f"with priority {best_priority} (threshold {threshold})"
             )
             return best
         elif best:
             logger.debug(
-                f"Defender {defender.id} found {best[0].name} on {best[1].id} "
+                f"Defender {defender.id} found {best[0].name} on {getattr(best[1], 'id', str(best[1]))} "
                 f"but priority {best_priority:.1f} below threshold {threshold:.1f}"
             )
         else:
