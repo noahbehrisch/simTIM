@@ -61,8 +61,5 @@ plots/
 misc/
 Zen.txt
 
-# Temporary
-tests/
-testREADME.md
-TODO.md
+# Temporary files
 run_analyzer.py
