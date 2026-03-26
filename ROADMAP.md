@@ -25,17 +25,14 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 - Better implementation of scenario comparison -> see simulation_orchestrator.py
 - [!] Simulation Behavior
-- Different instances for every run -> check economic model especially
+- seed management (?)
 
 ## GUI
 
 - Help
-- Enforcing the use of theme
 
 ## Visualization
 
-- [!] Path through network visualizer -> more detailed record of network and changes -> Compute and Cache the simulations
-- export visualizations
 - [!] seperation into different files for each plot
 
 ## Network
@@ -64,7 +61,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Testing
 
 - [!] big Network Test
-- create a tests/ folder with tests for every part of the simulator
 - more demo/test networks
 - Test the app on different operating systems (Arch, Ubuntu, Windows, MacOS)
 - Test compatibility of different versions (Python, Numpy, Matpotlib) -> already found a deepcopy compatability issue with Python 3.14 and an older matplotlib version

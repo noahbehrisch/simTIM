@@ -53,7 +53,16 @@ filterwarnings = ["ignore::DeprecationWarning"]
 [tool.coverage.run]
 source = ["src"]
 branch = true
-omit = ["src/gui/*", "src/visualization/*", "*/test_*"]
+omit = [
+    "src/gui/*",
+    "src/visualization/*",
+    "src/networks/network_creator/*",
+    "src/networks/network_visualizer.py",
+    "src/logging_config.py",
+    "src/utils/results_printer.py",
+    "src/utils/mitre.py",
+    "*/test_*",
+]
 
 [tool.coverage.report]
 exclude_lines = [
