@@ -20,50 +20,51 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 - User Documentation -> README.md and Help in the GUI suffices
 - Developer Documenation -> Comments/Docstrings in tricky parts of the code, Document that explains the bigger pictures
+- better ROADMAP descriptions
 
 ## Core
 
-- Better implementation of scenario comparison -> see simulation_orchestrator.py
-- [!] Simulation Behavior
-- seed management (?)
+- Scenario Comparison:
+    - Extend for Network, Budget, Capacity, Action parameters besides duration, etc.
+    - Maybe it would be reasonable to build a wrapper
+- Add random seed control for reproducibility
 
 ## GUI
 
-- Help
+- Help windows: -> More descriptive and user-friendly
 
 ## Visualization
 
-- [!] seperation into different files for each plot
+- seperation into different files for each plot for better modularity
 
 ## Network
 
-- Change Properties in the GUI
-- [!] mapping versions to vulnerabilities
-- Dynamic Behavior
+- Adding new Node properties in the GUI
+- mapping versions to vulnerabilities using jsons
+- Dynamic Behavior as per TIM Model
+    - Removing and adding Nodes and Links
 
 ## Software Architecture
 
-- using and explaining design patterns where useful -> write clean code and refactor bad code
 - Safe imports everywhere -> typecheck
 
 ## Actions
 
-- Modifiable Actions
-- Action Creator
-- [!] Puzzling Actions together with properties
+- Modifiable Actions in the GUI
+- Action Creator in the GUI
+- Tweaking actions to make them as realistic as possible is an ongoing chore
 
 ## Strategies
 
-- unified priority system to build strategies more easily
-- using the MITRE ATT&CK and D3EFEND matrizes
-- reinforcement learning with rewards for attackers and defenders
+- using the MITRE ATT&CK and D3EFEND matrizes as the basis for strategies
+- reinforcement learning as a strategy
 
 ## Testing
 
-- [!] big Network Test
+- Build a big test network
 - more demo/test networks
 - Test the app on different operating systems (Arch, Ubuntu, Windows, MacOS)
-- Test compatibility of different versions (Python, Numpy, Matpotlib) -> already found a deepcopy compatability issue with Python 3.14 and an older matplotlib version
+- Test compatibility of different versions (Python, Numpy, Matpotlib)
 
 ## Performance
 
