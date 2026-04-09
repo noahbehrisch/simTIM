@@ -16,12 +16,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 | ci        | CI/CD-related changes |
 | build     | Build system or dependency changes |
 
-## Documentation
-
-- User Documentation -> README.md and Help in the GUI suffices
-- Developer Documenation -> Comments/Docstrings in tricky parts of the code, Document that explains the bigger pictures
-- better ROADMAP descriptions
-
 ## Core
 
 - Scenario Comparison:
