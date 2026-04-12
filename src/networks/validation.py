@@ -82,9 +82,6 @@ class NetworkValidator:
         if "software" in node and not isinstance(node["software"], dict):
             errors.append(f"Node {node_ref}: 'software' must be a dictionary")
 
-        if "vulnerabilities" in node and not isinstance(node["vulnerabilities"], list):
-            errors.append(f"Node {node_ref}: 'vulnerabilities' must be a list")
-
         if "assets" in node and not isinstance(node["assets"], list):
             errors.append(f"Node {node_ref}: 'assets' must be a list")
 

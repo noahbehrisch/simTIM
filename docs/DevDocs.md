@@ -57,7 +57,6 @@ All defined in `ConditionEvaluator` in `src/actions/json_conditions.py`.
 | `implication` | `premise`, `conclusion` | If A then B |
 | `access_check` | `operator`, `value` | Check actor's access level |
 | `property_check` | `property`, `operator`, `value` | Check a node property |
-| `vulnerability_check` | `cve`, `status` (opt) OR `check_type`, `operator`, `value` | Check CVE presence or vuln count |
 | `software_check` | `software_key`, `operator`, + per-operator fields | Check software value/presence |
 | `service_check` | `service`, `status` (opt, default `running`) | Check service state |
 | `version_check` | `software_key`, `operator`, `value` | Compare software version |
@@ -86,8 +85,6 @@ All defined in `ActionExecutor` in `src/actions/json_conditions.py`.
 | `set_property` | `property`, `value` | Set a node property |
 | `modify_property` | `property`, `operation`, `value` | Arithmetic on a property (add/subtract/etc.) |
 | `set_software` | `software_key`, `value` | Set software on node |
-| `add_vulnerability` | `vulnerability` | Add a CVE to the node |
-| `remove_vulnerability` | `vulnerability` | Remove a CVE from the node |
 | `increment_counter` | `counter`, `increment` | Increment a numeric property |
 | `set_links_access` | `access_value` | Set access on connected links |
 | `set_access_neighbors` | `access_value` | Discover neighboring nodes |
@@ -156,7 +153,7 @@ The base class `choose_action()` iterates all valid (action, target) pairs, call
 - `actor.budget`, `actor.capacity`, `actor.ongoing_actions`
 - `action.cost`, `action.duration`, `action.success_probability`
 - `self.get_mitre_tactic(action)` (attacker) / `self.get_d3fend_tactic(action)` (defender)
-- `target.properties`, `target.vulnerabilities`, `target.assets`
+- `target.properties`, `target.assets`
 
 ---
 

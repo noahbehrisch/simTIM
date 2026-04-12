@@ -22,10 +22,10 @@
         "value": "ADMIN"
       },
       {
-        "type": "vulnerability_check",
-        "check_type": "count",
-        "operator": "greater_than",
-        "value": 0
+        "type": "time_check",
+        "property": "last_patched",
+        "operator": "time_since_greater_than",
+        "value": 12
       }
     ]
   },
@@ -34,14 +34,19 @@
     "operator": "AND",
     "actions": [
       {
-        "type": "remove_vulnerability",
-        "method": "multiple",
-        "count": 2
+        "type": "set_software",
+        "software_key": "version",
+        "value": "2025"
+      },
+      {
+        "type": "set_software",
+        "software_key": "web_version",
+        "value": "2.4.51"
       },
       {
         "type": "set_property",
         "property": "last_patched",
-        "value": "current_time"
+        "value": "@current_time"
       }
     ]
   },

@@ -22,7 +22,6 @@ def node():
     n = Node(
         id="web",
         software={"os": "Linux", "web_server": "Apache"},
-        vulnerabilities=["CVE-2024-001", "CVE-2024-002"],
         assets=["customer_data"],
     )
     n.properties = {"exposed_to_internet": True, "critical": True}
@@ -146,37 +145,6 @@ class TestPropertyCheck:
             "property": "nonexistent",
             "operator": "not_exists",
             "value": None,
-        }
-        assert evaluator.evaluate_condition(cond, node, ACCESS_NONE, "atk") is True
-
-
-# ── vulnerability_check ──────────────────────────────────────────
-
-
-class TestVulnerabilityCheck:
-    def test_cve_present(self, evaluator, node):
-        cond = {"type": "vulnerability_check", "cve": "CVE-2024-001", "status": "present"}
-        assert evaluator.evaluate_condition(cond, node, ACCESS_NONE, "atk") is True
-
-    def test_cve_absent(self, evaluator, node):
-        cond = {"type": "vulnerability_check", "cve": "CVE-2099-999", "status": "absent"}
-        assert evaluator.evaluate_condition(cond, node, ACCESS_NONE, "atk") is True
-
-    def test_count_greater(self, evaluator, node):
-        cond = {
-            "type": "vulnerability_check",
-            "check_type": "count",
-            "operator": "greater_than",
-            "value": 1,
-        }
-        assert evaluator.evaluate_condition(cond, node, ACCESS_NONE, "atk") is True
-
-    def test_count_equals(self, evaluator, node):
-        cond = {
-            "type": "vulnerability_check",
-            "check_type": "count",
-            "operator": "equals",
-            "value": 2,
         }
         assert evaluator.evaluate_condition(cond, node, ACCESS_NONE, "atk") is True
 
@@ -393,26 +361,6 @@ class TestPropertyPostcondition:
             "atk",
         )
         assert node.login_attempts == 5
-
-
-class TestVulnerabilityPostcondition:
-    def test_add_vulnerability(self, executor, node):
-        executor.execute_postcondition(
-            {"type": "add_vulnerability", "vulnerability": "CVE-2024-NEW"},
-            node,
-            "NONE",
-            "atk",
-        )
-        assert "CVE-2024-NEW" in node.vulnerabilities
-
-    def test_remove_vulnerability(self, executor, node):
-        executor.execute_postcondition(
-            {"type": "remove_vulnerability", "vulnerability": "CVE-2024-001"},
-            node,
-            "NONE",
-            "atk",
-        )
-        assert "CVE-2024-001" not in node.vulnerabilities
 
 
 class TestClearAssetsPostcondition:

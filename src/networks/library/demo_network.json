@@ -17,7 +17,6 @@
         "public_website",
         "web_logs"
       ],
-      "vulnerabilities": ["CVE-2021-41773", "CVE-2024-27316"],
       "properties": {
         "exposed_to_internet": true,
         "network_monitoring": false,
@@ -39,7 +38,6 @@
         "email_database",
         "user_credentials"
       ],
-      "vulnerabilities": ["CVE-2023-51764"],
       "properties": {
         "exposed_to_internet": true,
         "network_monitoring": true,
@@ -62,7 +60,6 @@
         "browser_credentials",
         "cached_passwords"
       ],
-      "vulnerabilities": ["CVE-2021-34527", "CVE-2023-36884"],
       "properties": {
         "exposed_to_internet": false,
         "network_monitoring": false,
@@ -86,7 +83,6 @@
         "user_database",
         "kerberos_keys"
       ],
-      "vulnerabilities": ["CVE-2020-1472", "CVE-2021-34527"],
       "properties": {
         "exposed_to_internet": false,
         "network_monitoring": true,
@@ -112,7 +108,6 @@
         "transaction_logs",
         "backup_data"
       ],
-      "vulnerabilities": ["CVE-2021-4034", "CVE-2022-0847"],
       "properties": {
         "exposed_to_internet": false,
         "data_amount": 50000,
@@ -136,7 +131,6 @@
         "encryption_keys",
         "disaster_recovery_data"
       ],
-      "vulnerabilities": ["CVE-2017-0144", "CVE-2019-0708"],
       "properties": {
         "exposed_to_internet": false,
         "network_monitoring": false,

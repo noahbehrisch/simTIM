@@ -85,8 +85,6 @@ class ActionFactory:
             "set_access_if_none",
             "set_property",
             "set_software",
-            "add_vulnerability",
-            "remove_vulnerability",
             "increment_counter",
             "set_links_access",
             "set_access_neighbors",
@@ -125,7 +123,6 @@ class ActionFactory:
             "software_check",
             "version_check",
             "property_check",
-            "vulnerability_check",
             "assets_check",
         ]
 

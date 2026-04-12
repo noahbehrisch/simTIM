@@ -34,7 +34,6 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 ## Network
 
 - Adding new Node properties in the GUI
-- mapping versions to vulnerabilities using jsons
 - Dynamic Behavior as per TIM Model
     - Removing and adding Nodes and Links
 
@@ -62,8 +61,4 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 
 ## Performance
 
-- Multithreading with diables GIL or Multiprocessing -> one simulation per thread with its own instances (no global instances)
-
-## Github
-
-- securing main branch -> rulesets?
+- Multithreading with disabled GIL or Multiprocessing -> one simulation per thread with its own instances (no global instances)

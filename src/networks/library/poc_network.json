@@ -10,13 +10,12 @@
       "software": {
         "os": "Ubuntu",
         "version": "22.04",
-        "web_server": "nginx",
-        "web_version": "1.18.0"
+        "web_server": "Apache",
+        "web_version": "2.4.41"
       },
       "assets": [
         "web_application"
       ],
-      "vulnerabilities": ["CVE-2021-41773", "CVE-2024-27316"],
       "properties": {
         "exposed_to_internet": true,
         "service_ssh": true
@@ -37,7 +36,6 @@
         "customer_data",
         "financial_records"
       ],
-      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "exposed_to_internet": false,
         "service_ssh": true

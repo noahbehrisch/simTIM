@@ -12,12 +12,10 @@ class Node:
         self,
         id: str,
         software: dict[str, str] | None = None,
-        vulnerabilities: list[str] | None = None,
         assets: list[str] | None = None,
     ):
         self.id = id
         self.software = software or {}
-        self.vulnerabilities = vulnerabilities or []
         self.assets = assets or []
         self.compromised = False
         self.access: dict[str, NodeAccessLevel] = {}
@@ -30,9 +28,6 @@ class Node:
     def get_software(self, key: str, default: str | None = None) -> str | None:
         return self.software.get(key, default)
 
-    def get_vulnerability(self, vuln: str) -> bool:
-        return vuln in self.vulnerabilities
-
     def get_asset(self, asset: str) -> bool:
         return asset in self.assets
 
@@ -40,7 +35,7 @@ class Node:
         return self.properties.get(key, default)
 
     def __repr__(self) -> str:
-        return f"Node(id={self.id}, compromised={self.compromised}, assets={len(self.assets)}, vulnerabilities={len(self.vulnerabilities)})"
+        return f"Node(id={self.id}, compromised={self.compromised}, assets={len(self.assets)})"
 
 
 class Link:

@@ -39,12 +39,6 @@ class BalancedDefenderStrategy(DefenderStrategy):
             }
             priority += tactic_boost.get(tactic, 15)
 
-        if not node.compromised and len(node.vulnerabilities) > 0:
-            if tactic == "Harden":
-                priority += 80 + len(node.vulnerabilities) * 12
-            elif tactic == "Model":
-                priority += 50 + len(node.vulnerabilities) * 8
-
         baseline = {
             "Detect": 50,
             "Harden": 45,

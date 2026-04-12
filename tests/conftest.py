@@ -12,7 +12,6 @@ def web_server():
     node = Node(
         id="webserver",
         software={"os": "Ubuntu", "web_server": "Apache"},
-        vulnerabilities=["CVE-2021-41773", "CVE-2024-27316"],
         assets=["web_application"],
     )
     node.exposed_to_internet = True
@@ -25,7 +24,6 @@ def db_server():
     return Node(
         id="database",
         software={"os": "Ubuntu", "database": "PostgreSQL"},
-        vulnerabilities=["CVE-2021-4034"],
         assets=["customer_data", "financial_records"],
     )
 
@@ -35,14 +33,13 @@ def workstation():
     return Node(
         id="workstation",
         software={"os": "Windows 10"},
-        vulnerabilities=["CVE-2021-34527"],
         assets=[],
     )
 
 
 @pytest.fixture
 def clean_node():
-    """A node with no vulnerabilities, assets, or special properties."""
+    """A node with no assets or special properties."""
     return Node(id="clean", software={"os": "Linux"})
 
 
@@ -70,13 +67,11 @@ def simple_network_config():
             {
                 "id": "webserver",
                 "software": {"os": "Ubuntu"},
-                "vulnerabilities": ["CVE-2021-41773"],
                 "properties": {"exposed_to_internet": True},
             },
             {
                 "id": "database",
                 "software": {"os": "Ubuntu"},
-                "vulnerabilities": [],
             },
         ],
         "links": [

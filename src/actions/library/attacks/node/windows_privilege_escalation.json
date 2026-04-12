@@ -32,10 +32,10 @@
         "value": "USER"
       },
       {
-        "type": "vulnerability_check",
-        "check_type": "count",
-        "operator": "greater_than",
-        "value": 0
+        "type": "version_check",
+        "software_key": "version",
+        "operator": "less_than",
+        "value": "2022"
       }
     ]
   },

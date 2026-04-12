@@ -64,8 +64,6 @@ class ConditionEvaluator:
             return self._evaluate_access_check(condition, actor_access, actor_id)
         elif condition_type == "property_check":
             return self._evaluate_property_check(condition, node)
-        elif condition_type == "vulnerability_check":
-            return self._evaluate_vulnerability_check(condition, node)
         elif condition_type == "assets_check":
             return self._evaluate_assets_check(condition, node)
         elif condition_type == "network_check":
@@ -242,8 +240,6 @@ class ConditionEvaluator:
             if network_context and "nodes" in network_context:
                 return list(network_context["nodes"].values())
             return []
-        elif domain_type == "vulnerabilities":
-            return getattr(node, "vulnerabilities", [])
         elif domain_type == "assets":
             return getattr(node, "assets", [])
         elif domain_type == "software":
@@ -391,32 +387,6 @@ class ConditionEvaluator:
         else:
             raise ValueError(f"Unknown property check operator: {operator}")
 
-    def _evaluate_vulnerability_check(self, condition: dict[str, Any], node: Node) -> bool:
-        if "cve" in condition:
-            cve_id = condition["cve"]
-            status = condition.get("status", "present")
-            node_vulns = getattr(node, "vulnerabilities", [])
-            if status == "present":
-                return cve_id in node_vulns
-            elif status == "absent":
-                return cve_id not in node_vulns
-            else:
-                raise ValueError(f"Unknown CVE status: {status}")
-        check_type = condition.get("check_type", "count")
-        operator = condition["operator"]
-        if check_type == "count":
-            vuln_count = len(getattr(node, "vulnerabilities", []))
-            expected_count = condition["value"]
-            if operator == "greater_than":
-                return vuln_count > expected_count
-            elif operator == "less_than":
-                return vuln_count < expected_count
-            elif operator == "equals":
-                return vuln_count == expected_count
-            else:
-                raise ValueError(f"Unknown vulnerability count operator: {operator}")
-        raise ValueError(f"Unknown vulnerability check type: {check_type}")
-
     def _evaluate_assets_check(self, condition: dict[str, Any], node: Node) -> bool:
         check_type = condition.get("check_type", "count")
         operator = condition["operator"]
@@ -560,10 +530,6 @@ class ActionExecutor:
             self._execute_modify_property(postcondition, node)
         elif action_type == "set_software":
             self._execute_set_software(postcondition, node)
-        elif action_type == "add_vulnerability":
-            self._execute_add_vulnerability(postcondition, node)
-        elif action_type == "remove_vulnerability":
-            self._execute_remove_vulnerability(postcondition, node)
         elif action_type == "increment_counter":
             self._execute_increment_counter(postcondition, node)
         elif action_type == "set_links_access":
@@ -680,36 +646,6 @@ class ActionExecutor:
         software_key = action["software_key"]
         value = action["value"]
         node.software[software_key] = value
-
-    def _execute_add_vulnerability(self, action: dict[str, Any], node: Node) -> None:
-        vulnerability = action["vulnerability"]
-        node.vulnerabilities.append(vulnerability)
-
-    def _execute_remove_vulnerability(self, action: dict[str, Any], node: Node) -> None:
-        if "cve" in action:
-            cve_id = action["cve"]
-            if cve_id in node.vulnerabilities:
-                node.vulnerabilities.remove(cve_id)
-            return
-        if "vulnerability" in action:
-            vuln_id = action["vulnerability"]
-            if vuln_id in node.vulnerabilities:
-                node.vulnerabilities.remove(vuln_id)
-            return
-        method = action.get("method", "pop")
-        if method == "pop" and len(node.vulnerabilities) > 0:
-            node.vulnerabilities.pop()
-        elif method == "multiple":
-            count = action.get("count", 1)
-            for _ in range(min(count, len(node.vulnerabilities))):
-                if node.vulnerabilities:
-                    node.vulnerabilities.pop()
-        elif method == "specific":
-            vulnerability = action["vulnerability"]
-            if vulnerability in node.vulnerabilities:
-                node.vulnerabilities.remove(vulnerability)
-        elif method == "all":
-            node.vulnerabilities.clear()
 
     def _execute_increment_counter(self, action: dict[str, Any], node: Node) -> None:
         counter_name = action["counter"]

@@ -67,7 +67,6 @@ class NetworkFactory:
         node = Node(
             id=node_config["id"],
             software=node_config.get("software", {}),
-            vulnerabilities=node_config.get("vulnerabilities", []),
             assets=node_config.get("assets", []),
         )
 
@@ -132,7 +131,6 @@ class NetworkFactory:
         config = {
             "id": node.id,
             "software": dict(node.software),
-            "vulnerabilities": list(node.vulnerabilities),
             "assets": list(node.assets),
             "properties": dict(node.properties),
         }

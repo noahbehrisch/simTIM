@@ -46,7 +46,6 @@
         "web_logs",
         "ssl_certificates"
       ],
-      "vulnerabilities": ["CVE-2021-41773", "CVE-2024-27316"],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -81,7 +80,6 @@
         "spam_filter",
         "mail_logs"
       ],
-      "vulnerabilities": ["CVE-2023-51764"],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -140,7 +138,6 @@
         "group_policies",
         "dns_records"
       ],
-      "vulnerabilities": ["CVE-2020-1472", "CVE-2021-34527"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -170,7 +167,6 @@
         "user_profiles",
         "project_data"
       ],
-      "vulnerabilities": ["CVE-2017-0144", "CVE-2019-0708"],
       "properties": {
         "critical": false,
         "physical_security": "high",
@@ -200,7 +196,6 @@
         "audit_logs",
         "business_intelligence"
       ],
-      "vulnerabilities": ["CVE-2020-1472"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -231,7 +226,6 @@
         "disaster_recovery_data",
         "backup_catalog"
       ],
-      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -259,7 +253,6 @@
         "threat_intelligence",
         "forensic_evidence"
       ],
-      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -292,7 +285,6 @@
         "payroll_spreadsheets",
         "personnel_files"
       ],
-      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -324,7 +316,6 @@
         "vendor_information",
         "tax_documents"
       ],
-      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -356,7 +347,6 @@
         "system_documentation",
         "privileged_credentials"
       ],
-      "vulnerabilities": ["CVE-2023-36884"],
       "properties": {
         "critical": true,
         "physical_security": "high",

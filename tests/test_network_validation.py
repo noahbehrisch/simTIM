@@ -85,11 +85,6 @@ class TestNodeValidation:
         result = validator.validate(config)
         assert not result.valid
 
-    def test_vulnerabilities_must_be_list(self, validator):
-        config = {"nodes": [{"id": "a", "vulnerabilities": "CVE-1234"}]}
-        result = validator.validate(config)
-        assert not result.valid
-
     def test_assets_must_be_list(self, validator):
         config = {"nodes": [{"id": "a", "assets": "customer_data"}]}
         result = validator.validate(config)

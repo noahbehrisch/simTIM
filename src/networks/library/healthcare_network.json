@@ -68,7 +68,6 @@
         "lab_results",
         "phi_database"
       ],
-      "vulnerabilities": ["CVE-2020-1472", "CVE-2021-34527"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -102,7 +101,6 @@
         "dicom_data",
         "imaging_metadata"
       ],
-      "vulnerabilities": ["CVE-2021-4034"],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
@@ -132,7 +130,6 @@
         "insurance_data",
         "scheduling_system"
       ],
-      "vulnerabilities": ["CVE-2017-0144"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -161,7 +158,6 @@
         "device_logs",
         "calibration_data"
       ],
-      "vulnerabilities": ["CVE-2019-0708"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -191,7 +187,6 @@
         "dose_records",
         "patient_positioning"
       ],
-      "vulnerabilities": ["CVE-2019-0708", "CVE-2017-0144"],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -275,7 +270,6 @@
         "nursing_notes",
         "care_plans"
       ],
-      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -308,7 +302,6 @@
         "prescription_orders",
         "medical_research"
       ],
-      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "medium",
@@ -344,7 +337,6 @@
         "security_policies",
         "audit_logs"
       ],
-      "vulnerabilities": ["CVE-2023-36884"],
       "properties": {
         "critical": true,
         "physical_security": "high",

@@ -13,8 +13,6 @@ from src.core.access_utils import (
     get_node_assets,
     get_node_property,
     get_node_software,
-    get_node_vulnerabilities,
-    has_vulnerability,
     set_link_access,
     set_node_access,
     set_node_property,
@@ -36,7 +34,6 @@ def _node(**kw):
         "access": {},
         "properties": {},
         "software": {},
-        "vulnerabilities": [],
         "assets": [],
     }
     defaults.update(kw)
@@ -158,28 +155,6 @@ class TestSoftwareHelper:
         assert get_node_software(_bare(), "os") is None
 
 
-# ── Vulnerability helpers ────────────────────────────────────────
-
-
-class TestVulnerabilityHelpers:
-    def test_has_vulnerability_true(self):
-        node = _node(vulnerabilities=["CVE-2024-001"])
-        assert has_vulnerability(node, "CVE-2024-001")
-
-    def test_has_vulnerability_false(self):
-        assert not has_vulnerability(_node(), "CVE-2024-001")
-
-    def test_no_vuln_attr(self):
-        assert not has_vulnerability(_bare(), "CVE-2024-001")
-
-    def test_get_list(self):
-        node = _node(vulnerabilities=["a", "b"])
-        assert get_node_vulnerabilities(node) == ["a", "b"]
-
-    def test_get_list_empty(self):
-        assert get_node_vulnerabilities(_bare()) == []
-
-
 class TestAssetHelpers:
     def test_get_assets(self):
         node = _node(assets=["customer_data"])
@@ -229,5 +204,4 @@ class TestValidateNode:
         assert hasattr(obj, "access")
         assert hasattr(obj, "properties")
         assert hasattr(obj, "software")
-        assert hasattr(obj, "vulnerabilities")
         assert hasattr(obj, "assets")

@@ -45,7 +45,6 @@
         "customer_inquiries",
         "marketing_content"
       ],
-      "vulnerabilities": ["CVE-2021-41773", "CVE-2021-4034"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -79,7 +78,6 @@
         "email_database",
         "company_data"
       ],
-      "vulnerabilities": ["CVE-2017-0144", "CVE-2020-1472"],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -160,7 +158,6 @@
         "employee_reviews",
         "customer_lists"
       ],
-      "vulnerabilities": ["CVE-2021-34527", "CVE-2023-36884"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -191,7 +188,6 @@
         "email_access",
         "customer_data"
       ],
-      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "low",
@@ -222,7 +218,6 @@
         "vendor_invoices",
         "tax_documents"
       ],
-      "vulnerabilities": ["CVE-2021-34527"],
       "properties": {
         "critical": false,
         "physical_security": "low",

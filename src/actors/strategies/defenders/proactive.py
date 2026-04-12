@@ -13,12 +13,6 @@ class ProactiveDefenderStrategy(DefenderStrategy):
         tactic = self.get_d3fend_tactic(action)
         priority = 1.0
 
-        if not node.compromised and len(node.vulnerabilities) > 0:
-            if tactic == "Harden":
-                priority += 200 + len(node.vulnerabilities) * 25
-            elif tactic == "Model":
-                priority += 150 + len(node.vulnerabilities) * 15
-
         tactic_priorities = {
             "Harden": 120,
             "Model": 100,

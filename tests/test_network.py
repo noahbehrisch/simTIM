@@ -10,7 +10,6 @@ class TestNode:
         node = Node("server1")
         assert node.id == "server1"
         assert node.software == {}
-        assert node.vulnerabilities == []
         assert node.assets == []
         assert node.compromised is False
         assert node.access == {}
@@ -20,11 +19,9 @@ class TestNode:
         node = Node(
             id="db",
             software={"os": "Ubuntu", "db": "PostgreSQL"},
-            vulnerabilities=["CVE-2021-1234"],
             assets=["customer_data"],
         )
         assert node.software["os"] == "Ubuntu"
-        assert len(node.vulnerabilities) == 1
         assert "customer_data" in node.assets
 
     def test_get_software(self):
@@ -32,11 +29,6 @@ class TestNode:
         assert node.get_software("os") == "Linux"
         assert node.get_software("db") is None
         assert node.get_software("db", "none") == "none"
-
-    def test_get_vulnerability(self):
-        node = Node("n", vulnerabilities=["CVE-2021-1234"])
-        assert node.get_vulnerability("CVE-2021-1234") is True
-        assert node.get_vulnerability("CVE-9999-0000") is False
 
     def test_get_asset(self):
         node = Node("n", assets=["data"])
@@ -51,15 +43,13 @@ class TestNode:
         assert node.get_property("missing", "default") == "default"
 
     def test_repr(self):
-        node = Node("web", vulnerabilities=["CVE-1"])
+        node = Node("web", software={"os": "Linux"})
         r = repr(node)
         assert "web" in r
-        assert "vulnerabilities=1" in r
 
     def test_none_args_become_empty(self):
-        node = Node("n", software=None, vulnerabilities=None, assets=None)
+        node = Node("n", software=None, assets=None)
         assert node.software == {}
-        assert node.vulnerabilities == []
         assert node.assets == []
 
 

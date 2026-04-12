@@ -171,8 +171,6 @@ def _analyze_postcondition_access(postcondition: dict[str, Any]) -> str | None:
         "set_links_access",
         "set_property",
         "clear_assets",
-        "add_vulnerability",
-        "remove_vulnerability",
         "increment_counter",
         "set_software",
     ]:
