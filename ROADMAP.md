@@ -23,6 +23,19 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
     - Maybe it would be reasonable to build a wrapper
 - Add random seed control for reproducibility
 
+## Bugs
+
+- handle_action_finished uses stale actor_access from decision time -> recalculate from node at finish time
+- Time-proportional economic rates never removed after eviction -> damage accumulates forever
+- Duration overrides mutate shared Action objects in action_manager singleton -> deep-copy before mutating
+- ongoing_actions is a set, can't track same action on multiple targets -> actors exceed capacity
+- set_access_neighbors bypasses access tracking (raw string, no record_access_change, marks all neighbors compromised)
+- Simulation loop processes events past deadline -> check event.time > until after pop
+- Duplicate economic calculation block in _calculate_economic_impact (copy-paste)
+- property_check missing numeric comparison operators (greater_than, less_than)
+- modify_property uses setattr instead of node.properties dict
+- No tiebreaker for same-time same-priority events in heapq
+
 ## GUI
 
 - Help windows: -> More descriptive and user-friendly
