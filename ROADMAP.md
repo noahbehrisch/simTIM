@@ -50,6 +50,7 @@ Commits adhere to [Commit conventions](https://www.conventionalcommits.org/en/v1
 - Defender priority heuristic damage_rate = len(assets) * 100.0 (defender.py L169) is disconnected from the economic model and from action damage specs -> two parallel notions of damage; unify with action-derived values
 - All defense JSONs set one_off_gain and time_gain to 0.0 -> defender Total Gain is structurally always $0 in the GUI Economic Impact panel; either define meaningful defender gain (e.g. prevented damage) or hide the field
 - Three parallel economic aggregation paths (SimpleEconomicModel, per-event economics dict in results_window, actor.incurred_cost) can drift apart (e.g. time-proportional damage only flows into SimpleEconomicModel) -> one source of truth
+- ResultsWindow._update_economics_view is an empty stub (results_window.py L1385) -> per-actor "Economic Impact" panel renders blank in the <=8-actors code path while the >8-actors dropdown path (_load_actor_data) renders the same data correctly; port the rendering logic into the stub
 
 ## GUI
 
