@@ -1,5 +1,8 @@
 # simTIM
 
+This repository contains the code corresponding to the following paper:
+Noah Niclas Behrisch, Zoltán Ádám Mann. SimTIM: A Temporal Cybersecurity Simulator. 21st International Conference on Availability, Reliability and Security (ARES), 2026
+
 ## Quick Start
 
 ### Prerequisites
