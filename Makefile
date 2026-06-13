@@ -75,6 +75,8 @@ run:  ## Run the GUI application
 demo:  ## Run demo simulation
 	$(ACTIVATE) && python main.py --demo
 
+cli:  ## Run command-line interface
+	$(ACTIVATE) && python main.py --cli
 # ==================== Profiling ====================
 
 profile:  ## Run profiling on simulation

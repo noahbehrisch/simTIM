@@ -49,18 +49,6 @@ def get_node_software(node, software_key: str, default: Any | None = None) -> An
     return node.software.get(software_key, default)
 
 
-def has_vulnerability(node, vuln_id: str) -> bool:
-    if not hasattr(node, "vulnerabilities"):
-        return False
-    return vuln_id in node.vulnerabilities
-
-
-def get_node_vulnerabilities(node) -> list:
-    if not hasattr(node, "vulnerabilities"):
-        return []
-    return list(node.vulnerabilities) if node.vulnerabilities else []
-
-
 def get_node_assets(node) -> list:
     if not hasattr(node, "assets"):
         return []
@@ -88,8 +76,6 @@ def validate_node(node) -> dict[str, Any]:
         node.properties = {}
     if not hasattr(node, "software"):
         node.software = {}
-    if not hasattr(node, "vulnerabilities"):
-        node.vulnerabilities = []
     if not hasattr(node, "assets"):
         node.assets = []
     return {"valid": len(errors) == 0, "errors": errors, "warnings": []}

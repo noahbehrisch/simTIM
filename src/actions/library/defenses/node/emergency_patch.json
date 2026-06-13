@@ -11,6 +11,7 @@
   "cost": 150,
   "duration": 2.0,
   "success_probability": 0.95,
+  "enabled_by_default": true,
   "precondition": {
     "type": "compound",
     "operator": "AND",
@@ -19,6 +20,12 @@
         "type": "access_check",
         "operator": "equals",
         "value": "ADMIN"
+      },
+      {
+        "type": "time_check",
+        "property": "last_patched",
+        "operator": "time_since_greater_than",
+        "value": 12
       }
     ]
   },
@@ -27,22 +34,19 @@
     "operator": "AND",
     "actions": [
       {
-        "type": "remove_vulnerability",
-        "vulnerability": "CVE-2017-0144"
+        "type": "set_software",
+        "software_key": "version",
+        "value": "2025"
       },
       {
-        "type": "remove_vulnerability",
-        "vulnerability": "CVE-2021-41773"
+        "type": "set_software",
+        "software_key": "web_version",
+        "value": "2.4.51"
       },
       {
         "type": "set_property",
         "property": "last_patched",
-        "value": "current_time"
-      },
-      {
-        "type": "set_property",
-        "property": "security_level",
-        "value": "hardened"
+        "value": "@current_time"
       }
     ]
   },
@@ -51,9 +55,9 @@
     "value": 0.0
   },
   "damage_gain": {
-    "one_off_damage": -300.0,
+    "one_off_damage": 0.0,
     "one_off_gain": 0.0,
-    "time_damage": -100.0,
+    "time_damage": 0.0,
     "time_gain": 0.0
   }
 }

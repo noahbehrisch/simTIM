@@ -1,110 +1,455 @@
 {
   "name": "Custom Network",
-  "description": "Custom network with 4 nodes and 3 links",
+  "description": "Custom network with 13 nodes and 14 links",
   "nodes": [
     {
-      "id": "web_server",
-      "name": "Internet-Facing Web Server",
+      "id": "internet_gateway",
+      "name": "internet_gateway",
+      "x": 720,
+      "y": 360,
       "software": {
-        "os": "Ubuntu",
-        "version": "20.04",
-        "services": [
-          "apache",
-          "php",
-          "ssh"
-        ]
+        "vendor": "Cisco",
+        "model": "ASA 5516-X",
+        "firmware": "9.16.1",
+        "management": "ASDM 7.16"
       },
-      "vulnerabilities": [
-        "CVE-2021-44228",
-        "CVE-2022-22965"
-      ],
       "assets": [
-        "web_application",
-        "access_logs"
+        "internet_access",
+        "vpn_gateway",
+        "firewall_logs"
       ],
       "properties": {
-        "exposed_to_internet": true,
-        "critical": false,
-        "category": "Web Server",
-        "network_segment": "DMZ",
-        "entry_point": true
-      }
-    },
-    {
-      "id": "data_server",
-      "name": "Internal Data Server",
-      "software": {
-        "os": "Windows Server",
-        "version": "2019",
-        "services": [
-          "file_server",
-          "sql_server",
-          "rdp"
-        ]
-      },
-      "vulnerabilities": [
-        "CVE-2020-1472"
-      ],
-      "assets": [
-        "customer_database",
-        "financial_records",
-        "employee_data",
-        "company_secrets",
-        "intellectual_property"
-      ],
-      "properties": {
-        "exposed_to_internet": false,
         "critical": true,
-        "category": "Data Server",
-        "network_segment": "Internal",
-        "high_value_target": true,
-        "contains_sensitive_data": true
-      }
-    },
-    {
-      "id": "node_3",
-      "name": "node_3",
-      "software": {
-        "os": "Ubuntu",
-        "version": "24.04 LTS",
-        "services": []
-      },
-      "vulnerabilities": [],
-      "assets": [],
-      "properties": {
+        "physical_security": "high",
+        "network_segment": "172.16.0.1/24",
+        "manages_traffic": true,
+        "logging_enabled": true,
         "exposed_to_internet": true
       }
     },
     {
-      "id": "node_4",
-      "name": "node_4",
+      "id": "dmz_web_server",
+      "name": "dmz_web_server",
+      "x": 720,
+      "y": 240,
+      "software": {
+        "os": "Ubuntu Server",
+        "version": "20.04.6",
+        "web_server": "Apache",
+        "web_version": "2.4.41",
+        "php": "7.4.33",
+        "ssl_cert": "Let's Encrypt"
+      },
+      "assets": [
+        "corporate_website",
+        "customer_portal",
+        "web_logs",
+        "ssl_certificates"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "medium",
+        "network_segment": "172.16.10.0/24",
+        "ip_address": "172.16.10.10",
+        "exposed_services": [
+          "80",
+          "443",
+          "22"
+        ],
+        "exposed_to_internet": true,
+        "backup_frequency": "daily",
+        "service_ssh": true
+      }
+    },
+    {
+      "id": "dmz_mail_server",
+      "name": "dmz_mail_server",
+      "x": 720,
+      "y": 420,
+      "software": {
+        "os": "Debian",
+        "version": "11.7",
+        "mail_server": "Postfix",
+        "mail_version": "3.5.6",
+        "webmail": "Roundcube",
+        "antivirus": "ClamAV"
+      },
+      "assets": [
+        "email_database",
+        "user_mailboxes",
+        "spam_filter",
+        "mail_logs"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "medium",
+        "network_segment": "172.16.10.0/24",
+        "ip_address": "172.16.10.20",
+        "exposed_services": [
+          "25",
+          "587",
+          "993",
+          "443"
+        ],
+        "encryption": "TLS 1.3",
+        "service_ssh": true
+      }
+    },
+    {
+      "id": "internal_firewall",
+      "name": "internal_firewall",
+      "x": 420,
+      "y": 300,
+      "software": {
+        "vendor": "pfSense",
+        "version": "2.6.0",
+        "base_os": "FreeBSD 12.3"
+      },
+      "assets": [
+        "internal_firewall_rules",
+        "network_segmentation",
+        "traffic_logs"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "high",
+        "network_segment": "172.16.1.1/24",
+        "manages_vlans": true,
+        "ids_enabled": true
+      }
+    },
+    {
+      "id": "domain_controller_01",
+      "name": "domain_controller_01",
+      "x": 300,
+      "y": 180,
+      "software": {
+        "os": "Windows Server",
+        "version": "2019",
+        "build": "17763.3650",
+        "active_directory": "2019 Forest Level",
+        "dns_server": "Windows DNS",
+        "dhcp_server": "Windows DHCP"
+      },
+      "assets": [
+        "domain_database",
+        "user_credentials",
+        "kerberos_tickets",
+        "group_policies",
+        "dns_records"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "high",
+        "network_segment": "172.16.20.0/24",
+        "ip_address": "172.16.20.10",
+        "domain_role": "primary_dc",
+        "backup_frequency": "hourly",
+        "service_rdp": true,
+        "service_smb": true
+      }
+    },
+    {
+      "id": "file_server_01",
+      "name": "file_server_01",
+      "x": 300,
+      "y": 420,
+      "software": {
+        "os": "Windows Server 2008",
+        "version": "2016",
+        "build": "14393.5501",
+        "file_services": "SMB 3.1.1",
+        "backup_agent": "Veeam Agent"
+      },
+      "assets": [
+        "shared_drives",
+        "department_files",
+        "user_profiles",
+        "project_data"
+      ],
+      "properties": {
+        "critical": false,
+        "physical_security": "high",
+        "network_segment": "172.16.20.0/24",
+        "ip_address": "172.16.20.20",
+        "storage_capacity": "10TB",
+        "encryption": "BitLocker",
+        "service_rdp": true,
+        "service_smb": true
+      }
+    },
+    {
+      "id": "sql_server_01",
+      "name": "sql_server_01",
+      "x": 300,
+      "y": 300,
+      "software": {
+        "os": "Windows Server",
+        "version": "2019",
+        "database": "Microsoft SQL Server",
+        "db_version": "2019 Enterprise",
+        "db_patch_level": "CU18"
+      },
+      "assets": [
+        "customer_database",
+        "financial_records",
+        "audit_logs",
+        "business_intelligence"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "maximum",
+        "network_segment": "172.16.30.0/24",
+        "ip_address": "172.16.30.10",
+        "encryption": "TDE",
+        "backup_frequency": "every_6_hours",
+        "compliance": [
+          "PCI-DSS",
+          "SOX"
+        ],
+        "service_rdp": true
+      }
+    },
+    {
+      "id": "backup_server",
+      "name": "backup_server",
+      "x": 420,
+      "y": 420,
+      "software": {
+        "os": "Ubuntu Server",
+        "version": "22.04.3",
+        "backup_software": "Veeam Backup & Replication",
+        "backup_version": "12.0"
+      },
+      "assets": [
+        "system_backups",
+        "disaster_recovery_data",
+        "backup_catalog"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "high",
+        "network_segment": "172.16.20.0/24",
+        "ip_address": "172.16.20.30",
+        "storage_capacity": "50TB",
+        "offsite_replication": true,
+        "service_ssh": true
+      }
+    },
+    {
+      "id": "siem_server",
+      "name": "siem_server",
+      "x": 420,
+      "y": 180,
+      "software": {
+        "os": "CentOS Linux",
+        "version": "8.5",
+        "siem": "Splunk Enterprise",
+        "siem_version": "9.1.2"
+      },
+      "assets": [
+        "security_logs",
+        "incident_data",
+        "threat_intelligence",
+        "forensic_evidence"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "maximum",
+        "network_segment": "172.16.40.0/24",
+        "ip_address": "172.16.40.10",
+        "log_retention": "2_years",
+        "compliance": [
+          "SOC2",
+          "PCI-DSS"
+        ],
+        "service_ssh": true
+      }
+    },
+    {
+      "id": "workstation_hr_01",
+      "name": "workstation_hr_01",
+      "x": 480,
+      "y": 420,
+      "software": {
+        "os": "Windows 10",
+        "version": "22H2",
+        "build": "19045.3448",
+        "office_suite": "Microsoft Office 365",
+        "endpoint_protection": "CrowdStrike Falcon",
+        "browser": "Microsoft Edge"
+      },
+      "assets": [
+        "hr_documents",
+        "employee_data",
+        "payroll_spreadsheets",
+        "personnel_files"
+      ],
+      "properties": {
+        "critical": false,
+        "physical_security": "medium",
+        "network_segment": "172.16.50.0/24",
+        "ip_address": "172.16.50.15",
+        "department": "Human Resources",
+        "user": "alice.johnson",
+        "admin_rights": false,
+        "endpoint_protection": true,
+        "service_rdp": true
+      }
+    },
+    {
+      "id": "workstation_finance_01",
+      "name": "workstation_finance_01",
+      "x": 540,
+      "y": 420,
+      "software": {
+        "os": "Windows 10",
+        "version": "22H2",
+        "build": "19045.3448",
+        "office_suite": "Microsoft Office 365",
+        "financial_software": "QuickBooks Enterprise",
+        "endpoint_protection": "Windows Defender"
+      },
+      "assets": [
+        "financial_reports",
+        "budget_data",
+        "vendor_information",
+        "tax_documents"
+      ],
+      "properties": {
+        "critical": false,
+        "physical_security": "medium",
+        "network_segment": "172.16.50.0/24",
+        "ip_address": "172.16.50.25",
+        "department": "Finance",
+        "user": "bob.chen",
+        "admin_rights": false,
+        "endpoint_protection": true,
+        "service_rdp": true
+      }
+    },
+    {
+      "id": "workstation_it_admin",
+      "name": "workstation_it_admin",
+      "x": 360,
+      "y": 420,
+      "software": {
+        "os": "Windows 10",
+        "version": "22H2",
+        "build": "19045.3448",
+        "admin_tools": "RSAT",
+        "remote_access": "RDP",
+        "endpoint_protection": "CrowdStrike Falcon"
+      },
+      "assets": [
+        "admin_scripts",
+        "network_diagrams",
+        "system_documentation",
+        "privileged_credentials"
+      ],
+      "properties": {
+        "critical": true,
+        "physical_security": "high",
+        "network_segment": "172.16.50.0/24",
+        "ip_address": "172.16.50.100",
+        "department": "IT",
+        "user": "carol.admin",
+        "admin_rights": true,
+        "privileged_access": [
+          "domain_controller_01",
+          "sql_server_01"
+        ],
+        "endpoint_protection": true,
+        "service_rdp": true
+      }
+    },
+    {
+      "id": "node_13",
+      "name": "node_13",
+      "x": 60,
+      "y": 300,
       "software": {
         "os": "Ubuntu",
         "version": "24.04 LTS",
         "services": []
       },
-      "vulnerabilities": [],
       "assets": [],
       "properties": {
-        "exposed_to_internet": false
+        "exposed_to_internet": false,
+        "service_ssh": true
       }
     }
   ],
   "links": [
     {
-      "node1": "web_server",
-      "node2": "data_server",
+      "node1": "internet_gateway",
+      "node2": "dmz_web_server",
       "bidirectional": true
     },
     {
-      "node1": "node_4",
-      "node2": "node_3",
+      "node1": "internet_gateway",
+      "node2": "dmz_mail_server",
       "bidirectional": true
     },
     {
-      "node1": "node_3",
-      "node2": "data_server",
+      "node1": "dmz_web_server",
+      "node2": "internal_firewall",
       "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "domain_controller_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "file_server_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "backup_server",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "sql_server_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "siem_server",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "workstation_hr_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "workstation_finance_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "internal_firewall",
+      "node2": "workstation_it_admin",
+      "bidirectional": true
+    },
+    {
+      "node1": "domain_controller_01",
+      "node2": "sql_server_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "siem_server",
+      "node2": "domain_controller_01",
+      "bidirectional": false
+    },
+    {
+      "node1": "siem_server",
+      "node2": "dmz_web_server",
+      "bidirectional": false
     }
   ]
 }

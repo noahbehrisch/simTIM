@@ -1,12 +1,65 @@
 import glob
+import importlib
+import inspect
 import logging
 import os
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 def get_src_path() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def discover_subclasses(
+    directory: str,
+    package_prefix: str,
+    base_class: type,
+    *,
+    suffix: str = "",
+    exclude: str = "",
+    extract_defaults: bool = False,
+) -> list[tuple[str, type, dict[str, Any]]]:
+    if not os.path.exists(directory):
+        return []
+
+    glob_pattern = f"*{suffix}.py" if suffix else "*.py"
+    pattern = os.path.join(directory, glob_pattern)
+    results: list[tuple[str, type, dict[str, Any]]] = []
+
+    for filepath in sorted(glob.glob(pattern)):
+        module_name = os.path.basename(filepath)[:-3]
+        if module_name.startswith("_") or module_name == exclude:
+            continue
+
+        fq_module = f"{package_prefix}.{module_name}"
+        try:
+            mod = importlib.import_module(fq_module)
+        except Exception:
+            logger.warning("Failed to import module %s", fq_module, exc_info=True)
+            continue
+
+        for attr_name in dir(mod):
+            obj = getattr(mod, attr_name)
+            if isinstance(obj, type) and issubclass(obj, base_class) and obj is not base_class:
+                registry_name = module_name.removesuffix(suffix) if suffix else module_name
+
+                default_params: dict[str, Any] = {}
+                if extract_defaults:
+                    sig = inspect.signature(obj.__init__)
+                    for pname, param in sig.parameters.items():
+                        if pname == "self":
+                            continue
+                        if param.default is not inspect.Parameter.empty:
+                            default_params[pname] = param.default
+
+                results.append((registry_name, obj, default_params))
+                logger.debug(
+                    "Discovered %s: %s -> %s", base_class.__name__, registry_name, obj.__name__
+                )
+
+    return results
 
 
 def discover_modules_in_directory(directory: str) -> list[str]:
@@ -16,7 +69,7 @@ def discover_modules_in_directory(directory: str) -> list[str]:
     py_files = glob.glob(os.path.join(directory, "*.py"))
     modules = []
     for f in py_files:
-        name = os.path.basename(f)[:-3]  # Remove .py
+        name = os.path.basename(f)[:-3]
         if not name.startswith("_"):
             modules.append(name)
     return sorted(modules)

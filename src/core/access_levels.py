@@ -13,12 +13,12 @@ class NodeAccessLevel(Enum):
     def __lt__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
             return self.value < other.value
-        return NotImplemented  # type: ignore[return-value]
+        return NotImplemented
 
     def __ge__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
             return self.value >= other.value
-        return NotImplemented  # type: ignore[return-value]
+        return NotImplemented
 
     @classmethod
     def from_string(cls, access_str: str) -> "NodeAccessLevel":

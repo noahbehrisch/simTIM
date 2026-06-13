@@ -1,28 +1,25 @@
 {
-  "name": "Healthcare Network - HIPAA Compliant",
-  "description": "A realistic healthcare network demonstrating medical device security, PHI protection, and HIPAA compliance challenges",
-  "metadata": {
-    "organization": "Regional Medical Center", 
-    "network_size": "healthcare_facility",
-    "compliance": ["HIPAA", "HITECH", "FDA CFR Part 11"],
-    "patient_capacity": 200,
-    "created": "2024-09-27"
-  },
+  "name": "Custom Network",
+  "description": "Custom network with 12 nodes and 14 links",
   "nodes": [
     {
       "id": "internet_firewall",
-      "type": "network_device",
-      "zone": "perimeter",
+      "name": "internet_firewall",
+      "x": 720,
+      "y": 240,
       "software": {
         "vendor": "Fortinet",
         "model": "FortiGate 600E",
         "firmware": "7.2.5"
       },
-      "vulnerabilities": ["CVE-2023-25610"],
-      "assets": ["network_access_logs", "vpn_connections", "firewall_policies"],
+      "assets": [
+        "network_access_logs",
+        "vpn_connections",
+        "firewall_policies"
+      ],
       "properties": {
         "critical": true,
-        "physical_security": "maximum", 
+        "physical_security": "maximum",
         "network_segment": "10.10.0.0/16",
         "hipaa_compliant": true,
         "logging_enabled": true,
@@ -30,28 +27,32 @@
       }
     },
     {
-      "id": "medical_firewall", 
-      "type": "network_device",
-      "zone": "medical_device_boundary",
+      "id": "medical_firewall",
+      "name": "medical_firewall",
+      "x": 240,
+      "y": 360,
       "software": {
         "vendor": "Cisco",
         "model": "ASA 5525-X",
         "firmware": "9.18.2"
       },
-      "vulnerabilities": [],
-      "assets": ["medical_network_segmentation", "device_access_logs"],
+      "assets": [
+        "medical_network_segmentation",
+        "device_access_logs"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
-        "network_segment": "10.10.100.0/24", 
+        "network_segment": "10.10.100.0/24",
         "medical_device_isolation": true,
         "fda_validated": true
       }
     },
     {
       "id": "ehr_server_primary",
-      "type": "server",
-      "zone": "clinical_systems", 
+      "name": "ehr_server_primary",
+      "x": 600,
+      "y": 240,
       "software": {
         "os": "Windows Server",
         "version": "2019",
@@ -60,77 +61,103 @@
         "ehr_version": "2022.1",
         "database": "Microsoft SQL Server 2019"
       },
-      "vulnerabilities": ["CVE-2023-21528", "CVE-2022-29143"],
-      "assets": ["patient_records", "medical_histories", "prescription_data", "lab_results", "phi_database"],
+      "assets": [
+        "patient_records",
+        "medical_histories",
+        "prescription_data",
+        "lab_results",
+        "phi_database"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
         "network_segment": "10.10.20.0/24",
-        "ip_address": "10.10.20.10", 
+        "ip_address": "10.10.20.10",
         "encryption": "AES-256",
         "backup_frequency": "continuous",
-        "compliance": ["HIPAA", "HITECH"],
-        "phi_storage": true
+        "compliance": [
+          "HIPAA",
+          "HITECH"
+        ],
+        "phi_storage": true,
+        "service_rdp": true
       }
     },
     {
       "id": "pacs_server",
-      "type": "server",
-      "zone": "clinical_systems",
+      "name": "pacs_server",
+      "x": 480,
+      "y": 360,
       "software": {
         "os": "Linux RHEL",
-        "version": "8.7", 
+        "version": "8.7",
         "pacs_system": "GE Centricity PACS",
         "pacs_version": "6.1",
         "dicom_services": "DICOM 3.0"
       },
-      "vulnerabilities": ["CVE-2022-29464"],
-      "assets": ["medical_images", "radiology_studies", "dicom_data", "imaging_metadata"],
+      "assets": [
+        "medical_images",
+        "radiology_studies",
+        "dicom_data",
+        "imaging_metadata"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "maximum",
         "network_segment": "10.10.20.0/24",
         "ip_address": "10.10.20.20",
-        "storage_capacity": "100TB", 
+        "storage_capacity": "100TB",
         "dicom_compliant": true,
-        "phi_storage": true
+        "phi_storage": true,
+        "service_ssh": true
       }
     },
     {
       "id": "his_server",
-      "type": "server", 
-      "zone": "clinical_systems",
+      "name": "his_server",
+      "x": 720,
+      "y": 420,
       "software": {
         "os": "Windows Server",
-        "version": "2016", 
+        "version": "2016",
         "build": "14393.5501",
         "his_system": "Meditech",
         "his_version": "6.17"
       },
-      "vulnerabilities": ["CVE-2021-31166", "CVE-2017-0144"],
-      "assets": ["hospital_administration", "patient_billing", "insurance_data", "scheduling_system"],
+      "assets": [
+        "hospital_administration",
+        "patient_billing",
+        "insurance_data",
+        "scheduling_system"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "10.10.30.0/24",
         "ip_address": "10.10.30.10",
         "legacy_system": true,
-        "end_of_life": "2025-01-14"
+        "end_of_life": "2025-01-14",
+        "service_rdp": true
       }
     },
     {
       "id": "mri_scanner",
-      "type": "medical_device",
-      "zone": "medical_devices", 
+      "name": "mri_scanner",
+      "x": 360,
+      "y": 300,
       "software": {
         "vendor": "Siemens",
-        "model": "MAGNETOM Vida", 
+        "model": "MAGNETOM Vida",
         "software_version": "VE11C",
         "os": "Windows 10 IoT",
         "dicom_version": "3.0"
       },
-      "vulnerabilities": ["CVE-2022-30190", "CVE-2023-21823"],
-      "assets": ["mri_images", "patient_scan_data", "device_logs", "calibration_data"],
+      "assets": [
+        "mri_images",
+        "patient_scan_data",
+        "device_logs",
+        "calibration_data"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
@@ -138,44 +165,56 @@
         "ip_address": "10.10.100.10",
         "fda_approved": true,
         "maintenance_contract": "siemens_gold",
-        "patch_restrictions": "vendor_approved_only"
+        "patch_restrictions": "vendor_approved_only",
+        "service_rdp": true
       }
     },
     {
-      "id": "ct_scanner", 
-      "type": "medical_device",
-      "zone": "medical_devices",
+      "id": "ct_scanner",
+      "name": "ct_scanner",
+      "x": 360,
+      "y": 420,
       "software": {
         "vendor": "GE Healthcare",
         "model": "Revolution CT",
         "software_version": "AW VolumeShare 7",
-        "os": "Windows 7 Embedded", 
+        "os": "Windows 7 Embedded",
         "dicom_version": "3.0"
       },
-      "vulnerabilities": ["CVE-2020-1472", "CVE-2017-0144", "CVE-2019-0708"],
-      "assets": ["ct_images", "contrast_protocols", "dose_records", "patient_positioning"],
+      "assets": [
+        "ct_images",
+        "contrast_protocols",
+        "dose_records",
+        "patient_positioning"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "10.10.100.0/24",
-        "ip_address": "10.10.100.20", 
+        "ip_address": "10.10.100.20",
         "fda_approved": true,
         "end_of_life_os": true,
-        "isolated_network": true
+        "isolated_network": true,
+        "service_rdp": true
       }
     },
     {
       "id": "infusion_pump_01",
-      "type": "medical_device",
-      "zone": "medical_devices",
+      "name": "infusion_pump_01",
+      "x": 240,
+      "y": 420,
       "software": {
         "vendor": "BD",
         "model": "Alaris 8015 PCU",
-        "software_version": "12.1.2", 
+        "software_version": "12.1.2",
         "wireless": "802.11n"
       },
-      "vulnerabilities": ["CVE-2022-26392"],
-      "assets": ["medication_protocols", "infusion_logs", "patient_vitals", "drug_library"],
+      "assets": [
+        "medication_protocols",
+        "infusion_logs",
+        "patient_vitals",
+        "drug_library"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -188,16 +227,21 @@
     },
     {
       "id": "patient_monitor",
-      "type": "medical_device", 
-      "zone": "medical_devices",
+      "name": "patient_monitor",
+      "x": 240,
+      "y": 300,
       "software": {
         "vendor": "Philips",
         "model": "IntelliVue MX800",
-        "software_version": "M.00.04", 
+        "software_version": "M.00.04",
         "protocol": "HL7 FHIR"
       },
-      "vulnerabilities": ["CVE-2023-20076"],
-      "assets": ["vital_signs", "alarm_history", "trend_data", "waveform_data"],
+      "assets": [
+        "vital_signs",
+        "alarm_history",
+        "trend_data",
+        "waveform_data"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "medium",
@@ -209,8 +253,9 @@
     },
     {
       "id": "nurse_workstation_01",
-      "type": "workstation",
-      "zone": "clinical_workstations", 
+      "name": "nurse_workstation_01",
+      "x": 600,
+      "y": 180,
       "software": {
         "os": "Windows 10",
         "version": "22H2",
@@ -219,23 +264,30 @@
         "browser": "Internet Explorer 11",
         "endpoint_protection": "Symantec Endpoint Protection"
       },
-      "vulnerabilities": ["CVE-2023-36874"],
-      "assets": ["patient_charts", "medication_orders", "nursing_notes", "care_plans"],
+      "assets": [
+        "patient_charts",
+        "medication_orders",
+        "nursing_notes",
+        "care_plans"
+      ],
       "properties": {
         "critical": false,
         "physical_security": "medium",
         "network_segment": "10.10.50.0/24",
-        "ip_address": "10.10.50.10", 
+        "ip_address": "10.10.50.10",
         "department": "ICU_Nursing",
         "user": "nurse.thompson",
         "admin_rights": false,
-        "mobile_cart": true
+        "mobile_cart": true,
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
-      "id": "doctor_workstation_01", 
-      "type": "workstation",
-      "zone": "clinical_workstations",
+      "id": "doctor_workstation_01",
+      "name": "doctor_workstation_01",
+      "x": 480,
+      "y": 240,
       "software": {
         "os": "Windows 10",
         "version": "22H2",
@@ -244,23 +296,33 @@
         "pacs_client": "GE Centricity Universal Viewer",
         "endpoint_protection": "CrowdStrike Falcon"
       },
-      "vulnerabilities": ["CVE-2023-36874"],
-      "assets": ["diagnosis_data", "treatment_plans", "prescription_orders", "medical_research"],
+      "assets": [
+        "diagnosis_data",
+        "treatment_plans",
+        "prescription_orders",
+        "medical_research"
+      ],
       "properties": {
         "critical": false,
-        "physical_security": "medium", 
+        "physical_security": "medium",
         "network_segment": "10.10.50.0/24",
         "ip_address": "10.10.50.20",
         "department": "Cardiology",
         "user": "dr.martinez",
         "admin_rights": false,
-        "privileged_access": ["ehr_server_primary", "pacs_server"]
+        "privileged_access": [
+          "ehr_server_primary",
+          "pacs_server"
+        ],
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     },
     {
-      "id": "admin_workstation", 
-      "type": "workstation",
-      "zone": "administrative", 
+      "id": "admin_workstation",
+      "name": "admin_workstation",
+      "x": 720,
+      "y": 480,
       "software": {
         "os": "Windows 10",
         "version": "22H2",
@@ -269,17 +331,27 @@
         "his_admin": "Meditech Admin",
         "endpoint_protection": "CrowdStrike Falcon"
       },
-      "vulnerabilities": ["CVE-2023-36874"],
-      "assets": ["system_administration", "user_accounts", "security_policies", "audit_logs"],
+      "assets": [
+        "system_administration",
+        "user_accounts",
+        "security_policies",
+        "audit_logs"
+      ],
       "properties": {
         "critical": true,
         "physical_security": "high",
         "network_segment": "10.10.40.0/24",
         "ip_address": "10.10.40.10",
-        "department": "IT_Administration", 
+        "department": "IT_Administration",
         "user": "admin.jones",
         "admin_rights": true,
-        "privileged_access": ["ehr_server_primary", "his_server", "pacs_server"]
+        "privileged_access": [
+          "ehr_server_primary",
+          "his_server",
+          "pacs_server"
+        ],
+        "endpoint_protection": true,
+        "service_rdp": true
       }
     }
   ],
@@ -287,190 +359,72 @@
     {
       "node1": "internet_firewall",
       "node2": "ehr_server_primary",
-      "bidirectional": true,
-      "latency": 1.0,
-      "bandwidth": "10000Mbps", 
-      "firewall_rules": ["encrypted_only", "vpn_access", "audit_all_connections"],
-      "encryption": "TLS 1.3"
+      "bidirectional": true
     },
     {
       "node1": "internet_firewall",
-      "node2": "his_server", 
-      "bidirectional": true,
-      "latency": 1.2,
-      "bandwidth": "1000Mbps",
-      "firewall_rules": ["business_hours_only", "admin_access"]
+      "node2": "his_server",
+      "bidirectional": true
     },
     {
       "node1": "medical_firewall",
       "node2": "mri_scanner",
-      "bidirectional": true,
-      "latency": 0.5, 
-      "bandwidth": "1000Mbps",
-      "connection_type": "isolated_medical_network"
+      "bidirectional": true
     },
     {
       "node1": "medical_firewall",
       "node2": "ct_scanner",
-      "bidirectional": true,
-      "latency": 0.6,
-      "bandwidth": "1000Mbps",
-      "connection_type": "isolated_medical_network"
-    },
-    {
-      "node1": "medical_firewall", 
-      "node2": "infusion_pump_01",
-      "bidirectional": true,
-      "latency": 2.0,
-      "bandwidth": "100Mbps",
-      "connection_type": "wireless_medical_device"
+      "bidirectional": true
     },
     {
       "node1": "medical_firewall",
-      "node2": "patient_monitor", 
-      "bidirectional": true,
-      "latency": 1.8,
-      "bandwidth": "100Mbps",
-      "connection_type": "wireless_medical_device"
+      "node2": "infusion_pump_01",
+      "bidirectional": true
+    },
+    {
+      "node1": "medical_firewall",
+      "node2": "patient_monitor",
+      "bidirectional": true
     },
     {
       "node1": "ehr_server_primary",
       "node2": "pacs_server",
-      "bidirectional": true,
-      "latency": 0.3,
-      "bandwidth": "10000Mbps", 
-      "connection_type": "clinical_data_integration"
+      "bidirectional": true
     },
     {
-      "node1": "ehr_server_primary", 
+      "node1": "ehr_server_primary",
       "node2": "his_server",
-      "bidirectional": true,
-      "latency": 0.8,
-      "bandwidth": "1000Mbps",
-      "connection_type": "hl7_interface"
+      "bidirectional": true
     },
     {
       "node1": "pacs_server",
       "node2": "mri_scanner",
-      "bidirectional": true,
-      "latency": 1.5, 
-      "bandwidth": "1000Mbps",
-      "connection_type": "dicom_transfer"
+      "bidirectional": true
     },
     {
       "node1": "pacs_server",
       "node2": "ct_scanner",
-      "bidirectional": true,
-      "latency": 1.6,
-      "bandwidth": "1000Mbps", 
-      "connection_type": "dicom_transfer"
+      "bidirectional": true
     },
     {
       "node1": "ehr_server_primary",
       "node2": "nurse_workstation_01",
-      "bidirectional": true,
-      "latency": 0.9,
-      "bandwidth": "1000Mbps",
-      "connection_type": "ehr_access"
+      "bidirectional": true
     },
     {
-      "node1": "ehr_server_primary", 
+      "node1": "ehr_server_primary",
       "node2": "doctor_workstation_01",
-      "bidirectional": true,
-      "latency": 0.7,
-      "bandwidth": "1000Mbps",
-      "connection_type": "ehr_access"
+      "bidirectional": true
     },
     {
       "node1": "pacs_server",
       "node2": "doctor_workstation_01",
-      "bidirectional": true, 
-      "latency": 1.0,
-      "bandwidth": "1000Mbps",
-      "connection_type": "image_viewing"
+      "bidirectional": true
     },
     {
       "node1": "his_server",
       "node2": "admin_workstation",
-      "bidirectional": true,
-      "latency": 0.4,
-      "bandwidth": "1000Mbps", 
-      "connection_type": "administrative_access"
-    }
-  ],
-  "attack_scenarios": [
-    {
-      "name": "Medical Device Compromise via Legacy OS",
-      "description": "Attacker exploits Windows 7 vulnerability on CT scanner, pivots to clinical systems",
-      "entry_point": "ct_scanner",
-      "attack_path": ["ct_scanner", "medical_firewall", "pacs_server", "ehr_server_primary"], 
-      "required_vulnerabilities": ["CVE-2017-0144", "CVE-2022-29464"],
-      "impact": "PHI_breach"
-    },
-    {
-      "name": "Wireless Medical Device Attack",
-      "description": "Compromise wireless infusion pump, lateral movement to patient monitoring",
-      "entry_point": "infusion_pump_01",
-      "attack_path": ["infusion_pump_01", "patient_monitor", "medical_firewall", "ehr_server_primary"],
-      "required_vulnerabilities": ["CVE-2022-26392", "CVE-2023-20076"], 
-      "impact": "patient_safety"
-    },
-    {
-      "name": "Privileged User Compromise",
-      "description": "Phishing attack on administrative user leads to full system compromise",
-      "entry_point": "admin_workstation",
-      "attack_path": ["admin_workstation", "ehr_server_primary", "pacs_server", "his_server"],
-      "required_vulnerabilities": ["CVE-2023-36874"], 
-      "impact": "full_phi_access"
-    },
-    {
-      "name": "Legacy HIS Server Exploit",
-      "description": "Direct attack on outdated HIS server through unpatched vulnerabilities",
-      "entry_point": "his_server",
-      "attack_path": ["his_server", "ehr_server_primary"],
-      "required_vulnerabilities": ["CVE-2017-0144", "CVE-2021-31166"],
-      "impact": "administrative_data_breach"
-    }
-  ],
-  "compliance_requirements": [
-    {
-      "standard": "HIPAA",
-      "requirements": [
-        "encryption_of_phi_at_rest",
-        "encryption_of_phi_in_transit", 
-        "access_controls_and_audit_logs",
-        "physical_safeguards",
-        "breach_notification_procedures"
-      ],
-      "covered_entities": ["ehr_server_primary", "pacs_server", "his_server"]
-    },
-    {
-      "standard": "FDA_CFR_Part_11",
-      "requirements": [
-        "electronic_signature_validation",
-        "audit_trail_requirements", 
-        "record_retention_policies"
-      ],
-      "covered_systems": ["mri_scanner", "ct_scanner", "infusion_pump_01", "patient_monitor"]
-    }
-  ],
-  "security_controls": [
-    {
-      "type": "network_segmentation",
-      "implementation": "medical_device_isolation",
-      "zones": ["medical_devices", "clinical_systems", "clinical_workstations", "administrative"]
-    },
-    {
-      "type": "phi_encryption", 
-      "at_rest": "AES-256",
-      "in_transit": "TLS 1.3",
-      "key_management": "hardware_security_module"
-    },
-    {
-      "type": "medical_device_management",
-      "patch_policy": "vendor_approved_only", 
-      "change_control": "fda_compliant",
-      "monitoring": "continuous_but_passive"
+      "bidirectional": true
     }
   ]
 }

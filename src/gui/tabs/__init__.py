@@ -3,8 +3,9 @@ from .attacker_tab import AttackerTab
 from .base_tab import BaseTab
 from .defender_tab import DefenderTab
 from .network_tab import NetworkTab
+from .overview_tab import OverviewTab
+from .scenario_tab import ScenarioTab
 from .simulation_tab import SimulationTab
-from .variables_tab import VariablesTab
 
 __all__ = [
     "BaseTab",
@@ -13,5 +14,6 @@ __all__ = [
     "AttackerTab",
     "DefenderTab",
     "ActionTab",
-    "VariablesTab",
+    "ScenarioTab",
+    "OverviewTab",
 ]

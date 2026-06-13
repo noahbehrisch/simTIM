@@ -1,7 +1,9 @@
+import json
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from ...config import sim_config
 from ...networks.network_creator import NetworkCreator
 from .base_tab import BaseTab
 
@@ -15,7 +17,7 @@ class NetworkTab(BaseTab):
                 "..",
                 "networks",
                 "library",
-                "demo_network.json",
+                sim_config.default_network,
             )
         )
         self.network_file_var = tk.StringVar(value=default_network_path)
@@ -62,7 +64,7 @@ class NetworkTab(BaseTab):
             bg=self.tab_color,
             fg=self.button_fg,
         ).grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.predefined_var = tk.StringVar(value="demo_network.json")
+        self.predefined_var = tk.StringVar(value=sim_config.default_network)
         self.predefined_dropdown = ttk.Combobox(
             self.predefined_frame,
             textvariable=self.predefined_var,
@@ -80,18 +82,13 @@ class NetworkTab(BaseTab):
         )
         descriptions_frame = tk.Frame(self.predefined_frame, bg=self.tab_color)
         descriptions_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
-        self.network_descriptions = {
-            "demo_network.json": "Simple 2-node network for testing and demonstrations",
-            "healthcare_network.json": "Healthcare facility network with medical devices and systems",
-            "realistic_enterprise_network.json": "Large enterprise network with multiple departments",
-            "realistic_smb_network.json": "Small-to-medium business network topology",
-        }
+        self.network_descriptions = self._load_network_descriptions()
         self.description_label = tk.Label(
             descriptions_frame,
-            text=self.network_descriptions["demo_network.json"],
+            text=self.network_descriptions.get(sim_config.default_network, ""),
             bg=self.tab_color,
             fg=self.theme.COLORS["text_secondary"],
-            wraplength=400,
+            wraplength=700,
             justify="left",
         )
         self.description_label.pack(anchor="w", padx=5, pady=2)
@@ -139,9 +136,30 @@ class NetworkTab(BaseTab):
             print(f"Error loading network files: {e}")
             return ["demo_network.json"]
 
+    def _load_network_descriptions(self):
+        descriptions = {}
+        library_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "..", "networks", "library"
+        )
+        library_dir = os.path.abspath(library_dir)
+        try:
+            for filename in os.listdir(library_dir):
+                if filename.endswith(".json"):
+                    filepath = os.path.join(library_dir, filename)
+                    try:
+                        with open(filepath, encoding="utf-8") as f:
+                            data = json.load(f)
+                        descriptions[filename] = data.get("description", "")
+                    except (json.JSONDecodeError, OSError):
+                        descriptions[filename] = ""
+        except OSError:
+            pass
+        return descriptions
+
     def _refresh_networks(self):
         current_value = self.predefined_var.get()
         available_networks = self._get_available_networks()
+        self.network_descriptions = self._load_network_descriptions()
         self.predefined_dropdown["values"] = available_networks
         if current_value in available_networks:
             self.predefined_var.set(current_value)
@@ -200,11 +218,12 @@ class NetworkTab(BaseTab):
             self.network_file_var.set(file_path)
 
     def launch_visualizer(self):
-        from src.core.graph import Graph
+        from src.networks import NetworkLoader
         from src.networks.network_visualizer import NetworkVisualizer
 
         network_path = self.network_file_var.get()
-        network = Graph.from_json(network_path)
+        loader = NetworkLoader()
+        network = loader.load(network_path)
         visualizer = NetworkVisualizer(network)
         visualizer.visualize()
 

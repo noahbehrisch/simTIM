@@ -131,7 +131,7 @@ class EventBus:
                 try:
                     weak_ref = WeakMethod(callback)
                 except TypeError:
-                    weak_ref = ref(callback)  # type: ignore[assignment]
+                    weak_ref = ref(callback)
 
             subscription = Subscription(
                 callback=callback,
@@ -438,21 +438,6 @@ class HistoryRecorder(SimulationObserver):
         if self._max_size and len(self._history) >= self._max_size:
             self._history.pop(0)
         self._history.append(entry)
-
-    def on_action_started(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_action_succeeded(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_action_failed(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_attack_detected(self, event: SimulationEvent) -> None:
-        self._record(event)
-
-    def on_state_changed(self, event: SimulationEvent) -> None:
-        self._record(event)
 
     def register(self) -> None:
         self._unsubscribers.append(self._event_bus.subscribe_all(self._record))

@@ -27,7 +27,6 @@ def main():
 
 
 def print_help():
-    """Print command-line help."""
     print("""
 simTIM - Cybersecurity Simulation Tool
 ======================================
@@ -43,11 +42,7 @@ For more information, see README.md
 
 
 def run_demo():
-    import tkinter as tk
-
-    from src.core.simulation_main import simtim_main
-    from src.gui.results_window import ResultsWindow
-    from src.gui.theme import Theme
+    from src.core.simulation_runner import SimulationRunner
     from src.utils.results_printer import print_event_history, print_quick_summary
 
     demo_network = os.path.join(
@@ -65,7 +60,8 @@ def run_demo():
     print("=" * 70)
     print()
 
-    histories = simtim_main(
+    runner = SimulationRunner()
+    histories = runner.run_sync(
         path_to_network_config=demo_network,
         attackers=[
             {
@@ -85,31 +81,18 @@ def run_demo():
         ],
         sim_time=168,
         sim_runs=3,
-        detection_engine_type="exponential",
+        detection_engine_type="early_weighted",
     )
 
     if histories:
-        # Print detailed event timeline and summary to terminal
         print_event_history(histories, verbose=False, show_timeline=True)
 
-        # Also print quick summary table
         print_quick_summary(histories)
 
         print()
         print("=" * 70)
-        print("Opening GUI results window...")
-        print("(Close the window to exit)")
+        print("Demo complete.")
         print("=" * 70)
-
-        root = tk.Tk()
-        root.withdraw()
-        theme_colors = {
-            "bg_color": Theme.COLORS["bg_primary"],
-            "button_fg": Theme.COLORS["text_primary"],
-        }
-        results_window = ResultsWindow(root, histories, theme_colors, sim_time=168)
-        results_window.window.protocol("WM_DELETE_WINDOW", root.quit)
-        root.mainloop()
     else:
         print("Demo run failed!")
         return 1
@@ -117,8 +100,7 @@ def run_demo():
 
 
 def run_cli():
-    """Run an interactive CLI simulation."""
-    from src.core.simulation_main import simtim_main
+    from src.core.simulation_runner import SimulationRunner
     from src.networks import NetworkLoader
     from src.utils.results_printer import (
         export_to_csv,
@@ -134,7 +116,6 @@ def run_cli():
     print("simTIM - Interactive CLI Mode")
     print("=" * 70)
 
-    # Select network
     print("\nAvailable networks:")
     for i, network in enumerate(available_networks, 1):
         print(f"  {i}. {network}")
@@ -152,7 +133,6 @@ def run_cli():
         except ValueError:
             print("Please enter a number.")
 
-    # Get simulation parameters
     print("\n" + "-" * 50)
     print("Simulation Parameters")
     print("-" * 50)
@@ -173,13 +153,13 @@ def run_cli():
         attacker_strategy = "escalation"
         defender_strategy = "balanced"
 
-    # Run simulation
     print("\n" + "=" * 70)
     print("Running simulation...")
     print("=" * 70)
 
     network_path = loader.get_path(network_name)
-    histories = simtim_main(
+    runner = SimulationRunner()
+    histories = runner.run_sync(
         path_to_network_config=str(network_path),
         attackers=[
             {
@@ -199,18 +179,16 @@ def run_cli():
         ],
         sim_time=sim_time,
         sim_runs=sim_runs,
-        detection_engine_type="exponential",
+        detection_engine_type="early_weighted",
     )
 
     if not histories:
         print("Simulation failed!")
         return 1
 
-    # Print results
     print_event_history(histories, verbose=False, show_timeline=True)
     print_quick_summary(histories)
 
-    # Export options
     print("\n" + "-" * 50)
     print("Export Options")
     print("-" * 50)

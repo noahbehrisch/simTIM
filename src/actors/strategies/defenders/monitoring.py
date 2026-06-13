@@ -7,7 +7,9 @@ class MonitoringDefenderStrategy(DefenderStrategy):
     def __init__(self):
         super().__init__("monitoring", detection_window_hours=0.0)
 
-    def get_priority(self, action: Any, node: Any, detected_nodes: set[str] | None = None) -> float:
+    def get_priority(
+        self, action: Any, node: Any, detected_nodes: set[str] | None = None, network: Any = None
+    ) -> float:
         tactic = self.get_d3fend_tactic(action)
         priority = 1.0
 
@@ -22,13 +24,14 @@ class MonitoringDefenderStrategy(DefenderStrategy):
         }
         priority += tactic_priorities.get(tactic, 10)
 
+        link_count = len(network.get_links_for_node(node.id)) if network else 0
         if tactic == "Detect":
             priority += len(node.assets) * 12
-            priority += len(node.links) * 10
+            priority += link_count * 10
         elif tactic == "Model":
             priority += len(node.assets) * 8
         elif tactic == "Deceive":
-            priority += len(node.links) * 5
+            priority += link_count * 5
 
         if node.compromised:
             if tactic == "Detect":
@@ -37,3 +40,6 @@ class MonitoringDefenderStrategy(DefenderStrategy):
                 priority += 20
 
         return priority
+
+    def get_minimum_threshold(self, ongoing_count: int) -> float:
+        return 30.0 * ongoing_count

@@ -21,7 +21,7 @@ class Sidebar(tk.Frame):
             "Attackers",
             "Defenders",
             "Actions",
-            "Variables",
+            "Scenarios",
             "Overview",
         ]
         self._create_tab_buttons(switch_tab_callback)

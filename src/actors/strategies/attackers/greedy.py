@@ -10,11 +10,20 @@ class GreedyAttackerStrategy(AttackerStrategy):
         self.consider_cost = consider_cost
         self.consider_time_gain = consider_time_gain
 
-    def get_priority(self, action: Any, node: Any, access: NodeAccessLevel, attacker: Any) -> float:
-        one_off_gain = action.get_one_off_gain(node, access, attacker.id)
+    def get_priority(
+        self, action: Any, target: Any, access: NodeAccessLevel, attacker: Any
+    ) -> float:
+        if hasattr(action, "is_link_action") and action.is_link_action():
+            one_off_gain = action.get_one_off_gain(target, access, attacker.id)
+            expected_gain = one_off_gain * action.success_probability
+            if self.consider_cost:
+                return expected_gain - action.cost
+            return expected_gain
+
+        one_off_gain = action.get_one_off_gain(target, access, attacker.id)
 
         if self.consider_time_gain:
-            time_gain = action.get_time_gain(node, access, attacker.id)
+            time_gain = action.get_time_gain(target, access, attacker.id)
             total_expected_gain = one_off_gain + (time_gain * action.duration)
         else:
             total_expected_gain = one_off_gain
@@ -25,3 +34,6 @@ class GreedyAttackerStrategy(AttackerStrategy):
             return expected_gain - action.cost
 
         return expected_gain
+
+    def get_minimum_threshold(self, ongoing_count: int) -> float:
+        return 5.0 * ongoing_count

@@ -1,0 +1,54 @@
+{
+  "name": "Decoy File",
+  "description": "Plant fake files in common locations (credential stores, config files, memory) that trigger alerts when accessed. Detects unauthorized access and lateral movement attempts.",
+  "action_type": "node",
+  "d3fend": {
+    "technique_id": "D3-DF",
+    "technique_name": "Decoy File",
+    "tactic": "Deceive",
+    "url": "https://d3fend.mitre.org/technique/d3f:DecoyFile/"
+  },
+  "cost": 200,
+  "duration": 2.0,
+  "success_probability": 0.85,
+  "enabled_by_default": true,
+  "precondition": {
+    "type": "compound",
+    "operator": "AND",
+    "conditions": [
+      {"type": "access_check", "operator": "equals", "value": "ADMIN"},
+      {"type": "property_check", "property": "decoy_file_active", "operator": "not_equals", "value": true}
+    ]
+  },
+  "postcondition": {
+    "type": "compound",
+    "operator": "AND",
+    "actions": [
+      {
+        "type": "set_property",
+        "property": "decoy_file_active",
+        "value": true
+      },
+      {
+        "type": "set_property",
+        "property": "credential_theft_detection",
+        "value": true
+      }
+    ]
+  },
+  "detection_probability": {
+    "type": "constant",
+    "value": 0.0
+  },
+  "damage_gain": {
+    "one_off_damage": 0.0,
+    "one_off_gain": 0.0,
+    "time_damage": 0.0,
+    "time_gain": 0.0
+  },
+  "references": [
+    "https://d3fend.mitre.org/technique/d3f:DecoyCredentials/",
+    "https://attack.mitre.org/techniques/T1003/"
+  ],
+  "notes": "Decoy credentials are highly effective against credential dumping attacks. Low false positive rate as legitimate users should never use decoy credentials."
+}

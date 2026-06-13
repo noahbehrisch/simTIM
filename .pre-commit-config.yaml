@@ -3,7 +3,7 @@
 # Run all: pre-commit run --all-files
 
 default_language_version:
-  python: python3.13
+  python: python3
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -56,7 +56,7 @@ repos:
     hooks:
       - id: pytest-quick
         name: pytest-quick
-        entry: bash -c 'source venv/bin/activate && python -m pytest tests/ -x -q --tb=short --timeout=30'
+        entry: venv/bin/python -m pytest tests/ -x -q --tb=short
         language: system
         pass_filenames: false
-        stages: [pre-push]
+        always_run: true

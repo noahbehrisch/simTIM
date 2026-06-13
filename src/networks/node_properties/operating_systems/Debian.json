@@ -2,29 +2,13 @@
   "name": "Debian",
   "versions": [
     {
-      "version": "12",
-      "vulnerabilities": [
-        "CVE-2023-4911",
-        "CVE-2023-29491",
-        "CVE-2022-3821"
-      ]
+      "version": "12"
     },
     {
-      "version": "11",
-      "vulnerabilities": [
-        "CVE-2022-3715",
-        "CVE-2021-3997",
-        "CVE-2021-44228"
-      ]
+      "version": "11"
     },
     {
-      "version": "10",
-      "vulnerabilities": [
-        "CVE-2021-3177",
-        "CVE-2020-1472",
-        "CVE-2019-14287"
-      ]
+      "version": "10"
     }
   ]
 }
-

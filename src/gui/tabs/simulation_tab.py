@@ -1,9 +1,8 @@
-import importlib
-import inspect
-import os
 import tkinter as tk
 from tkinter import ttk
 
+from src.config import sim_config
+from src.detection.registry import get_detection_registry
 from src.gui.help_content import TOOLTIPS
 from src.gui.help_window import ToolTip
 
@@ -13,109 +12,25 @@ from .base_tab import BaseTab
 class SimulationTab(BaseTab):
     def __init__(self, parent, theme_colors):
         self.available_engines = self._get_available_detection_engines()
-        self.sim_runs_var = tk.IntVar(value=3)
-        self.sim_days_var = tk.IntVar(value=7)
-        self.sim_hours_var = tk.IntVar(value=0)
-        self.detection_engine_var = tk.StringVar(value=self._get_default_engine())
+        self.sim_runs_var = tk.IntVar(value=sim_config.default_sim_runs)
+        self.sim_days_var = tk.IntVar(value=sim_config.default_sim_time // 24)
+        self.sim_hours_var = tk.IntVar(value=sim_config.default_sim_time % 24)
+        self.detection_engine_var = tk.StringVar(value=sim_config.default_detection_engine)
         super().__init__(parent, theme_colors)
 
     def _get_available_detection_engines(self):
+        registry = get_detection_registry()
         engines = {}
-        try:
-            detection_dir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "detection")
-            )
-            if not os.path.exists(detection_dir):
-                print(f"Warning: Detection directory not found at {detection_dir}")
-                return self._get_fallback_engines()
-            from src.detection.base_detection import BaseDetectionEngine
-
-            python_files = [
-                f
-                for f in os.listdir(detection_dir)
-                if f.endswith("_detection.py") and f != "base_detection.py"
-            ]
-            for filename in python_files:
-                try:
-                    module_name = filename[:-3]
-                    module = importlib.import_module(f"src.detection.{module_name}")
-                    for name, obj in inspect.getmembers(module, inspect.isclass):
-                        if (
-                            issubclass(obj, BaseDetectionEngine)
-                            and obj != BaseDetectionEngine
-                            and (obj.__module__ == f"src.detection.{module_name}")
-                        ):
-                            try:
-                                obj()
-                                engine_id = name.replace("DetectionEngine", "").lower()
-                                docstring = inspect.getdoc(obj) or ""
-                                first_line = docstring.split("\n")[0] if docstring else name
-                                description = first_line
-                                if "Fa(t)" in docstring:
-                                    for line in docstring.split("\n"):
-                                        if "Fa(t)" in line and "=" in line:
-                                            description = line.strip()
-                                            break
-                                engines[engine_id] = {
-                                    "class": obj,
-                                    "name": name.replace("DetectionEngine", " Detection"),
-                                    "description": description,
-                                    "module": module_name,
-                                }
-                            except Exception as e:
-                                print(f"Warning: Could not instantiate {name}: {e}")
-                except Exception as e:
-                    print(f"Warning: Could not import {filename}: {e}")
-            if not engines:
-                print("No detection engines found, using fallback")
-                return self._get_fallback_engines()
-        except Exception as e:
-            print(f"Error scanning detection folder: {e}")
-            return self._get_fallback_engines()
-        return engines
-
-    def _get_fallback_engines(self):
-        try:
-            from src.detection import (
-                ExponentialDetectionEngine,
-                LinearDetectionEngine,
-                UniformDetectionEngine,
-            )
-
-            return {
-                "uniform": {
-                    "class": UniformDetectionEngine,
-                    "name": "Uniform Detection",
-                    "description": "Fa(t) = t - Constant detection rate",
-                },
-                "exponential": {
-                    "class": ExponentialDetectionEngine,
-                    "name": "Exponential Detection",
-                    "description": "Fa(t) = 1 - e^(-λt) - Early detection bias",
-                },
-                "linear": {
-                    "class": LinearDetectionEngine,
-                    "name": "Linear Detection",
-                    "description": "Fa(t) = t^n - Linear detection rate increase (n=2)",
-                },
-            }
-        except ImportError:
-            return {
-                "exponential": {
-                    "name": "Exponential Detection",
-                    "description": "Default detection engine",
+        for name in registry.get_available():
+            info = registry.get_engine_info(name)
+            if info:
+                engines[name] = {
+                    "name": info["class"].replace("DetectionEngine", " Detection"),
+                    "description": info.get("docstring", "").split("\n")[0]
+                    if info.get("docstring")
+                    else name,
                 }
-            }
-
-    def _get_default_engine(self):
-        if "exponential" in self.available_engines:
-            return "exponential"
-        elif "uniform" in self.available_engines:
-            return "uniform"
-        else:
-            return (
-                list(self.available_engines.keys())[0] if self.available_engines else "exponential"
-            )
+        return engines
 
     def create_widgets(self):
         self.create_section_header(

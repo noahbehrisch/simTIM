@@ -1,13 +1,14 @@
 [project]
 name = "simtim"
-version = "0.6.0"
+version = "0.6.1"
 description = "Simulation based on the paper 'Time is money: A temporal model of cybersecurity' by Zoltán Ádám Mann."
 readme = "README.md"
-#license = {text = "BSD-3-Clause"}
+license = "Apache 2.0"
 requires-python = ">=3.10"
 
 authors = [
-    {name = "Noah Behrisch"}
+    {name = "Noah Niclas Behrisch"},
+    {name = "Zoltán Ádám Mann"}
 ]
 
 dependencies = [
@@ -52,7 +53,16 @@ filterwarnings = ["ignore::DeprecationWarning"]
 [tool.coverage.run]
 source = ["src"]
 branch = true
-omit = ["src/gui/*", "src/visualization/*", "*/test_*"]
+omit = [
+    "src/gui/*",
+    "src/visualization/*",
+    "src/networks/network_creator/*",
+    "src/networks/network_visualizer.py",
+    "src/logging_config.py",
+    "src/utils/results_printer.py",
+    "src/utils/mitre.py",
+    "*/test_*",
+]
 
 [tool.coverage.report]
 exclude_lines = [

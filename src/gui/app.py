@@ -4,8 +4,9 @@ import sys
 import tkinter as tk
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.core.simulation_main import simtim_main
+from src.core.simulation_runner import SimulationRunner
 from src.gui.help_window import HelpWindow
+from src.gui.progress_window import ProgressWindow
 from src.gui.results_window import ResultsWindow
 from src.gui.sidebar import Sidebar
 from src.gui.tabs import (
@@ -13,8 +14,9 @@ from src.gui.tabs import (
     AttackerTab,
     DefenderTab,
     NetworkTab,
+    OverviewTab,
+    ScenarioTab,
     SimulationTab,
-    VariablesTab,
 )
 from src.gui.theme import Theme
 
@@ -22,6 +24,8 @@ from src.gui.theme import Theme
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self._is_closing = False
+        self._results_window = None
         self.theme = Theme()
         self.title("simTIM GUI")
         self.geometry("1400x800")
@@ -36,6 +40,7 @@ class App(tk.Tk):
         self.fullscreen_state = False
         self.bind("<Escape>", self.exit_fullscreen)
         self.bind("<F11>", self.toggle_fullscreen)
+        self.protocol("WM_DELETE_WINDOW", self._on_closing)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
         self.grid_rowconfigure(2, weight=0)
@@ -47,12 +52,13 @@ class App(tk.Tk):
             "Attackers",
             "Defenders",
             "Actions",
-            "Variables",
+            "Scenarios",
             "Overview",
         ]
         self.tabs = {}
         self.current_tab = None
-        self.last_sim_time = None  # Store last simulation time for results window
+        self.last_sim_time = None
+        self.last_total_nodes = None
         self.theme_colors = self.theme.get_theme_colors()
         self.create_tabs()
         self.sidebar = Sidebar(
@@ -119,31 +125,16 @@ class App(tk.Tk):
         self.attacker_tab = AttackerTab(self, self.theme_colors)
         self.defender_tab = DefenderTab(self, self.theme_colors)
         self.action_tab = ActionTab(self, self.theme_colors)
-        self.variables_tab = VariablesTab(self, self.theme_colors)
-        self.variables_tab.on_scenarios_changed = self._on_variable_scenarios_changed
+        self.scenario_tab = ScenarioTab(self, self.theme_colors)
+        self.scenario_tab.on_scenarios_changed = self._on_variable_scenarios_changed
+        self.overview_tab = OverviewTab(self, self.theme_colors)
         self.tabs["Simulation"] = self.simulation_tab.frame
         self.tabs["Network"] = self.network_tab.frame
         self.tabs["Attackers"] = self.attacker_tab.frame
         self.tabs["Defenders"] = self.defender_tab.frame
         self.tabs["Actions"] = self.action_tab.frame
-        self.tabs["Variables"] = self.variables_tab.frame
-        overview_frame = tk.Frame(self, bg=self.tab_color)
-        overview_frame.grid(row=1, column=1, sticky="nswe")
-        overview_frame.grid_remove()
-        overview_frame.grid_propagate(False)
-        overview_pad_frame = tk.Frame(overview_frame, padx=50, pady=50, bg=self.tab_color)
-        overview_pad_frame.pack(expand=True, fill="both")
-        self.overview_text = tk.Text(
-            overview_pad_frame,
-            width=60,
-            height=30,
-            state=tk.DISABLED,
-            bg="#eaf1fb",
-            fg=self.button_fg,
-            insertbackground=self.button_fg,
-        )
-        self.overview_text.pack(expand=True, fill="both", padx=10, pady=10)
-        self.tabs["Overview"] = overview_frame
+        self.tabs["Scenarios"] = self.scenario_tab.frame
+        self.tabs["Overview"] = self.overview_tab.frame
         self._load_default_network_nodes()
 
     def _load_default_network_nodes(self):
@@ -158,6 +149,18 @@ class App(tk.Tk):
                 self.node_options = []
         except Exception:
             self.node_options = []
+
+    def _on_closing(self):
+        self._is_closing = True
+        self._close_results_window()
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.close("all")
+        except Exception:
+            pass
+        self.quit()
+        self.destroy()
 
     def browse_network_file(self):
         self.network_tab.browse_network_file()
@@ -210,82 +213,8 @@ class App(tk.Tk):
         network_config = self.network_tab.get_network_config()
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
-        variables_config = self.variables_tab.get_variables_config()
-        overview = "SIMULATION CONFIGURATION\n"
-        overview += "=" * 50 + "\n\n"
-        overview += "Simulation Parameters:\n"
-        if variables_config and "scenarios" in variables_config and variables_config["scenarios"]:
-            scenarios = variables_config["scenarios"]
-            var_type = variables_config.get("variable_type", "action_duration")
-            total_runs = sum(s["runs"] for s in scenarios)
-            if var_type == "attack_duration":
-                mode_desc = "ATTACK DURATION COMPARISON"
-            elif var_type == "defense_duration":
-                mode_desc = "DEFENSE DURATION COMPARISON"
-            elif var_type == "attacker_strategy":
-                mode_desc = "ATTACKER STRATEGY COMPARISON"
-            elif var_type == "defender_strategy":
-                mode_desc = "DEFENDER STRATEGY COMPARISON"
-            else:
-                mode_desc = "SCENARIO COMPARISON"
-            overview += f"   • Mode: {mode_desc}\n"
-            overview += f"   • Scenarios: {len(scenarios)}\n"
-            overview += f"   • Total Runs: {total_runs}\n"
-            overview += f"   • Time per run: {sim_config['time']} seconds\n"
-            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
-            overview += "   Scenario Details:\n"
-            for idx, scenario in enumerate(scenarios, 1):
-                runs = scenario["runs"]
-                if var_type == "attack_duration":
-                    overview += (
-                        f"      {idx}. Attack Duration: {scenario['duration']}h → {runs} runs\n"
-                    )
-                elif var_type == "defense_duration":
-                    overview += (
-                        f"      {idx}. Defense Duration: {scenario['duration']}h → {runs} runs\n"
-                    )
-                elif var_type == "attacker_strategy":
-                    overview += (
-                        f"      {idx}. Attacker Strategy: {scenario['strategy']} → {runs} runs\n"
-                    )
-                elif var_type == "defender_strategy":
-                    overview += (
-                        f"      {idx}. Defender Strategy: {scenario['strategy']} → {runs} runs\n"
-                    )
-                else:
-                    overview += f"      {idx}. Scenario → {runs} runs\n"
-            overview += "\n"
-        else:
-            overview += f"   • Runs: {sim_config['runs']}\n"
-            overview += f"   • Time: {sim_config['time']} seconds\n"
-            overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
-        overview += "Network Configuration:\n"
-        network_file = network_config["file_path"]
-        network_name = network_file.split("/")[-1] if "/" in network_file else network_file
-        overview += f"   • File: {network_name}\n"
-        overview += f"   • Path: {network_file}\n\n"
-        overview += f"Attackers ({len(attackers)}):\n"
-        for idx, attacker in enumerate(attackers, 1):
-            capacity_text = (
-                "∞" if attacker["capacity"] == float("inf") else str(attacker["capacity"])
-            )
-            overview += f"   {idx}. {attacker['id']}\n"
-            overview += f"      Strategy: {attacker['strategy']}\n"
-            overview += f"      Capacity: {capacity_text}\n"
-            overview += f"      Budget: ${attacker['budget']}\n"
-        overview += "\n"
-        overview += f"Defenders ({len(defenders)}):\n"
-        for idx, defender in enumerate(defenders, 1):
-            overview += f"   {idx}. {defender['id']}\n"
-            overview += f"      Strategy: {defender['strategy']}\n"
-            overview += f"      Capacity: {defender['capacity']}\n"
-            overview += f"      Budget: ${defender['budget']}\n"
-        overview += "\n" + "=" * 50 + "\n"
-        overview += "Ready to run simulation!"
-        self.overview_text.config(state=tk.NORMAL)
-        self.overview_text.delete(1.0, tk.END)
-        self.overview_text.insert(tk.END, overview)
-        self.overview_text.config(state=tk.DISABLED)
+        scenario_config = self.scenario_tab.get_variables_config()
+        self.overview_tab.update(sim_config, network_config, attackers, defenders, scenario_config)
 
     def set_attacker_info(self):
         self.attacker_info_var.set("Attacker created")
@@ -315,21 +244,40 @@ class App(tk.Tk):
     def open_create_network_window(self):
         self.network_tab.open_create_network_window()
 
+    def _close_results_window(self):
+        if self._results_window is not None:
+            try:
+                self._results_window._on_close()
+            except Exception:
+                pass
+            self._results_window = None
+
     def open_results_window(self, all_histories):
+        self._close_results_window()
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
-        ResultsWindow(self, all_histories, theme_colors, sim_time=self.last_sim_time)
+        self._results_window = ResultsWindow(
+            self,
+            all_histories,
+            theme_colors,
+            sim_time=self.last_sim_time,
+            total_nodes=self.last_total_nodes,
+            network_path=getattr(self, "last_network_path", None),
+        )
 
     def open_results_window_scenarios(self, scenario_results):
+        self._close_results_window()
         theme_colors = {"bg_color": self.bg_color, "button_fg": self.button_fg}
         all_histories = []
         for scenario in scenario_results["scenarios"]:
             all_histories.extend(scenario["histories"])
-        ResultsWindow(
+        self._results_window = ResultsWindow(
             self,
             all_histories,
             theme_colors,
             scenario_results=scenario_results,
             sim_time=self.last_sim_time,
+            total_nodes=self.last_total_nodes,
+            network_path=getattr(self, "last_network_path", None),
         )
 
     def open_help_window(self):
@@ -340,30 +288,57 @@ class App(tk.Tk):
         network_config = self.network_tab.get_network_config()
         attackers = self.attacker_tab.get_attacker_config()
         defenders = self.defender_tab.get_defender_config()
-        variables_config = self.variables_tab.get_variables_config()
+        scenario_config = self.scenario_tab.get_variables_config()
+        enabled_actions = self.action_tab.get_enabled_actions()
         sim_runs = sim_config["runs"]
         sim_time = sim_config["time"]
-        self.last_sim_time = sim_time  # Store for results window
+        self.last_sim_time = sim_time
         detection_engine_type = sim_config["detection_engine_type"]
         path_to_network_config = network_config["file_path"]
+        self.last_network_path = path_to_network_config
+
+        try:
+            import json
+
+            with open(path_to_network_config) as f:
+                net_data = json.load(f)
+            self.last_total_nodes = len(net_data.get("nodes", []))
+        except Exception:
+            self.last_total_nodes = None
+
         if not attackers:
             tk.messagebox.showerror("Error", "At least one attacker is required!")
             return
-        if not defenders:
-            tk.messagebox.showerror("Error", "At least one defender is required!")
-            return
         try:
-            if (
-                variables_config
-                and "scenarios" in variables_config
-                and variables_config["scenarios"]
-            ):
-                from src.core.simulation_main import run_variable_scenarios
+            if scenario_config and "scenarios" in scenario_config and scenario_config["scenarios"]:
+                scenarios = scenario_config["scenarios"]
+                variable_type = scenario_config.get("variable_type", "action_duration")
+                total_runs = sum(s.get("runs", 1) for s in scenarios)
 
-                scenarios = variables_config["scenarios"]
-                variable_type = variables_config.get("variable_type", "action_duration")
-                total_runs = sum(s["runs"] for s in scenarios)
-                results = run_variable_scenarios(
+                progress_window = ProgressWindow(self, total_runs=total_runs)
+
+                def on_progress(current, total):
+                    if not self._is_closing:
+                        self.after(
+                            0, lambda c=current, t=total: progress_window.update_progress(c, t)
+                        )
+
+                def on_complete(results):
+                    if not self._is_closing:
+                        self.after(
+                            0, lambda: self._handle_scenario_complete(results, progress_window)
+                        )
+
+                def on_error(msg):
+                    if not self._is_closing:
+                        self.after(0, lambda: progress_window.show_error(msg))
+
+                runner = SimulationRunner(
+                    on_progress=on_progress,
+                    on_complete=on_complete,
+                    on_error=on_error,
+                )
+                runner.run_scenarios_async(
                     path_to_network_config=path_to_network_config,
                     scenarios=scenarios,
                     variable_type=variable_type,
@@ -371,67 +346,44 @@ class App(tk.Tk):
                     defenders=defenders,
                     sim_time=sim_time,
                     detection_engine_type=detection_engine_type,
+                    enabled_actions=enabled_actions,
                 )
-                self.scenario_results = results
-                self.all_histories = []
-                for scenario in results["scenarios"]:
-                    self.all_histories.extend(scenario["histories"])
-                self.results_button.config(
-                    state=tk.NORMAL,
-                    command=lambda: self.open_results_window_scenarios(results),
-                )
-                custom_messagebox = tk.Toplevel(self)
-                custom_messagebox.title("Scenario Comparison Complete")
-                custom_messagebox.geometry("800x400")
-                custom_messagebox.configure(bg=self.bg_color)
-                summary = f"Completed {len(scenarios)} scenarios\nTotal runs: {total_runs}"
-                tk.Label(
-                    custom_messagebox,
-                    text=summary,
-                    bg=self.bg_color,
-                    fg=self.button_fg,
-                    font=("Arial", 14),
-                    justify=tk.CENTER,
-                ).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-                tk.Button(
-                    custom_messagebox,
-                    text="OK",
-                    command=custom_messagebox.destroy,
-                    bg=self.button_color,
-                    fg=self.button_fg,
-                ).pack(pady=10)
             else:
-                all_histories = simtim_main(
+                progress_window = ProgressWindow(self, total_runs=sim_runs)
+
+                def on_progress(current, total):
+                    if not self._is_closing:
+                        self.after(
+                            0, lambda c=current, t=total: progress_window.update_progress(c, t)
+                        )
+
+                def on_complete(all_histories):
+                    if not self._is_closing:
+                        self.after(
+                            0,
+                            lambda: self._handle_simulation_complete(
+                                all_histories, progress_window
+                            ),
+                        )
+
+                def on_error(msg):
+                    if not self._is_closing:
+                        self.after(0, lambda: progress_window.show_error(msg))
+
+                runner = SimulationRunner(
+                    on_progress=on_progress,
+                    on_complete=on_complete,
+                    on_error=on_error,
+                )
+                runner.run_async(
                     path_to_network_config=path_to_network_config,
                     sim_runs=sim_runs,
                     sim_time=sim_time,
                     attackers=attackers,
                     defenders=defenders,
                     detection_engine_type=detection_engine_type,
+                    enabled_actions=enabled_actions,
                 )
-                self.all_histories = all_histories
-                self.results_button.config(
-                    state=tk.NORMAL,
-                    command=lambda: self.open_results_window(all_histories),
-                )
-                custom_messagebox = tk.Toplevel(self)
-                custom_messagebox.title("Simulation Complete")
-                custom_messagebox.geometry("800x400")
-                custom_messagebox.configure(bg=self.bg_color)
-                tk.Label(
-                    custom_messagebox,
-                    text="Simulation Complete",
-                    bg=self.bg_color,
-                    fg=self.button_fg,
-                    font=("Arial", 16),
-                ).pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-                tk.Button(
-                    custom_messagebox,
-                    text="OK",
-                    command=custom_messagebox.destroy,
-                    bg=self.button_color,
-                    fg=self.button_fg,
-                ).pack(pady=10)
         except Exception as e:
             import traceback
 
@@ -440,6 +392,25 @@ class App(tk.Tk):
             print("Full traceback:")
             traceback.print_exc()
             tk.messagebox.showerror("Simulation Error", error_msg)
+
+    def _handle_simulation_complete(self, all_histories, progress_window):
+        self.all_histories = all_histories
+        self.results_button.config(
+            state=tk.NORMAL,
+            command=lambda: self.open_results_window(all_histories),
+        )
+        progress_window.show_completion()
+
+    def _handle_scenario_complete(self, results, progress_window):
+        self.scenario_results = results
+        self.all_histories = []
+        for scenario in results["scenarios"]:
+            self.all_histories.extend(scenario["histories"])
+        self.results_button.config(
+            state=tk.NORMAL,
+            command=lambda: self.open_results_window_scenarios(results),
+        )
+        progress_window.show_completion()
 
     def launch_visualizer(self):
         self.network_tab.launch_visualizer()

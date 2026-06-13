@@ -5,29 +5,43 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from src.utils import format_time
 from src.utils.time_utils import parse_event
 from src.visualization import (
+    AttackPathPanel,
     TimeSeriesPlotEngine,
     analyze_simulation_results,
+    get_theme,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class ResultsWindow:
-    def __init__(self, parent, all_histories, theme_colors, scenario_results=None, sim_time=None):
+    def __init__(
+        self,
+        parent,
+        all_histories,
+        theme_colors,
+        scenario_results=None,
+        sim_time=None,
+        total_nodes=None,
+        network_path=None,
+    ):
         self.parent = parent
         self.all_histories = all_histories
         self.scenario_results = scenario_results
-        self.sim_time = sim_time  # Store simulation duration for consistent X-axis
+        self.sim_time = sim_time
+        self.total_nodes = total_nodes
+        self.network_path = network_path
         self.bg_color = theme_colors["bg_color"]
         self.button_fg = theme_colors["button_fg"]
         self.runs_data = []
         self.actors_data = {}
         self.economic_data = {}
+        self.viz_theme = get_theme()
         self.window = tk.Toplevel(parent)
         self.window.title("Simulation Results")
         self.window.geometry("1600x1000")
@@ -77,7 +91,6 @@ class ResultsWindow:
                             action_name = data["action"].name
                         if "target" in data and hasattr(data["target"], "id"):
                             target_id = data["target"].id
-                # Only include action completion events, not start events
                 if event_type not in [
                     "action_succeeded",
                     "action_failed",
@@ -93,7 +106,6 @@ class ResultsWindow:
                     "action_interrupted_by_detection",
                 ]:
                     continue
-                # Determine success/failure based on event type
                 is_success = event_type == "action_succeeded"
                 is_detection = event_type == "attack_detected"
                 is_failure = event_type in [
@@ -146,64 +158,33 @@ class ResultsWindow:
             self.runs_data.append(run_events)
 
     def _extract_cost(self, event: dict[str, Any]) -> float:
-        """Extract actual cost from event data, not estimated."""
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
-            action = raw_data.get("action")
-            if action and hasattr(action, "cost"):
-                return float(action.cost)
+            economics = raw_data.get("economics")
+            if economics:
+                return float(economics.get("cost", 0.0))
         return 0.0
 
     def _extract_gain(self, event: dict[str, Any]) -> float:
-        """Extract actual gain from event data, not estimated."""
-        if "attacker" not in event["actor_id"].lower():
-            return 0.0
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
-            action = raw_data.get("action")
-            target = raw_data.get("target")
-            if action and hasattr(action, "get_one_off_gain"):
-                try:
-                    actor_access = raw_data.get("actor_access", "NONE")
-                    actor_id = event.get("actor_id", "unknown")
-                    return float(action.get_one_off_gain(target, actor_access, actor_id))
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract gain via get_one_off_gain: {e}")
-            if action and hasattr(action, "one_off_gain"):
-                try:
-                    return float(action.one_off_gain(target, None, None))
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract gain via one_off_gain: {e}")
+            economics = raw_data.get("economics")
+            if economics:
+                return float(economics.get("gain", 0.0))
         return 0.0
 
     def _extract_damage(self, event: dict[str, Any]) -> float:
-        actor_id = event.get("actor_id", "")
-        if "attacker" not in actor_id.lower():
-            return 0.0
-
         raw_data = event.get("raw_data", {})
         if isinstance(raw_data, dict):
-            action = raw_data.get("action")
-            target = raw_data.get("target")
-            if action and hasattr(action, "get_one_off_damage"):
-                try:
-                    actor_access = raw_data.get("actor_access", "NONE")
-                    actor_id = event.get("actor_id", "unknown")
-                    damage = float(action.get_one_off_damage(target, actor_access, actor_id))
-                    return max(0.0, damage)
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract damage via get_one_off_damage: {e}")
-            if action and hasattr(action, "one_off_damage"):
-                try:
-                    damage = float(action.one_off_damage(target, None, None))
-                    return max(0.0, damage)
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.debug(f"Failed to extract damage via one_off_damage: {e}")
+            economics = raw_data.get("economics")
+            if economics:
+                return float(economics.get("damage", 0.0))
         return 0.0
 
     def _create_interface(self):
         self.notebook = ttk.Notebook(self.window)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self._create_dashboard_tab()
         num_runs = len(self.runs_data)
         num_actors = len(self.actors_data)
         if num_runs <= 5:
@@ -219,6 +200,8 @@ class ResultsWindow:
         self._create_events_timeline_tab()
         self._create_money_timeline_tab()
         self._create_nodes_timeline_tab()
+        if self.network_path:
+            self._create_attack_path_tab()
         self._create_statistical_tab()
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -434,6 +417,10 @@ class ResultsWindow:
         canvas = FigureCanvasTkAgg(fig, self.events_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        toolbar_frame = tk.Frame(self.events_plot_frame)
+        toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
         self.events_fig = fig
         self.events_canvas = canvas
 
@@ -475,56 +462,64 @@ class ResultsWindow:
         fig, ax = plt.subplots(figsize=(12, 6))
 
         if run_events:
-            times = []
-            cum_cost = []
-            cum_gain = []
-            cum_damage = []
+            times: list[float] = []
+            damage_line: list[float] = []
+            atk_gain_line: list[float] = []
+            def_cost_line: list[float] = []
 
             sorted_events = sorted(run_events, key=lambda x: x["time"])
-            total_cost: float = 0.0
-            total_gain: float = 0.0
             total_damage: float = 0.0
+            atk_gain: float = 0.0
+            atk_cost: float = 0.0
+            def_cost: float = 0.0
 
             for event in sorted_events:
                 if event["success"]:
-                    total_cost += self._extract_cost(event)
-                    total_gain += self._extract_gain(event)
-                    total_damage += self._extract_damage(event)
+                    actor = event.get("raw_data", {}).get("actor")
+                    is_atk = getattr(actor, "is_attacker", False) if actor else False
+                    cost = self._extract_cost(event)
+                    gain = self._extract_gain(event)
+                    damage = self._extract_damage(event)
+                    total_damage += damage
+                    if is_atk:
+                        atk_gain += gain
+                        atk_cost += cost
+                    else:
+                        def_cost += cost
                 times.append(event["time"])
-                cum_cost.append(total_cost)
-                cum_gain.append(total_gain)
-                cum_damage.append(total_damage)
+                damage_line.append(total_damage)
+                atk_gain_line.append(atk_gain - atk_cost)
+                def_cost_line.append(def_cost)
 
             if times:
-                # Extend data to simulation end time for consistent X-axis
                 if self.sim_time and times[-1] < self.sim_time:
                     times.append(self.sim_time)
-                    cum_cost.append(cum_cost[-1])
-                    cum_gain.append(cum_gain[-1])
-                    cum_damage.append(cum_damage[-1])
+                    damage_line.append(damage_line[-1])
+                    atk_gain_line.append(atk_gain_line[-1])
+                    def_cost_line.append(def_cost_line[-1])
 
                 ax.step(
                     times,
-                    cum_cost,
-                    where="post",
-                    label="Cumulative Cost",
-                    color="#ff7f0e",
-                    linewidth=2,
-                )
-                ax.step(
-                    times,
-                    cum_gain,
-                    where="post",
-                    label="Attacker Gain",
-                    color="#2ca02c",
-                    linewidth=2,
-                )
-                ax.step(
-                    times,
-                    cum_damage,
+                    damage_line,
                     where="post",
                     label="System Damage",
-                    color="#d62728",
+                    color=self.viz_theme.get_color("damage"),
+                    linewidth=2,
+                )
+                ax.step(
+                    times,
+                    atk_gain_line,
+                    where="post",
+                    label="Attacker Gain",
+                    color=self.viz_theme.get_color("gain"),
+                    linewidth=2,
+                )
+                ax.step(
+                    times,
+                    def_cost_line,
+                    where="post",
+                    label="Defender Cost",
+                    color=self.viz_theme.get_color("defender"),
                     linewidth=2,
                 )
                 ax.set_xlabel("Time (hours)")
@@ -533,7 +528,6 @@ class ResultsWindow:
                 ax.legend(loc="upper left")
                 ax.grid(True, alpha=0.3)
 
-                # Set X-axis to full simulation time
                 if self.sim_time:
                     ax.set_xlim(0, self.sim_time * 1.02)
 
@@ -542,6 +536,10 @@ class ResultsWindow:
         canvas = FigureCanvasTkAgg(fig, self.money_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        toolbar_frame = tk.Frame(self.money_plot_frame)
+        toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
         self.money_fig = fig
         self.money_canvas = canvas
 
@@ -582,56 +580,47 @@ class ResultsWindow:
 
         fig, ax = plt.subplots(figsize=(12, 6))
 
-        node_states = {}
+        access_map: dict[tuple[str, str], str] = {}
         times = []
         admin_counts = []
         user_counts = []
         visible_counts = []
 
+        ACCESS_RANK = {"NONE": 0, "VISIBLE": 1, "USER": 2, "ADMIN": 3}
+
         for entry in history:
             if len(entry) >= 3:
                 time, event_type, data = entry[0], entry[1], entry[2]
-                if event_type == "action_succeeded" and isinstance(data, dict):
-                    target = data.get("target")
-                    actor = data.get("actor")
-                    action = data.get("action")
+                if event_type == "access_changed" and isinstance(data, dict):
+                    node_id = data.get("node_id")
+                    actor_id = data.get("actor_id", "")
+                    raw_access = data.get("new_access", "NONE")
+                    new_access = raw_access.name if hasattr(raw_access, "name") else str(raw_access)
+                    if not node_id:
+                        continue
 
-                    if (
-                        target
-                        and hasattr(target, "id")
-                        and actor
-                        and hasattr(actor, "is_attacker")
-                        and actor.is_attacker
-                    ):
-                        node_id = target.id
-                        action_name = (
-                            action.name.lower() if action and hasattr(action, "name") else ""
-                        )
+                    key = (node_id, actor_id)
+                    old = access_map.get(key, "NONE")
+                    if old == new_access:
+                        continue
+                    access_map[key] = new_access
 
-                        if (
-                            "admin" in action_name
-                            or "privilege" in action_name
-                            or "root" in action_name
-                        ):
-                            node_states[node_id] = "admin"
-                        elif "exploit" in action_name or "user" in action_name:
-                            if node_states.get(node_id) != "admin":
-                                node_states[node_id] = "user"
-                        elif "scan" in action_name or "discover" in action_name:
-                            if node_id not in node_states:
-                                node_states[node_id] = "visible"
+                    node_max: dict[str, str] = {}
+                    for (nid, _aid), acc in access_map.items():
+                        prev = node_max.get(nid, "NONE")
+                        if ACCESS_RANK.get(acc.upper(), 0) > ACCESS_RANK.get(prev.upper(), 0):
+                            node_max[nid] = acc
 
-                        admin = sum(1 for s in node_states.values() if s == "admin")
-                        user = sum(1 for s in node_states.values() if s == "user")
-                        visible = sum(1 for s in node_states.values() if s == "visible")
+                    admin = sum(1 for s in node_max.values() if s.upper() == "ADMIN")
+                    user = sum(1 for s in node_max.values() if s.upper() == "USER")
+                    visible = sum(1 for s in node_max.values() if s.upper() == "VISIBLE")
 
-                        times.append(time)
-                        admin_counts.append(admin)
-                        user_counts.append(user)
-                        visible_counts.append(visible)
+                    times.append(time)
+                    admin_counts.append(admin)
+                    user_counts.append(user)
+                    visible_counts.append(visible)
 
         if times:
-            # Use simulation time for consistent X-axis, fall back to max event time
             plot_max_time = (
                 self.sim_time
                 if self.sim_time
@@ -642,19 +631,19 @@ class ResultsWindow:
                 )
             )
 
-            # Extend data to simulation end time to avoid whitespace
             if self.sim_time and times[-1] < self.sim_time:
                 times.append(self.sim_time)
                 admin_counts.append(admin_counts[-1])
                 user_counts.append(user_counts[-1])
                 visible_counts.append(visible_counts[-1])
 
+            access_colors = self.viz_theme.get_access_level_colors()
             ax.fill_between(
                 times,
                 0,
                 admin_counts,
                 label="Admin Access",
-                color="#d62728",
+                color=access_colors["admin"],
                 alpha=0.7,
                 step="post",
             )
@@ -663,7 +652,7 @@ class ResultsWindow:
                 admin_counts,
                 [a + u for a, u in zip(admin_counts, user_counts, strict=False)],
                 label="User Access",
-                color="#ff7f0e",
+                color=access_colors["user"],
                 alpha=0.7,
                 step="post",
             )
@@ -675,12 +664,15 @@ class ResultsWindow:
                     for a, u, v in zip(admin_counts, user_counts, visible_counts, strict=False)
                 ],
                 label="Visible",
-                color="#ffbb78",
+                color=access_colors["visible"],
                 alpha=0.7,
                 step="post",
             )
             ax.legend(loc="upper left")
             ax.set_xlim(0, plot_max_time * 1.02)
+            if self.total_nodes:
+                ax.set_ylim(0, self.total_nodes)
+                ax.set_yticks(range(self.total_nodes + 1))
         else:
             ax.text(
                 0.5,
@@ -692,6 +684,11 @@ class ResultsWindow:
                 fontsize=12,
                 color="gray",
             )
+            if self.sim_time:
+                ax.set_xlim(0, self.sim_time * 1.02)
+            if self.total_nodes:
+                ax.set_ylim(0, self.total_nodes)
+                ax.set_yticks(range(self.total_nodes + 1))
 
         ax.set_xlabel("Time (hours)")
         ax.set_ylabel("Number of Nodes")
@@ -701,8 +698,511 @@ class ResultsWindow:
         canvas = FigureCanvasTkAgg(fig, self.nodes_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        toolbar_frame = tk.Frame(self.nodes_plot_frame)
+        toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+        toolbar.update()
         self.nodes_fig = fig
         self.nodes_canvas = canvas
+
+    def _create_attack_path_tab(self):
+        tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
+        self.notebook.add(tab_frame, text="Attack Path")
+        try:
+            self._attack_path_panel = AttackPathPanel(
+                tab_frame,
+                network_path=self.network_path,
+                all_histories=self.all_histories,
+                bg_color=self.bg_color,
+                sim_time=self.sim_time,
+            )
+        except Exception as e:
+            logger.error(f"Failed to create attack path panel: {e}", exc_info=True)
+            self._attack_path_panel = None
+            tk.Label(
+                tab_frame,
+                text=f"Could not load attack path visualizer:\n{e}",
+                font=("TkDefaultFont", 12),
+                foreground="red",
+                bg=self.bg_color,
+            ).pack(expand=True)
+
+    def _create_dashboard_tab(self):
+        tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
+        self.notebook.add(tab_frame, text="Dashboard")
+
+        top = tk.Frame(tab_frame, bg=self.bg_color)
+        top.pack(fill=tk.X, padx=10, pady=5)
+        tk.Label(top, text="Select Run:", bg=self.bg_color, fg=self.button_fg).pack(
+            side=tk.LEFT, padx=5
+        )
+        self._dash_run_var = tk.StringVar(value="Run 1")
+        run_opts = [f"Run {i + 1}" for i in range(len(self.all_histories))]
+        combo = ttk.Combobox(
+            top, textvariable=self._dash_run_var, values=run_opts, state="readonly", width=15
+        )
+        combo.pack(side=tk.LEFT, padx=5)
+        combo.bind("<<ComboboxSelected>>", lambda _e: self._dash_on_run_changed())
+
+        paned = tk.PanedWindow(tab_frame, orient=tk.VERTICAL, bg=self.bg_color, sashwidth=4)
+        paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 5))
+
+        plot_pane = tk.Frame(paned, bg=self.bg_color)
+        paned.add(plot_pane, minsize=300)
+
+        self._dash_fig, self._dash_axes = plt.subplots(2, 2, figsize=(14, 8))
+        self._dash_canvas = FigureCanvasTkAgg(self._dash_fig, plot_pane)
+        self._dash_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        ctrl = tk.Frame(plot_pane, bg=self.bg_color)
+        ctrl.pack(fill=tk.X, padx=5, pady=(0, 2))
+
+        self._dash_play_btn = tk.Button(
+            ctrl,
+            text="\u25b6 Play",
+            command=self._dash_toggle_play,
+            width=8,
+            font=("TkDefaultFont", 10),
+        )
+        self._dash_play_btn.pack(side=tk.LEFT, padx=(0, 8))
+
+        self._dash_time_label = tk.Label(
+            ctrl,
+            text="t = 0.0 h",
+            bg=self.bg_color,
+            font=("TkDefaultFont", 10),
+        )
+        self._dash_time_label.pack(side=tk.LEFT, padx=(0, 5))
+
+        max_time = self._dash_max_time()
+        self._dash_time_var = tk.DoubleVar(value=0.0)
+        self._dash_slider = ttk.Scale(
+            ctrl,
+            from_=0.0,
+            to=max_time if max_time > 0 else 1.0,
+            orient=tk.HORIZONTAL,
+            variable=self._dash_time_var,
+            command=self._dash_on_slider,
+        )
+        self._dash_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        self._dash_max_label = tk.Label(
+            ctrl,
+            text=f"/ {max_time:.1f} h",
+            bg=self.bg_color,
+            font=("TkDefaultFont", 10),
+        )
+        self._dash_max_label.pack(side=tk.LEFT, padx=(0, 5))
+
+        log_pane = tk.Frame(paned, bg=self.bg_color)
+        paned.add(log_pane, minsize=80)
+
+        tk.Label(
+            log_pane,
+            text="Event Log",
+            font=("Arial", 10, "bold"),
+            bg=self.bg_color,
+            fg=self.button_fg,
+        ).pack(anchor=tk.W, padx=5)
+
+        txt_frame = tk.Frame(log_pane)
+        txt_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=2)
+        self._dash_log = tk.Text(
+            txt_frame,
+            wrap=tk.WORD,
+            bg="#eaf1fb",
+            fg=self.button_fg,
+            font=("Consolas", 9),
+            height=8,
+        )
+        sb = tk.Scrollbar(txt_frame, orient=tk.VERTICAL, command=self._dash_log.yview)
+        self._dash_log.configure(yscrollcommand=sb.set)
+        self._dash_log.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self._dash_topo_links: list[tuple[str, str]] = []
+        self._dash_positions: dict[str, tuple[float, float]] = {}
+        if self.network_path:
+            from src.visualization.attack_path import _compute_positions, _load_network_topology
+
+            topo = _load_network_topology(self.network_path)
+            self._dash_topo_links = topo["links"]
+            self._dash_positions = _compute_positions(topo["nodes"])
+
+        self._dash_engine = TimeSeriesPlotEngine()
+        self._dash_playing = False
+        self._dash_after_id: str | None = None
+
+        self._dash_precompute()
+        self._dash_redraw_all()
+
+    def _dash_precompute(self):
+        run_id = self._dash_get_run_id()
+        run_events = self.runs_data[run_id] if run_id < len(self.runs_data) else []
+        self._dash_sorted_events = sorted(run_events, key=lambda x: x["time"])
+
+    def _dash_get_run_id(self) -> int:
+        return int(self._dash_run_var.get().split()[1]) - 1
+
+    def _dash_max_time(self) -> float:
+        run_id = self._dash_get_run_id()
+        history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
+        from src.visualization.attack_path import _get_max_time
+
+        t = _get_max_time(history)
+        if self.sim_time and self.sim_time > t:
+            t = self.sim_time
+        return t
+
+    def _dash_on_run_changed(self):
+        self._dash_stop_play()
+        self._dash_precompute()
+        max_time = self._dash_max_time()
+        self._dash_slider.configure(to=max_time if max_time > 0 else 1.0)
+        self._dash_time_var.set(0.0)
+        self._dash_max_label.configure(text=f"/ {max_time:.1f} h")
+        self._dash_redraw_all()
+
+    def _dash_on_slider(self, _value=None):
+        self._dash_redraw_attack_path()
+
+    def _dash_toggle_play(self):
+        if self._dash_playing:
+            self._dash_stop_play()
+        else:
+            self._dash_start_play()
+
+    def _dash_start_play(self):
+        self._dash_playing = True
+        self._dash_play_btn.configure(text="\u23f8 Pause")
+        max_t = self._dash_max_time()
+        if self._dash_time_var.get() >= max_t - 0.01:
+            self._dash_time_var.set(0.0)
+        self._dash_play_tick()
+
+    def _dash_stop_play(self):
+        self._dash_playing = False
+        self._dash_play_btn.configure(text="\u25b6 Play")
+        if self._dash_after_id is not None:
+            try:
+                self.window.after_cancel(self._dash_after_id)
+            except Exception:
+                pass
+            self._dash_after_id = None
+
+    def _dash_play_tick(self):
+        if not self._dash_playing:
+            return
+        max_t = self._dash_max_time()
+        current = self._dash_time_var.get()
+        next_t = current + 0.5
+        if next_t >= max_t:
+            next_t = max_t
+            self._dash_time_var.set(next_t)
+            self._dash_redraw_attack_path()
+            self._dash_stop_play()
+            return
+        self._dash_time_var.set(next_t)
+        self._dash_redraw_attack_path()
+        self._dash_after_id = self.window.after(80, self._dash_play_tick)
+
+    def _dash_redraw_all(self):
+        run_id = self._dash_get_run_id()
+        ct = self._dash_time_var.get()
+        self._dash_time_label.configure(text=f"t = {ct:.1f} h")
+
+        for ax in self._dash_axes.flat:
+            ax.clear()
+
+        self._dash_draw_events(self._dash_axes[0, 0], run_id)
+        self._dash_draw_money(self._dash_axes[0, 1], run_id)
+        self._dash_draw_nodes(self._dash_axes[1, 0], run_id)
+        self._dash_draw_attack_path(self._dash_axes[1, 1], ct, run_id)
+        self._dash_update_log()
+
+        self._dash_fig.tight_layout()
+        self._dash_canvas.draw()
+
+    def _dash_redraw_attack_path(self):
+        run_id = self._dash_get_run_id()
+        ct = self._dash_time_var.get()
+        self._dash_time_label.configure(text=f"t = {ct:.1f} h")
+
+        ax = self._dash_axes[1, 1]
+        ax.clear()
+        self._dash_draw_attack_path(ax, ct, run_id)
+
+        self._dash_fig.tight_layout()
+        self._dash_canvas.draw()
+
+    def _dash_draw_events(self, ax, run_id):
+        run_id_safe = min(run_id, len(self.all_histories) - 1)
+        history = self.all_histories[run_id_safe] if self.all_histories else []
+        events = self._dash_engine._extract_events(history)
+        max_time = self.sim_time if self.sim_time else self._dash_engine._get_max_time(history)
+
+        y_pos = {"attacker": 1, "defender": 0}
+        self._dash_engine._draw_event_scatter(ax, events, y_pos, marker_size=40)
+        ax.set_yticks([0, 1])
+        ax.set_yticklabels(["Defender", "Attacker"])
+        ax.set_ylim(-0.3, 1.3)
+        ax.legend(loc="upper right", fontsize=6, ncol=3)
+        self._dash_engine._setup_axes(
+            ax,
+            "Time (hours)",
+            "Actor Type",
+            f"Events \u2014 Run {run_id + 1}",
+            max_time,
+        )
+
+    def _dash_draw_money(self, ax, run_id):
+        run_events = self.runs_data[run_id] if run_id < len(self.runs_data) else []
+        sorted_events = sorted(run_events, key=lambda x: x["time"])
+
+        times: list[float] = []
+        damage_line: list[float] = []
+        atk_gain_line: list[float] = []
+        def_cost_line: list[float] = []
+        total_damage = atk_gain = atk_cost = def_cost = 0.0
+
+        for ev in sorted_events:
+            if ev["success"]:
+                actor = ev.get("raw_data", {}).get("actor")
+                is_atk = getattr(actor, "is_attacker", False) if actor else False
+                cost = self._extract_cost(ev)
+                gain = self._extract_gain(ev)
+                damage = self._extract_damage(ev)
+                total_damage += damage
+                if is_atk:
+                    atk_gain += gain
+                    atk_cost += cost
+                else:
+                    def_cost += cost
+            times.append(ev["time"])
+            damage_line.append(total_damage)
+            atk_gain_line.append(atk_gain - atk_cost)
+            def_cost_line.append(def_cost)
+
+        if times:
+            if self.sim_time and times[-1] < self.sim_time:
+                times.append(self.sim_time)
+                damage_line.append(damage_line[-1])
+                atk_gain_line.append(atk_gain_line[-1])
+                def_cost_line.append(def_cost_line[-1])
+
+            ax.step(
+                times,
+                damage_line,
+                where="post",
+                label="System Damage",
+                color=self.viz_theme.get_color("damage"),
+                linewidth=1.5,
+            )
+            ax.step(
+                times,
+                atk_gain_line,
+                where="post",
+                label="Attacker Gain",
+                color=self.viz_theme.get_color("gain"),
+                linewidth=1.5,
+            )
+            ax.step(
+                times,
+                def_cost_line,
+                where="post",
+                label="Defender Cost",
+                color=self.viz_theme.get_color("defender"),
+                linewidth=1.5,
+            )
+            ax.legend(loc="upper left", fontsize=7)
+
+        if self.sim_time:
+            ax.set_xlim(0, self.sim_time * 1.02)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
+        ax.set_title(f"Economics \u2014 Run {run_id + 1}", fontsize=10)
+        ax.set_xlabel("Time (hours)", fontsize=8)
+        ax.set_ylabel("Value ($)", fontsize=8)
+        ax.grid(True, alpha=0.3)
+
+    def _dash_draw_nodes(self, ax, run_id):
+        history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
+
+        ACCESS_RANK = {"NONE": 0, "VISIBLE": 1, "USER": 2, "ADMIN": 3}
+        access_map: dict[tuple[str, str], str] = {}
+        times: list[float] = []
+        admin_counts: list[int] = []
+        user_counts: list[int] = []
+        visible_counts: list[int] = []
+
+        for entry in history:
+            if len(entry) < 3:
+                continue
+            time, event_type, data = entry[0], entry[1], entry[2]
+            if event_type != "access_changed" or not isinstance(data, dict):
+                continue
+            node_id = data.get("node_id")
+            actor_id = data.get("actor_id", "")
+            raw_access = data.get("new_access", "NONE")
+            new_access = raw_access.name if hasattr(raw_access, "name") else str(raw_access)
+            if not node_id:
+                continue
+            key = (node_id, actor_id)
+            if access_map.get(key) == new_access:
+                continue
+            access_map[key] = new_access
+            node_max: dict[str, str] = {}
+            for (nid, _aid), acc in access_map.items():
+                prev = node_max.get(nid, "NONE")
+                if ACCESS_RANK.get(acc.upper(), 0) > ACCESS_RANK.get(prev.upper(), 0):
+                    node_max[nid] = acc
+            times.append(time)
+            admin_counts.append(sum(1 for s in node_max.values() if s.upper() == "ADMIN"))
+            user_counts.append(sum(1 for s in node_max.values() if s.upper() == "USER"))
+            visible_counts.append(sum(1 for s in node_max.values() if s.upper() == "VISIBLE"))
+
+        if times:
+            plot_max_time = self.sim_time if self.sim_time else max(times)
+            if self.sim_time and times[-1] < self.sim_time:
+                times.append(self.sim_time)
+                admin_counts.append(admin_counts[-1])
+                user_counts.append(user_counts[-1])
+                visible_counts.append(visible_counts[-1])
+
+            ac = self.viz_theme.get_access_level_colors()
+            ax.fill_between(
+                times,
+                0,
+                admin_counts,
+                label="Admin",
+                color=ac["admin"],
+                alpha=0.7,
+                step="post",
+            )
+            user_top = [a + u for a, u in zip(admin_counts, user_counts, strict=False)]
+            ax.fill_between(
+                times,
+                admin_counts,
+                user_top,
+                label="User",
+                color=ac["user"],
+                alpha=0.7,
+                step="post",
+            )
+            vis_top = [
+                a + u + v
+                for a, u, v in zip(admin_counts, user_counts, visible_counts, strict=False)
+            ]
+            ax.fill_between(
+                times,
+                user_top,
+                vis_top,
+                label="Visible",
+                color=ac["visible"],
+                alpha=0.7,
+                step="post",
+            )
+            ax.legend(loc="upper left", fontsize=7)
+            ax.set_xlim(0, plot_max_time * 1.02)
+            if self.total_nodes:
+                ax.set_ylim(0, self.total_nodes)
+        else:
+            if self.sim_time:
+                ax.set_xlim(0, self.sim_time * 1.02)
+            if self.total_nodes:
+                ax.set_ylim(0, self.total_nodes)
+
+        ax.set_title(f"Node Compromise \u2014 Run {run_id + 1}", fontsize=10)
+        ax.set_xlabel("Time (hours)", fontsize=8)
+        ax.set_ylabel("Nodes", fontsize=8)
+        ax.grid(True, alpha=0.3)
+
+    def _dash_draw_attack_path(self, ax, current_time, run_id):
+        from src.visualization.attack_path import extract_attack_path
+
+        history = self.all_histories[run_id] if run_id < len(self.all_histories) else []
+        path_info = extract_attack_path(history, up_to_time=current_time)
+
+        ax.set_aspect("equal", adjustable="box")
+
+        if not self._dash_positions:
+            ax.text(
+                0.5,
+                0.5,
+                "No network loaded",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=10,
+                color="gray",
+            )
+            ax.set_title(f"Attack Path \u2014 Run {run_id + 1}", fontsize=10)
+            return
+
+        xs = [p[0] for p in self._dash_positions.values()]
+        ys = [p[1] for p in self._dash_positions.values()]
+        margin = 1.5
+        ax.set_xlim(min(xs) - margin, max(xs) + margin)
+        ax.set_ylim(min(ys) - margin, max(ys) + margin)
+
+        nc = self.viz_theme.get_network_colors()
+        acolors = self.viz_theme.get_access_level_colors()
+        cmap = {
+            "ADMIN": acolors["admin"],
+            "USER": acolors["user"],
+            "VISIBLE": acolors["visible"],
+            "NONE": nc["internal"],
+        }
+
+        traversed = path_info["traversed"]
+        for n1, n2 in self._dash_topo_links:
+            p1, p2 = self._dash_positions.get(n1), self._dash_positions.get(n2)
+            if not p1 or not p2:
+                continue
+            hit = (n1, n2) in traversed or (n2, n1) in traversed
+            ax.plot(
+                [p1[0], p2[0]],
+                [p1[1], p2[1]],
+                color=nc["attack_path"] if hit else nc["link"],
+                linewidth=3.0 if hit else 1.0,
+                alpha=1.0 if hit else 0.4,
+                zorder=1,
+            )
+
+        node_access = path_info["node_access"]
+        for nid, pos in self._dash_positions.items():
+            access = node_access.get(nid, "NONE")
+            ax.scatter(
+                pos[0],
+                pos[1],
+                color=cmap.get(access, cmap["NONE"]),
+                s=300,
+                zorder=2,
+                edgecolors="black",
+                linewidths=1,
+            )
+            ax.text(
+                pos[0],
+                pos[1],
+                nid[:10],
+                fontsize=6,
+                ha="center",
+                va="center",
+                zorder=3,
+                fontweight="bold",
+            )
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.set_title(f"Attack Path \u2014 Run {run_id + 1}", fontsize=10)
+
+    def _dash_update_log(self):
+        self._dash_log.config(state=tk.NORMAL)
+        self._dash_log.delete(1.0, tk.END)
+        for ev in self._dash_sorted_events:
+            self._add_event_to_log(self._dash_log, ev)
+        self._dash_log.config(state=tk.DISABLED)
 
     def _create_statistical_tab(self):
         tab_frame = tk.Frame(self.notebook, bg=self.bg_color)
@@ -711,6 +1211,10 @@ class ResultsWindow:
             self.stat_fig, self.stat_ax = plt.subplots(1, 1, figsize=(12, 8))
             self.stat_canvas = FigureCanvasTkAgg(self.stat_fig, tab_frame)
             self.stat_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+            stat_toolbar_frame = tk.Frame(tab_frame)
+            stat_toolbar_frame.pack(fill=tk.X, side=tk.BOTTOM)
+            self.stat_toolbar = NavigationToolbar2Tk(self.stat_canvas, stat_toolbar_frame)
+            self.stat_toolbar.update()
             self._create_scenario_comparison_plots()
         else:
             empty_label = tk.Label(
@@ -901,11 +1405,12 @@ class ResultsWindow:
                     )
                 self.stat_canvas.draw()
                 return
+            economic_colors = self.viz_theme.get_economic_colors()
             damages = [r.get("total_damage", 0) for r in simulation_results]
             if damages and any(d > 0 for d in damages):
                 parts = self.damage_ax.violinplot([damages], showmeans=True, showmedians=True)
                 for pc in parts["bodies"]:
-                    pc.set_facecolor("#d62728")
+                    pc.set_facecolor(economic_colors["damage"])
                     pc.set_alpha(0.7)
                 self.damage_ax.set_title("Damage Distribution")
                 self.damage_ax.set_ylabel("Damage ($)")
@@ -920,7 +1425,7 @@ class ResultsWindow:
             if all_costs and any(c > 0 for c in all_costs):
                 parts = self.cost_ax.violinplot([all_costs], showmeans=True, showmedians=True)
                 for pc in parts["bodies"]:
-                    pc.set_facecolor("#ff7f0e")
+                    pc.set_facecolor(economic_colors["cost"])
                     pc.set_alpha(0.7)
                 self.cost_ax.set_title("Cost Distribution")
                 self.cost_ax.set_ylabel("Cost ($)")
@@ -934,7 +1439,7 @@ class ResultsWindow:
             if all_gains and any(g > 0 for g in all_gains):
                 parts = self.gain_ax.violinplot([all_gains], showmeans=True, showmedians=True)
                 for pc in parts["bodies"]:
-                    pc.set_facecolor("#2ca02c")
+                    pc.set_facecolor(economic_colors["gain"])
                     pc.set_alpha(0.7)
                 self.gain_ax.set_title("Attacker Gains Distribution")
                 self.gain_ax.set_ylabel("Gains ($)")
@@ -1035,9 +1540,9 @@ class ResultsWindow:
                 showmedians=True,
                 showextrema=True,
             )
-            colors = plt.cm.RdYlGn_r(np.linspace(0.2, 0.8, len(scenarios)))
+            scenario_colors = self.viz_theme.get_scenario_colors(len(scenarios))
             for i, pc in enumerate(parts["bodies"]):
-                pc.set_facecolor(colors[i])
+                pc.set_facecolor(scenario_colors[i])
                 pc.set_alpha(0.8)
                 pc.set_edgecolor("black")
                 pc.set_linewidth(1.5)
@@ -1113,9 +1618,28 @@ class ResultsWindow:
 
     def _on_close(self):
         try:
+            if hasattr(self, "_dash_playing") and self._dash_playing:
+                self._dash_stop_play()
+            if hasattr(self, "_attack_path_panel") and self._attack_path_panel is not None:
+                try:
+                    self._attack_path_panel.destroy()
+                except Exception:
+                    pass
+            for canvas_attr in [
+                "events_canvas",
+                "money_canvas",
+                "nodes_canvas",
+                "stat_canvas",
+                "_dash_canvas",
+            ]:
+                canvas = getattr(self, canvas_attr, None)
+                if canvas is not None:
+                    try:
+                        canvas.get_tk_widget().destroy()
+                    except Exception:
+                        pass
             plt.close("all")
         except Exception as e:
-            # Log but don't crash on cleanup failure
             import logging
 
             logging.getLogger(__name__).debug(f"Error closing plots: {e}")

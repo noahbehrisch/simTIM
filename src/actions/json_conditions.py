@@ -15,13 +15,12 @@ from src.core.access_utils import (
     set_link_access,
     set_node_access,
 )
-from src.core.graph import Link, Node
+from src.core.network import Link, Node
 from src.utils.version import Version
 
 if TYPE_CHECKING:
-    pass  # NodeAccessLevel already imported above
+    pass
 
-# Import directly from modules to avoid circular imports through src.core.__init__
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,6 @@ class ConditionEvaluator:
         self._simulator = None
 
     def set_simulator(self, simulator):
-        """Set simulator reference for time-based condition checks."""
         self._simulator = simulator
 
     def evaluate_condition(
@@ -66,15 +64,12 @@ class ConditionEvaluator:
             return self._evaluate_access_check(condition, actor_access, actor_id)
         elif condition_type == "property_check":
             return self._evaluate_property_check(condition, node)
-        elif condition_type == "vulnerability_check":
-            return self._evaluate_vulnerability_check(condition, node)
         elif condition_type == "assets_check":
             return self._evaluate_assets_check(condition, node)
         elif condition_type == "network_check":
             return self._evaluate_network_check(condition, node, network_context)
         elif condition_type == "variable_ref":
             return self._evaluate_variable_ref(condition, node, actor_access, actor_id)
-        # Link action condition types (for actions with action_type: "link")
         elif condition_type == "start_node_access_check":
             return self._evaluate_start_node_access_check(condition, node, actor_id)
         elif condition_type == "end_node_access_check":
@@ -177,7 +172,7 @@ class ConditionEvaluator:
         formula = condition.get("formula")
         if not all([variable, domain, formula]):
             raise ValueError("Exists quantifier requires 'variable', 'domain', and 'formula'")
-        assert domain is not None and formula is not None  # Type narrowing
+        assert domain is not None and formula is not None
         domain_elements = self._get_domain_elements(domain, node, network_context)
         for element in domain_elements:
             old_value = self.variable_scope.get(variable)
@@ -211,7 +206,7 @@ class ConditionEvaluator:
         formula = condition.get("formula")
         if not all([variable, domain, formula]):
             raise ValueError("Forall quantifier requires 'variable', 'domain', and 'formula'")
-        assert domain is not None and formula is not None  # Type narrowing
+        assert domain is not None and formula is not None
         domain_elements = self._get_domain_elements(domain, node, network_context)
         for element in domain_elements:
             old_value = self.variable_scope.get(variable)
@@ -237,13 +232,14 @@ class ConditionEvaluator:
     ) -> list[Any]:
         domain_type = domain.get("type")
         if domain_type == "neighbors":
-            return [link.get_other_node(node) for link in node.links if link.get_other_node(node)]
+            if self._simulator and self._simulator.network:
+                links = self._simulator.network.get_links_for_node(node.id)
+                return [link.get_other_node(node) for link in links if link.get_other_node(node)]
+            return []
         elif domain_type == "network_nodes":
             if network_context and "nodes" in network_context:
                 return list(network_context["nodes"].values())
             return []
-        elif domain_type == "vulnerabilities":
-            return getattr(node, "vulnerabilities", [])
         elif domain_type == "assets":
             return getattr(node, "assets", [])
         elif domain_type == "software":
@@ -307,8 +303,6 @@ class ConditionEvaluator:
     def _evaluate_service_check(self, condition: dict[str, Any], node: Node) -> bool:
         service = condition["service"]
         status = condition.get("status", "running")
-        if not hasattr(node, "services"):
-            node.services = {}
         service_status = node.services.get(service, "stopped")
         if status == "running":
             return service_status == "running"
@@ -378,8 +372,8 @@ class ConditionEvaluator:
         property_name = condition["property"]
         operator = condition["operator"]
         expected_value = condition["value"]
-        if hasattr(node, "properties") and property_name in node.properties:  # type: ignore[union-attr]
-            actual_value = node.properties[property_name]  # type: ignore[union-attr]
+        if hasattr(node, "properties") and property_name in node.properties:
+            actual_value = node.properties[property_name]
         else:
             actual_value = getattr(node, property_name, None)
         if operator == "equals":
@@ -392,32 +386,6 @@ class ConditionEvaluator:
             return actual_value is None
         else:
             raise ValueError(f"Unknown property check operator: {operator}")
-
-    def _evaluate_vulnerability_check(self, condition: dict[str, Any], node: Node) -> bool:
-        if "cve" in condition:
-            cve_id = condition["cve"]
-            status = condition.get("status", "present")
-            node_vulns = getattr(node, "vulnerabilities", [])
-            if status == "present":
-                return cve_id in node_vulns
-            elif status == "absent":
-                return cve_id not in node_vulns
-            else:
-                raise ValueError(f"Unknown CVE status: {status}")
-        check_type = condition.get("check_type", "count")
-        operator = condition["operator"]
-        if check_type == "count":
-            vuln_count = len(getattr(node, "vulnerabilities", []))
-            expected_count = condition["value"]
-            if operator == "greater_than":
-                return vuln_count > expected_count
-            elif operator == "less_than":
-                return vuln_count < expected_count
-            elif operator == "equals":
-                return vuln_count == expected_count
-            else:
-                raise ValueError(f"Unknown vulnerability count operator: {operator}")
-        raise ValueError(f"Unknown vulnerability check type: {check_type}")
 
     def _evaluate_assets_check(self, condition: dict[str, Any], node: Node) -> bool:
         check_type = condition.get("check_type", "count")
@@ -450,7 +418,12 @@ class ConditionEvaluator:
         elif check_type == "neighbor_count":
             operator = condition.get("operator", "equals")
             value = condition.get("value", 0)
-            neighbor_count = len(node.links)
+            links = (
+                self._simulator.network.get_links_for_node(node.id)
+                if self._simulator and self._simulator.network
+                else []
+            )
+            neighbor_count = len(links)
             if operator == "equals":
                 return neighbor_count == value
             elif operator == "greater_than":
@@ -463,6 +436,8 @@ class ConditionEvaluator:
             target_id = condition.get("target_id")
             if not network_context or not target_id:
                 return False
+            if not self._simulator or not self._simulator.network:
+                return False
             visited = set()
             queue = [node]
             while queue:
@@ -472,7 +447,8 @@ class ConditionEvaluator:
                 if current.id in visited:
                     continue
                 visited.add(current.id)
-                for link in current.links:
+                current_links = self._simulator.network.get_links_for_node(current.id)
+                for link in current_links:
                     neighbor = link.get_other_node(current)
                     if neighbor and neighbor.id not in visited:
                         queue.append(neighbor)
@@ -480,19 +456,9 @@ class ConditionEvaluator:
         else:
             raise ValueError(f"Unknown network check type: {check_type}")
 
-    # =========================================================================
-    # Link Action Condition Types
-    # =========================================================================
-    # These extract the appropriate node from a Link and delegate to existing
-    # condition evaluators. Per TIM paper Section 4.3:
-    # "For a link action, Vφa contains the properties of the start and end node
-    # of the link and the actor's access to the start and end node of the link."
-    # =========================================================================
-
     def _evaluate_start_node_access_check(
         self, condition: dict[str, Any], target, actor_id: str
     ) -> bool:
-        """Check actor's access to start node of a link. Delegates to _evaluate_access_check."""
         node = target.node1 if isinstance(target, Link) else target
         actor_access = get_node_access(node, actor_id)
         return self._evaluate_access_check(condition, actor_access, actor_id)
@@ -500,36 +466,30 @@ class ConditionEvaluator:
     def _evaluate_end_node_access_check(
         self, condition: dict[str, Any], target, actor_id: str
     ) -> bool:
-        """Check actor's access to end node of a link. Delegates to _evaluate_access_check."""
         if not isinstance(target, Link):
             return True
         actor_access = get_node_access(target.node2, actor_id)
         return self._evaluate_access_check(condition, actor_access, actor_id)
 
     def _evaluate_start_node_property_check(self, condition: dict[str, Any], target) -> bool:
-        """Check property on start node of a link. Delegates to _evaluate_property_check."""
         node = target.node1 if isinstance(target, Link) else target
         return self._evaluate_property_check(condition, node)
 
     def _evaluate_end_node_property_check(self, condition: dict[str, Any], target) -> bool:
-        """Check property on end node of a link. Delegates to _evaluate_property_check."""
         if not isinstance(target, Link):
             return True
         return self._evaluate_property_check(condition, target.node2)
 
     def _evaluate_link_property_check(self, condition: dict[str, Any], target) -> bool:
-        """Check property on the link itself. Reuses _evaluate_property_check logic."""
         if not isinstance(target, Link):
             return True
-        # Treat link as a node-like object for property checking
         return self._evaluate_property_check(condition, target)
 
     def _evaluate_time_check(self, condition: dict[str, Any], node: Node) -> bool:
-        """Check time-based conditions (cooldowns). Extends property_check with time math."""
         property_name = condition["property"]
-        last_time = node.properties.get(property_name) if hasattr(node, "properties") else None
+        last_time = node.properties.get(property_name)
         if last_time is None:
-            return True  # Never done before = condition satisfied
+            return True
 
         current_time = self._simulator.current_time if self._simulator else 0.0
         time_since = current_time - last_time
@@ -570,10 +530,6 @@ class ActionExecutor:
             self._execute_modify_property(postcondition, node)
         elif action_type == "set_software":
             self._execute_set_software(postcondition, node)
-        elif action_type == "add_vulnerability":
-            self._execute_add_vulnerability(postcondition, node)
-        elif action_type == "remove_vulnerability":
-            self._execute_remove_vulnerability(postcondition, node)
         elif action_type == "increment_counter":
             self._execute_increment_counter(postcondition, node)
         elif action_type == "set_links_access":
@@ -586,6 +542,8 @@ class ActionExecutor:
             self._execute_add_capability(postcondition, node)
         elif action_type == "remove_capability":
             self._execute_remove_capability(postcondition, node)
+        elif action_type == "reduce_attacker_access":
+            self._execute_reduce_attacker_access(postcondition, node, actor_id)
         else:
             raise ValueError(f"Unknown postcondition type: {action_type}")
 
@@ -605,42 +563,53 @@ class ActionExecutor:
         if access_level is None:
             return
         old_access = get_node_access(node, actor_id)
-        # Convert string from JSON to NodeAccessLevel
         if isinstance(access_level, str):
             access_level = validate_node_access(access_level)
         set_node_access(node, actor_id, access_level)
         if access_level >= NodeAccessLevel.USER and old_access < NodeAccessLevel.USER:
             node.compromised = True
-            if hasattr(self, "_simulator") and self._simulator:
+            if self._simulator:
                 for actor in self._simulator.get_all_actors():
                     if actor.id == actor_id and hasattr(actor, "compromised_nodes"):
-                        if hasattr(node, "id"):
-                            actor.compromised_nodes.add(node.id)
+                        actor.compromised_nodes.add(node.id)
         if old_access == NodeAccessLevel.NONE and access_level == NodeAccessLevel.VISIBLE:
-            if hasattr(self, "_simulator") and self._simulator:
-                if hasattr(node, "id"):
-                    self._simulator.notify_nodes_discovered(actor_id, [node])
-        if hasattr(self, "_simulator") and self._simulator:
+            if self._simulator:
+                self._simulator.notify_nodes_discovered(actor_id, [node])
+        if self._simulator:
             self._simulator.record_access_change(node, actor_id, old_access, access_level)
 
     def _execute_set_access_if_none(
         self, action: dict[str, Any], node: Node, actor_id: str
     ) -> None:
-        """Set access only if current access is NONE. Used for discovery actions."""
         current_access = get_node_access(node, actor_id)
         if current_access == NodeAccessLevel.NONE:
             self._execute_set_access(action, node, actor_id)
+
+    def _execute_reduce_attacker_access(
+        self, action: dict[str, Any], node: Node, defender_id: str
+    ) -> None:
+        target_level = validate_node_access(action.get("access_value", "NONE"))
+        if not self._simulator:
+            return
+        for actor in self._simulator.get_all_actors():
+            if not getattr(actor, "is_attacker", False):
+                continue
+            current_access = get_node_access(node, actor.id)
+            if current_access > target_level:
+                set_node_access(node, actor.id, target_level)
+                self._simulator.record_access_change(node, actor.id, current_access, target_level)
+                if target_level < NodeAccessLevel.USER and hasattr(actor, "compromised_nodes"):
+                    actor.compromised_nodes.discard(node.id)
+                if target_level == NodeAccessLevel.NONE and hasattr(actor, "visible_nodes"):
+                    actor.visible_nodes.discard(node)
 
     def _execute_set_property(self, action: dict[str, Any], node: Node) -> None:
         property_name = action["property"]
         value = action["value"]
 
-        # Handle special value placeholders
         if isinstance(value, str) and value.startswith("@"):
             value = self._resolve_special_value(value, node)
 
-        if not hasattr(node, "properties"):
-            node.properties = {}
         node.properties[property_name] = value
 
     def _execute_modify_property(self, action: dict[str, Any], node: Node) -> None:
@@ -676,44 +645,7 @@ class ActionExecutor:
     def _execute_set_software(self, action: dict[str, Any], node: Node) -> None:
         software_key = action["software_key"]
         value = action["value"]
-        if not hasattr(node, "software"):
-            node.software = {}
         node.software[software_key] = value
-
-    def _execute_add_vulnerability(self, action: dict[str, Any], node: Node) -> None:
-        vulnerability = action["vulnerability"]
-        if not hasattr(node, "vulnerabilities"):
-            node.vulnerabilities = []
-        node.vulnerabilities.append(vulnerability)
-
-    def _execute_remove_vulnerability(self, action: dict[str, Any], node: Node) -> None:
-        if not hasattr(node, "vulnerabilities"):
-            node.vulnerabilities = []
-            return
-        if "cve" in action:
-            cve_id = action["cve"]
-            if cve_id in node.vulnerabilities:
-                node.vulnerabilities.remove(cve_id)
-            return
-        if "vulnerability" in action:
-            vuln_id = action["vulnerability"]
-            if vuln_id in node.vulnerabilities:
-                node.vulnerabilities.remove(vuln_id)
-            return
-        method = action.get("method", "pop")
-        if method == "pop" and len(node.vulnerabilities) > 0:
-            node.vulnerabilities.pop()
-        elif method == "multiple":
-            count = action.get("count", 1)
-            for _ in range(min(count, len(node.vulnerabilities))):
-                if node.vulnerabilities:
-                    node.vulnerabilities.pop()
-        elif method == "specific":
-            vulnerability = action["vulnerability"]
-            if vulnerability in node.vulnerabilities:
-                node.vulnerabilities.remove(vulnerability)
-        elif method == "all":
-            node.vulnerabilities.clear()
 
     def _execute_increment_counter(self, action: dict[str, Any], node: Node) -> None:
         counter_name = action["counter"]
@@ -722,20 +654,20 @@ class ActionExecutor:
         setattr(node, counter_name, current_value + increment)
 
     def _execute_set_links_access(self, action: dict[str, Any], node: Node, actor_id: str) -> None:
-        if not hasattr(node, "links"):
+        if not self._simulator or not self._simulator.network:
             logger.debug(
-                f"set_links_access: Node {getattr(node, 'id', '?')} has no links attribute"
+                f"set_links_access: No simulator/network available for node {getattr(node, 'id', '?')}"
             )
             return
+        links = self._simulator.network.get_links_for_node(node.id)
         logger.debug(f"set_links_access on node {node.id} by {actor_id}")
-        logger.debug(f"  Node has {len(node.links)} links")
+        logger.debug(f"  Node has {len(links)} links")
         access_value = action["access_value"]
-        # Convert string from JSON to LinkAccessLevel
         if isinstance(access_value, str):
             access_value = validate_link_access(access_value)
         discovered_nodes = []
         discovered_links = []
-        for link in node.links:
+        for link in links:
             old_access = get_link_access(link, actor_id)
             set_link_access(link, actor_id, access_value)
             logger.debug(f"  Link access: {old_access} → {access_value}")
@@ -748,65 +680,49 @@ class ActionExecutor:
         logger.debug(
             f"  Total discovered: {len(discovered_nodes)} nodes, {len(discovered_links)} links"
         )
-        if discovered_nodes and hasattr(self, "_simulator") and self._simulator:
+        if discovered_nodes and self._simulator:
             logger.debug(f"  Notifying simulator about {len(discovered_nodes)} discovered nodes")
             self._simulator.notify_nodes_discovered(actor_id, discovered_nodes)
-        if discovered_links and hasattr(self, "_simulator") and self._simulator:
+        if discovered_links and self._simulator:
             logger.debug(f"  Notifying simulator about {len(discovered_links)} discovered links")
             self._simulator.notify_links_discovered(actor_id, discovered_links)
 
     def _execute_set_access_neighbors(
         self, action: dict[str, Any], node: Node, actor_id: str
     ) -> None:
-        if not hasattr(node, "links"):
+        if not self._simulator or not self._simulator.network:
             return
+        links = self._simulator.network.get_links_for_node(node.id)
         access_value = action["access_value"]
         compromised_neighbors = []
-        for link in node.links:
+        for link in links:
             other_node = link.get_other_node(node)
             if other_node and (not other_node.compromised):
-                if not hasattr(other_node, "access"):
-                    other_node.access = {}
                 other_node.access[actor_id] = access_value
                 other_node.compromised = True
                 compromised_neighbors.append(other_node)
-                if not hasattr(link, "access"):
-                    link.access = {}
                 link.access[actor_id] = LinkAccessLevel.VISIBLE
-        if compromised_neighbors and hasattr(self, "_simulator") and self._simulator:
+        if compromised_neighbors and self._simulator:
             self._simulator.notify_nodes_discovered(actor_id, compromised_neighbors)
             for actor in self._simulator.get_all_actors():
                 if actor.id == actor_id and hasattr(actor, "compromised_nodes"):
                     for neighbor in compromised_neighbors:
-                        if hasattr(neighbor, "id"):
-                            actor.compromised_nodes.add(neighbor.id)
+                        actor.compromised_nodes.add(neighbor.id)
 
     def _execute_clear_assets(self, action: dict[str, Any], node: Node) -> None:
-        if hasattr(node, "assets"):
-            node.assets.clear()
+        node.assets.clear()
 
     def _execute_add_capability(self, action: dict[str, Any], node: Node) -> None:
         capability = action["capability"]
-        if not hasattr(node, "capabilities"):
-            node.capabilities = []
         if capability not in node.capabilities:
             node.capabilities.append(capability)
 
     def _execute_remove_capability(self, action: dict[str, Any], node: Node) -> None:
         capability = action["capability"]
-        if hasattr(node, "capabilities") and capability in node.capabilities:
+        if capability in node.capabilities:
             node.capabilities.remove(capability)
 
     def _resolve_special_value(self, value: str, node: Node) -> Any:
-        """
-        Resolve special value placeholders like @current_time, @node_id, etc.
-
-        Supported placeholders:
-        - @current_time: Current simulation time
-        - @node_id: ID of the current node
-        - @start_node_id: ID of start node (for link actions)
-        - @end_node_id: ID of end node (for link actions)
-        """
         if value == "@current_time":
             if hasattr(self, "_simulator") and self._simulator:
                 return self._simulator.current_time
@@ -822,7 +738,6 @@ class ActionExecutor:
                 return getattr(node.node2, "id", str(node.node2))
             return getattr(node, "id", str(node))
         else:
-            # Unknown placeholder, return as-is
             return value
 
 

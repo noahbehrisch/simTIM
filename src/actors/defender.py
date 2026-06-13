@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.core.access_utils import get_node_access
 
 from .actor import Actor
 from .strategies import get_defender_strategy
+
+if TYPE_CHECKING:
+    from src.actions.action import Action
+    from src.core.network import Link, Node
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +24,15 @@ class Defender(Actor):
         budget: float = float("inf"),
     ):
         super().__init__(id, "defender", capacity=capacity, strategy=strategy, budget=budget)
-        self.is_defender = True
-        self.is_attacker = False
-        self.visible_nodes: set[Any] = set()
-        self.compromised_nodes: set[Any] = set()
-        self.visible_links: set[Any] = set()
-        self.compromised_links: set[Any] = set()
-        self.available_actions: list[Any] = []
-        self.system_damage_prevented = 0.0
-        self.detected_attacks: list[Any] = []
+        self.is_defender: bool = True
+        self.is_attacker: bool = False
+        self.visible_nodes: set[Node] = set()
+        self.compromised_nodes: set[str] = set()
+        self.visible_links: set[Link] = set()
+        self.compromised_links: set[Link] = set()
+        self.available_actions: list[Action] = []
+        self.system_damage_prevented: float = 0.0
+        self.detected_attacks: list[dict[str, Any]] = []
         self._strategy_component = get_defender_strategy(strategy)
 
     def make_decision(self, network_state):
@@ -38,10 +44,16 @@ class Defender(Actor):
         decision = self.choose_best_action(network_state)
         if decision:
             action, target = decision
-            actor_access = get_node_access(target, self.id)
-            logger.info(f"Defender {self.id} scheduling {action.name} on {target.id}")
+            if hasattr(action, "is_link_action") and action.is_link_action():
+                actor_access = get_node_access(target.node1, self.id)
+            else:
+                actor_access = get_node_access(target, self.id)
+            logger.info(
+                f"Defender {self.id} scheduling {action.name} on {getattr(target, 'id', str(target))}"
+            )
             if action.precondition(target, actor_access, self.id):
-                self.pending_action_count += 1  # Track pending action for capacity
+                self.pending_action_count += 1
+                self._pending_pairs.add((action.name, getattr(target, "id", str(target))))
                 self.simulator.schedule_event(
                     self.simulator.current_time,
                     "start_action",
@@ -54,6 +66,7 @@ class Defender(Actor):
                 )
                 return True
             else:
+                self._pending_pairs.add((action.name, getattr(target, "id", str(target))))
                 logger.warning(
                     f"Defender {self.id}: Precondition failed for {action.name} on {target.id}"
                 )
@@ -69,6 +82,13 @@ class Defender(Actor):
     def on_action_finished(self, action, status, target=None):
         if action in self.ongoing_actions:
             self.ongoing_actions.remove(action)
+        if self.running and self.simulator:
+            self._last_run_time = -1.0
+            self.simulator.schedule_event(
+                self.simulator.current_time,
+                "actor_run",
+                {"actor": self},
+            )
 
     def on_attack_detected(self, detection_data):
         detected_action = detection_data.get("detected_action")
@@ -90,20 +110,17 @@ class Defender(Actor):
                 "detection_method": detection_data.get("detection_method", "unknown"),
             }
         )
-        if hasattr(self, "available_actions"):
-            defensive_actions = [
-                action
-                for action in self.available_actions
-                if "patch" in action.name.lower() or "firewall" in action.name.lower()
-            ]
-            if defensive_actions and self.can_schedule_action():
-                response_action = defensive_actions[0]
-                self._execute_defensive_action(response_action, detected_target)
+        if self.can_schedule_action() and self.simulator:
+            self.simulator.schedule_event(
+                self.simulator.current_time,
+                "actor_run",
+                {"actor": self},
+            )
 
     def record_detection_economics(self, attack_source, damage_prevented=0.0, detection_cost=0.0):
         timestamp = getattr(self.simulator, "current_time", 0.0)
         if detection_cost > 0:
-            self.incurredCost += detection_cost
+            self.incurred_cost += detection_cost
             self.record_economic_event(
                 timestamp,
                 "cost",
@@ -120,14 +137,19 @@ class Defender(Actor):
 
     def _execute_defensive_action(self, action, target):
         if self.simulator and self.can_schedule_action():
-            action_data = {
-                "actor": self,
-                "action": action,
-                "target": target,
-                "actor_access": get_node_access(target, self.id),
-            }
-            self.simulator.schedule_event(self.simulator.current_time, "action", action_data)
-            self.ongoing_actions.add(action)
+            actor_access = get_node_access(target, self.id)
+            if action.precondition(target, actor_access, self.id):
+                self.pending_action_count += 1
+                self.simulator.schedule_event(
+                    self.simulator.current_time,
+                    "start_action",
+                    {
+                        "actor": self,
+                        "action": action,
+                        "target": target,
+                        "actor_access": actor_access,
+                    },
+                )
 
     def _calculate_total_system_damage(self, time_interval=None):
         if hasattr(self.simulator, "get_total_system_damage"):

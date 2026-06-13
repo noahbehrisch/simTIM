@@ -28,6 +28,7 @@ class NetworkCreator(
         self.links = []
         self.selected_node = None
         self.selected_nodes = []
+        self.selected_links = []
         self.link_start_node = None
         self.link_mode = False
         self.right_click_link_start = None
@@ -37,6 +38,11 @@ class NetworkCreator(
         self.drag_start_y = 0
         self.selection_box_active = False
         self.selection_box_start = None
+        self.snap_size = 60
+        self.zoom_scale = 1.0
+        self.min_zoom = 0.25
+        self.max_zoom = 4.0
+        self.canvas_half_extent = 2000
         self.create_widgets()
         self.transient(parent)
 
@@ -45,6 +51,17 @@ class NetworkCreator(
             self.add_link_button.config(state=tk.DISABLED)
         else:
             self.add_link_button.config(state=tk.NORMAL)
+        if len(self.selected_nodes) == 1 or (self.selected_node and len(self.selected_nodes) == 0):
+            self.edit_node_button.config(state=tk.NORMAL)
+        else:
+            self.edit_node_button.config(state=tk.DISABLED)
+
+    def snap_to_grid(self, x: int, y: int) -> tuple[int, int]:
+        if self.snap_size <= 0:
+            return x, y
+        snapped_x = round(x / self.snap_size) * self.snap_size
+        snapped_y = round(y / self.snap_size) * self.snap_size
+        return snapped_x, snapped_y
 
     def show_help(self):
         if self.help_visible:
@@ -79,10 +96,11 @@ class NetworkCreator(
         for node_id, node in self.nodes.items():
             self.properties_text.insert(tk.END, f"• {node_id}\n")
             self.properties_text.insert(tk.END, f"  Name: {node['name']}\n")
-            self.properties_text.insert(tk.END, f"  OS: {node['software']['os']}\n")
+            os_name = node.get("software", {}).get("os", "Unknown")
+            self.properties_text.insert(tk.END, f"  OS: {os_name}\n")
             if node.get("category"):
                 self.properties_text.insert(tk.END, f"  Category: {node['category']}\n")
-            if node["properties"].get("exposed_to_internet"):
+            if node.get("properties", {}).get("exposed_to_internet"):
                 self.properties_text.insert(tk.END, "  [EXPOSED]\n")
             self.properties_text.insert(tk.END, "\n")
 
@@ -117,6 +135,16 @@ class NetworkCreator(
             fg="white",
             font=self.theme.FONTS["body"],
         ).pack(side=tk.LEFT, padx=5, pady=5)
+        self.edit_node_button = tk.Button(
+            toolbar_frame,
+            text="Edit Node",
+            command=self.edit_selected_node,
+            bg=self.theme.COLORS["info"],
+            fg="white",
+            font=self.theme.FONTS["body"],
+            state=tk.DISABLED,
+        )
+        self.edit_node_button.pack(side=tk.LEFT, padx=5, pady=5)
         tk.Button(
             toolbar_frame,
             text="Generate Random",
@@ -188,14 +216,45 @@ class NetworkCreator(
             content_frame, bg=self.theme.COLORS["bg_secondary"], relief=tk.SUNKEN, bd=2
         )
         self.canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        self.canvas = tk.Canvas(self.canvas_frame, bg="white", width=800, height=600)
+        self.v_scrollbar = tk.Scrollbar(self.canvas_frame, orient=tk.VERTICAL)
+        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.h_scrollbar = tk.Scrollbar(self.canvas_frame, orient=tk.HORIZONTAL)
+        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.canvas = tk.Canvas(
+            self.canvas_frame,
+            bg="white",
+            width=800,
+            height=600,
+            xscrollcommand=self.h_scrollbar.set,
+            yscrollcommand=self.v_scrollbar.set,
+            scrollregion=(
+                -self.canvas_half_extent,
+                -self.canvas_half_extent,
+                self.canvas_half_extent,
+                self.canvas_half_extent,
+            ),
+        )
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.v_scrollbar.config(command=self.canvas.yview)
+        self.h_scrollbar.config(command=self.canvas.xview)
+        self.canvas.xview_moveto(0.5)
+        self.canvas.yview_moveto(0.5)
         self.canvas.bind("<Button-1>", self.canvas_click)
+        self.canvas.bind("<Double-Button-1>", self.canvas_double_click)
         self.canvas.bind("<B1-Motion>", self.canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.canvas_release)
         self.canvas.bind("<Button-3>", self.canvas_right_click)
         self.canvas.bind("<B3-Motion>", self.canvas_right_drag)
         self.canvas.bind("<ButtonRelease-3>", self.canvas_right_release)
+        self.canvas.bind("<MouseWheel>", self.on_zoom)
+        self.canvas.bind("<Button-4>", self.on_zoom_in)
+        self.canvas.bind("<Button-5>", self.on_zoom_out)
+        self.canvas.bind("<Button-2>", self.pan_start)
+        self.canvas.bind("<B2-Motion>", self.pan_move)
+        self.canvas.bind("<ButtonRelease-2>", self.pan_end)
+        self.canvas.bind("<Control-Button-1>", self.pan_start)
+        self.canvas.bind("<Control-B1-Motion>", self.pan_move)
+        self.canvas.bind("<Control-ButtonRelease-1>", self.pan_end)
         self.properties_frame = tk.Frame(
             content_frame, bg=self.theme.COLORS["bg_sidebar"], width=300
         )

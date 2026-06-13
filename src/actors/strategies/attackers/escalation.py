@@ -8,36 +8,48 @@ class EscalationAttackerStrategy(AttackerStrategy):
     def __init__(self):
         super().__init__("escalation")
 
-    def get_priority(self, action: Any, node: Any, access: NodeAccessLevel, attacker: Any) -> float:
+    def get_priority(
+        self, action: Any, target: Any, access: NodeAccessLevel, attacker: Any
+    ) -> float:
         tactic = self.get_mitre_tactic(action)
-        priority = 1.0
 
-        tactic_priorities = {
-            "privilege-escalation": 500,
-            "credential-access": 400,
-            "initial-access": 300,
-            "lateral-movement": 250,
-            "execution": 200,
-            "persistence": 150,
-            "discovery": 100,
-            "reconnaissance": 80,
-            "defense-evasion": 60,
-            "collection": 50,
-            "exfiltration": 40,
-            "command-and-control": 30,
-            "impact": 20,
-        }
-        priority += tactic_priorities.get(tactic, 10)
+        if hasattr(action, "is_link_action") and action.is_link_action():
+            if access >= NodeAccessLevel.ADMIN:
+                return 800.0
+            if access >= NodeAccessLevel.USER:
+                return 400.0
+            return 100.0
 
         if access == NodeAccessLevel.VISIBLE:
-            if tactic in ["initial-access", "reconnaissance"]:
-                priority += 200
-        elif access == NodeAccessLevel.USER:
+            if tactic in ("initial-access", "reconnaissance"):
+                return 1000.0
+            return 50.0
+
+        if access == NodeAccessLevel.USER:
             if tactic == "privilege-escalation":
-                priority += 300
-            elif tactic == "credential-access":
-                priority += 200
+                return 900.0
+            if tactic == "credential-access":
+                return 700.0
+            return 50.0
 
-        priority += len(node.assets) * 5
+        if access == NodeAccessLevel.ADMIN:
+            if tactic == "credential-access":
+                return 500.0
+            if tactic == "defense-evasion":
+                return 400.0
+            if tactic == "command-and-control":
+                return 350.0
+            if tactic == "collection":
+                return 300.0
+            if tactic == "exfiltration":
+                return 250.0
+            if tactic == "impact":
+                return 200.0
+            if tactic == "persistence":
+                return 150.0
+            return 10.0
 
-        return priority
+        return 1.0
+
+    def get_minimum_threshold(self, ongoing_count: int) -> float:
+        return 100.0 * ongoing_count

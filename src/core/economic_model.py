@@ -1,58 +1,15 @@
 from typing import Any
 
-from src.core.access_levels import NodeAccessLevel
-from src.core.access_utils import get_node_access
-from src.core.graph import Node
-
-
-class EconomicParameters:
-    def __init__(self):
-        self.admin_access_damage_rate = 50.0
-        self.user_access_damage_rate = 10.0
-        self.data_sensitivity_multipliers = {"high": 3.0, "medium": 1.5, "low": 1.0}
-        self.criticality_multipliers = {
-            "critical": 2.0,
-            "high": 1.5,
-            "medium": 1.3,
-            "low": 1.0,
-        }
-        self.asset_value_factor = 0.5
-        self.attacker_gain_ratio = 0.35
-        self.critical_system_base_damage = 1000.0
-        self.critical_system_multiplier = 5.0
-
-    def to_dict(self) -> dict:
-        return {
-            "admin_access_damage_rate": self.admin_access_damage_rate,
-            "user_access_damage_rate": self.user_access_damage_rate,
-            "data_sensitivity_multipliers": self.data_sensitivity_multipliers.copy(),
-            "criticality_multipliers": self.criticality_multipliers.copy(),
-            "asset_value_factor": self.asset_value_factor,
-            "attacker_gain_ratio": self.attacker_gain_ratio,
-            "critical_system_base_damage": self.critical_system_base_damage,
-            "critical_system_multiplier": self.critical_system_multiplier,
-        }
-
-    @classmethod
-    def from_dict(cls, config: dict):
-        params = cls()
-        for key, value in config.items():
-            if hasattr(params, key):
-                setattr(params, key, value)
-        return params
-
 
 class SimpleEconomicModel:
-    def __init__(self, parameters: EconomicParameters | None = None):
-        self.parameters = parameters or EconomicParameters()
+    def __init__(self):
         self.total_damage = 0.0
         self.actor_gains: dict[str, float] = {}
         self.action_history: list[tuple[float, str, str, float, float]] = []
         self.time_proportional_damage = 0.0
         self.time_proportional_gains: dict[str, float] = {}
-        self.access_state_changes: list[tuple[float, str, str, str, str]] = []
-        self.property_state_changes: list[tuple[float, str, str, Any, Any]] = []
         self.last_accumulation_time = 0.0
+        self._active_time_rates: list[tuple[float, float, str]] = []
 
     def record_damage(self, damage: float):
         self.total_damage += damage
@@ -70,49 +27,33 @@ class SimpleEconomicModel:
         damage: float = 0.0,
         gain: float = 0.0,
     ):
-        if damage > 0:
+        if damage != 0:
             self.record_damage(damage)
         if gain > 0:
             self.record_gain(actor_id, gain)
         self.action_history.append((time, actor_id, action_name, damage, gain))
 
-    def record_access_change(
-        self, time: float, node_id: str, actor_id: str, old_access: str, new_access: str
-    ):
-        self.access_state_changes.append((time, node_id, actor_id, old_access, new_access))
+    def register_time_rate(self, actor_id: str, time_damage: float, time_gain: float):
+        if time_damage != 0 or time_gain != 0:
+            self._active_time_rates.append((time_damage, time_gain, actor_id))
 
-    def record_property_change(
-        self,
-        time: float,
-        node_id: str,
-        property_name: str,
-        old_value: Any,
-        new_value: Any,
-    ):
-        self.property_state_changes.append((time, node_id, property_name, old_value, new_value))
-
-    def accumulate_time_proportional_impact(
-        self, current_time: float, all_nodes: list[Node], attacker_actors: list[Any]
-    ):
+    def accumulate_time_proportional_impact(self, current_time: float):
         if current_time <= self.last_accumulation_time:
             return
         delta_t = current_time - self.last_accumulation_time
-        for attacker in attacker_actors:
-            attacker_id = attacker.id
-            for node in all_nodes:
-                access = get_node_access(node, attacker_id)
-                damage_rate = self.calculate_delta(access, node)
-                gain_rate = self.calculate_gamma(access, node)
-                if damage_rate > 0:
-                    self.time_proportional_damage += damage_rate * delta_t
-                    self.total_damage += damage_rate * delta_t
-                if gain_rate > 0:
-                    if attacker_id not in self.time_proportional_gains:
-                        self.time_proportional_gains[attacker_id] = 0.0
-                    self.time_proportional_gains[attacker_id] += gain_rate * delta_t
-                    if attacker_id not in self.actor_gains:
-                        self.actor_gains[attacker_id] = 0.0
-                    self.actor_gains[attacker_id] += gain_rate * delta_t
+        for damage_rate, gain_rate, actor_id in self._active_time_rates:
+            if damage_rate != 0:
+                time_damage = damage_rate * delta_t
+                self.time_proportional_damage += time_damage
+                self.total_damage += time_damage
+            if gain_rate > 0:
+                time_gain = gain_rate * delta_t
+                if actor_id not in self.time_proportional_gains:
+                    self.time_proportional_gains[actor_id] = 0.0
+                self.time_proportional_gains[actor_id] += time_gain
+                if actor_id not in self.actor_gains:
+                    self.actor_gains[actor_id] = 0.0
+                self.actor_gains[actor_id] += time_gain
         self.last_accumulation_time = current_time
 
     def get_attacker_objective(self, actor_id: str, actor_cost: float = 0.0) -> float:
@@ -132,8 +73,8 @@ class SimpleEconomicModel:
         actor_costs = {}
         if actors:
             for actor in actors:
-                actor_costs[actor.id] = actor.incurredCost
-                total_costs += actor.incurredCost
+                actor_costs[actor.id] = actor.incurred_cost
+                total_costs += actor.incurred_cost
 
         return {
             "total_damage": self.total_damage,
@@ -145,102 +86,4 @@ class SimpleEconomicModel:
             "actor_costs": actor_costs,
             "actor_gains": dict(self.actor_gains),
             "num_actions": len(self.action_history),
-            "num_access_changes": len(self.access_state_changes),
-            "num_property_changes": len(self.property_state_changes),
         }
-
-    def calculate_delta(self, access: NodeAccessLevel, node: Node) -> float:
-        if access < NodeAccessLevel.USER:
-            return 0.0
-        if access == NodeAccessLevel.ADMIN:
-            base_rate = self.parameters.admin_access_damage_rate
-        elif access == NodeAccessLevel.USER:
-            base_rate = self.parameters.user_access_damage_rate
-        else:
-            return 0.0
-        asset_count = len(getattr(node, "assets", []))
-        if asset_count > 0:
-            base_rate *= 1 + asset_count * self.parameters.asset_value_factor
-        properties = getattr(node, "properties", {})
-        data_sensitivity = properties.get("data_sensitivity", "low")
-        base_rate *= self.parameters.data_sensitivity_multipliers.get(data_sensitivity, 1.0)
-        criticality = properties.get("criticality", "low")
-        base_rate *= self.parameters.criticality_multipliers.get(criticality, 1.0)
-        data_amount = properties.get("data_amount", 0)
-        if data_amount > 0:
-            import math
-
-            base_rate *= 1 + math.log10(data_amount + 1) * 0.1
-        return base_rate
-
-    def calculate_gamma(self, access: NodeAccessLevel, node: Node) -> float:
-        damage_rate = self.calculate_delta(access, node)
-        return damage_rate * self.parameters.attacker_gain_ratio
-
-    def calculate_action_damage(self, action_name: str, node: Node) -> float:
-        base_damage = self.parameters.critical_system_base_damage
-        asset_multiplier = len(getattr(node, "assets", [])) * 500.0
-        if "exfiltration" in action_name.lower() or "tapestry" in action_name.lower():
-            base_damage *= self.parameters.critical_system_multiplier
-        return base_damage + asset_multiplier
-
-    def calculate_action_gain(self, action_name: str, node: Node) -> float:
-        damage = self.calculate_action_damage(action_name, node)
-        return damage * 0.3
-
-
-def calculate_delta(
-    access: NodeAccessLevel, node: Node, parameters: EconomicParameters | None = None
-) -> float:
-    if parameters is not None:
-        temp_model = SimpleEconomicModel(parameters)
-        return temp_model.calculate_delta(access, node)
-    return economic_model.calculate_delta(access, node)
-
-
-def calculate_gamma(
-    access: NodeAccessLevel, node: Node, parameters: EconomicParameters | None = None
-) -> float:
-    if parameters is not None:
-        temp_model = SimpleEconomicModel(parameters)
-        return temp_model.calculate_gamma(access, node)
-    return economic_model.calculate_gamma(access, node)
-
-
-def calculate_action_damage(
-    action_name: str, node: Node, parameters: EconomicParameters | None = None
-) -> float:
-    if parameters is not None:
-        temp_model = SimpleEconomicModel(parameters)
-        return temp_model.calculate_action_damage(action_name, node)
-    return economic_model.calculate_action_damage(action_name, node)
-
-
-def calculate_action_gain(
-    action_name: str, node: Node, parameters: EconomicParameters | None = None
-) -> float:
-    if parameters is not None:
-        temp_model = SimpleEconomicModel(parameters)
-        return temp_model.calculate_action_gain(action_name, node)
-    return economic_model.calculate_action_gain(action_name, node)
-
-
-economic_model = SimpleEconomicModel()
-
-
-def get_economic_model() -> SimpleEconomicModel:
-    global economic_model
-    return economic_model
-
-
-def set_economic_model(model: SimpleEconomicModel) -> SimpleEconomicModel:
-    global economic_model
-    old_model = economic_model
-    economic_model = model
-    return old_model
-
-
-def reset_economic_model(parameters: EconomicParameters | None = None) -> SimpleEconomicModel:
-    global economic_model
-    economic_model = SimpleEconomicModel(parameters)
-    return economic_model

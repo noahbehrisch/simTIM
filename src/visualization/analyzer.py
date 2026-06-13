@@ -1,9 +1,8 @@
 from typing import Any
 
-from src.core.economic_model import calculate_action_damage, calculate_action_gain
 from src.utils.time_utils import parse_event
 
-from .plots import ViolinPlotEngine
+from .violin_plots import ViolinPlotEngine
 
 
 def analyze_simulation_results(
@@ -25,20 +24,20 @@ def analyze_simulation_results(
                 action = data.get("action")
                 actor = data.get("actor")
                 target = data.get("target")
+                actor_access = data.get("actor_access")
                 if action and target:
                     if hasattr(action, "cost"):
                         costs += action.cost
+                    actor_id = actor.id if actor else "unknown"
                     if actor and hasattr(actor, "is_attacker") and actor.is_attacker:
                         num_successful_attacks += 1
-                        action_damage = calculate_action_damage(action.name, target)
-                        action_gain = calculate_action_gain(action.name, target)
-                        damage += action_damage
-                        gains += action_gain
+                        damage += action.get_one_off_damage(target, actor_access, actor_id)
+                        gains += action.get_one_off_gain(target, actor_access, actor_id)
                     elif actor and hasattr(actor, "is_defender") and actor.is_defender:
                         num_successful_defenses += 1
+                        damage += action.get_one_off_damage(target, actor_access, actor_id)
                     else:
-                        action_damage = calculate_action_damage(action.name, target)
-                        damage += action_damage
+                        damage += action.get_one_off_damage(target, actor_access, actor_id)
             elif event_type == "attack_detected":
                 num_detections += 1
         result = {

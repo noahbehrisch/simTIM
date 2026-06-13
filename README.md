@@ -17,7 +17,7 @@ Noah Niclas Behrisch, Zoltán Ádám Mann. SimTIM: A Temporal Cybersecurity Simu
 # Clone the repository
 git clone https://github.com/noahbehrisch/simTIM.git
 
-# Install production dependencies (creates venv automatically)
+# Install core dependencies (creates venv automatically)
 make install
 
 # Or install development dependencies (includes testing, linting tools)
@@ -53,6 +53,8 @@ Run `make help` to see all available commands:
 | `make security` | Run security scans |
 | `make docker` | Build Docker image |
 | `make clean` | Clean build artifacts and caches |
+
+**Windows users**: If you don't have `make`, see the [Makefile](Makefile) for the underlying commands, or use WSL.
 
 ## Running Tests
 

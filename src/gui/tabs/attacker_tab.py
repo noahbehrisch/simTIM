@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from src.config import sim_config
 from src.utils.discovery import list_attacker_strategies
 
 from .base_tab import BaseTab
@@ -67,10 +68,13 @@ class AttackerTab(BaseTab):
             state="readonly",
         )
         strategy_dropdown.grid(row=row, column=1, padx=2, pady=2, sticky="ew")
-        capacity_var = tk.StringVar(value="3")
+        is_inf_capacity = sim_config.default_attacker_capacity == float("inf")
+        capacity_var = tk.StringVar(
+            value="" if is_inf_capacity else str(int(sim_config.default_attacker_capacity))
+        )
         capacity_entry = self.create_styled_entry(self.attacker_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
-        infinite_var = tk.BooleanVar(value=True)
+        infinite_var = tk.BooleanVar(value=is_inf_capacity)
         infinite_check = tk.Checkbutton(
             self.attacker_entries_frame,
             text="∞",
@@ -80,8 +84,14 @@ class AttackerTab(BaseTab):
             command=lambda: self._toggle_capacity(capacity_entry, infinite_var),
         )
         infinite_check.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
-        capacity_entry.config(state="disabled")
-        budget_var = tk.StringVar(value="100000")
+        if is_inf_capacity:
+            capacity_entry.config(state="disabled")
+        budget_default = (
+            "inf"
+            if sim_config.default_budget == float("inf")
+            else str(int(sim_config.default_budget))
+        )
+        budget_var = tk.StringVar(value=budget_default)
         budget_entry = self.create_styled_entry(self.attacker_entries_frame, budget_var)
         budget_entry.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
         remove_btn = self.create_styled_button(

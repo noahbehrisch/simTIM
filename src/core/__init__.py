@@ -6,11 +6,7 @@ from .access_utils import (
     set_node_access,
 )
 from .action_index import OngoingActionsIndex
-from .economic_model import (
-    calculate_action_damage,
-    calculate_action_gain,
-    economic_model,
-)
+from .economic_model import SimpleEconomicModel
 from .events import (
     DefenderAlertObserver,
     EventBus,
@@ -38,24 +34,16 @@ from .exceptions import (
     SimulationError,
     ValidationError,
 )
-from .graph import Link, Node
-from .network import Network
+from .network import Link, Network, Node
+from .simulation_orchestrator import SimulationOrchestrator, run_variable_scenarios
+from .simulation_runner import SimulationRunner
 from .simulator import Event, Simulator
-
-
-def get_simtim_main():
-    from .simulation_main import simtim_main
-
-    return simtim_main
-
-
-try:
-    from .simulation_main import simtim_main
-except ImportError:
-    simtim_main = None  # type: ignore[assignment]
 
 __all__ = [
     "Simulator",
+    "SimulationRunner",
+    "SimulationOrchestrator",
+    "run_variable_scenarios",
     "Event",
     "Node",
     "Link",
@@ -66,11 +54,7 @@ __all__ = [
     "set_node_access",
     "get_link_access",
     "set_link_access",
-    "economic_model",
-    "calculate_action_damage",
-    "calculate_action_gain",
-    "simtim_main",
-    "get_simtim_main",
+    "SimpleEconomicModel",
     "OngoingActionsIndex",
     "EventBus",
     "EventType",

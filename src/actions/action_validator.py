@@ -1,17 +1,9 @@
-"""
-Action validation module.
-
-Provides validation for action JSON configurations with detailed error reporting.
-"""
-
 from dataclasses import dataclass, field
 from typing import Any
 
 
 @dataclass
 class ValidationResult:
-    """Result of a validation operation."""
-
     valid: bool
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -20,7 +12,6 @@ class ValidationResult:
         return self.valid
 
     def merge(self, other: "ValidationResult") -> "ValidationResult":
-        """Merge another validation result into this one."""
         return ValidationResult(
             valid=self.valid and other.valid,
             errors=self.errors + other.errors,
@@ -29,15 +20,6 @@ class ValidationResult:
 
 
 class ActionValidator:
-    """
-    Validates action JSON configurations.
-
-    Separates validation logic from action creation, allowing for:
-    - Reusable validation rules
-    - Custom validation extensions
-    - Clear error reporting
-    """
-
     REQUIRED_FIELDS = [
         "name",
         "action_type",
@@ -66,7 +48,6 @@ class ActionValidator:
         "software_check",
         "version_check",
         "property_check",
-        "vulnerability_check",
         "assets_check",
         "constant",
         "zero",
@@ -79,8 +60,6 @@ class ActionValidator:
         "set_access_if_none",
         "set_property",
         "set_software",
-        "add_vulnerability",
-        "remove_vulnerability",
         "increment_counter",
         "set_links_access",
         "set_access_neighbors",
@@ -88,21 +67,10 @@ class ActionValidator:
     ] + VALID_CONDITION_TYPES
 
     def validate(self, action_data: dict[str, Any]) -> ValidationResult:
-        """
-        Validate an action configuration.
-
-        Args:
-            action_data: Dictionary containing action configuration
-
-        Returns:
-            ValidationResult with errors and warnings
-        """
         result = ValidationResult(valid=True)
 
-        # Check required fields
         result = result.merge(self._validate_required_fields(action_data))
 
-        # Validate individual fields
         result = result.merge(self._validate_name(action_data))
         result = result.merge(self._validate_action_type(action_data))
         result = result.merge(self._validate_cost(action_data))
@@ -116,7 +84,6 @@ class ActionValidator:
         return result
 
     def _validate_required_fields(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Check that all required fields are present."""
         errors = []
         for field_name in self.REQUIRED_FIELDS:
             if field_name not in action_data:
@@ -124,9 +91,8 @@ class ActionValidator:
         return ValidationResult(valid=len(errors) == 0, errors=errors)
 
     def _validate_name(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the name field."""
         if "name" not in action_data:
-            return ValidationResult(valid=True)  # Already caught by required fields
+            return ValidationResult(valid=True)
 
         if not isinstance(action_data["name"], str):
             return ValidationResult(valid=False, errors=["'name' must be a string"])
@@ -137,7 +103,6 @@ class ActionValidator:
         return ValidationResult(valid=True)
 
     def _validate_action_type(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the action_type field."""
         if "action_type" not in action_data:
             return ValidationResult(valid=True)
 
@@ -150,7 +115,6 @@ class ActionValidator:
         return ValidationResult(valid=True)
 
     def _validate_cost(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the cost field."""
         if "cost" not in action_data:
             return ValidationResult(valid=True)
 
@@ -164,7 +128,6 @@ class ActionValidator:
         return ValidationResult(valid=True)
 
     def _validate_duration(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the duration field."""
         if "duration" not in action_data:
             return ValidationResult(valid=True)
 
@@ -178,7 +141,6 @@ class ActionValidator:
         return ValidationResult(valid=True)
 
     def _validate_success_probability(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the success_probability field."""
         if "success_probability" not in action_data:
             return ValidationResult(valid=True)
 
@@ -194,7 +156,6 @@ class ActionValidator:
         return ValidationResult(valid=True)
 
     def _validate_damage_gain(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the damage_gain field."""
         if "damage_gain" not in action_data:
             return ValidationResult(valid=True)
 
@@ -212,7 +173,6 @@ class ActionValidator:
         return ValidationResult(valid=len(errors) == 0, errors=errors)
 
     def _validate_precondition(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the precondition field."""
         if "precondition" not in action_data:
             return ValidationResult(valid=True)
 
@@ -223,7 +183,6 @@ class ActionValidator:
         return self._validate_condition_spec(precondition, "precondition")
 
     def _validate_postcondition(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the postcondition field."""
         if "postcondition" not in action_data:
             return ValidationResult(valid=True)
 
@@ -234,7 +193,6 @@ class ActionValidator:
         return self._validate_postcondition_spec(postcondition)
 
     def _validate_detection_probability(self, action_data: dict[str, Any]) -> ValidationResult:
-        """Validate the detection_probability field."""
         if "detection_probability" not in action_data:
             return ValidationResult(valid=True)
 
@@ -247,7 +205,6 @@ class ActionValidator:
         return self._validate_condition_spec(detection, "detection_probability")
 
     def _validate_condition_spec(self, spec: dict[str, Any], field_name: str) -> ValidationResult:
-        """Validate a condition specification."""
         warnings = []
 
         if "type" not in spec:
@@ -266,7 +223,6 @@ class ActionValidator:
         return ValidationResult(valid=True, warnings=warnings)
 
     def _validate_postcondition_spec(self, spec: dict[str, Any]) -> ValidationResult:
-        """Validate a postcondition specification."""
         if "type" not in spec:
             return ValidationResult(
                 valid=False, errors=["'postcondition' must have a 'type' field"]

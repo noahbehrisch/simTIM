@@ -1,41 +1,11 @@
-"""
-MITRE Framework Utilities
-
-Provides easy access to MITRE ATT&CK and D3FEND data for simTIM.
-Used to validate and enrich action definitions with official technique data.
-
-Usage:
-    from src.utils.mitre import MitreData
-
-    mitre = MitreData()
-
-    # Look up ATT&CK technique
-    technique = mitre.get_attack_technique("T1566.001")
-    print(technique['name'])  # "Spearphishing Attachment"
-
-    # Look up D3FEND technique
-    defense = mitre.get_defend_technique("D3-NTA")
-    print(defense['name'])  # "Network Traffic Analysis"
-"""
-
 import json
 from pathlib import Path
 from typing import Any
 
 
 class MitreData:
-    """Access MITRE ATT&CK and D3FEND reference data."""
-
     def __init__(self, data_dir: str | Path | None = None):
-        """
-        Initialize MITRE data access.
-
-        Args:
-            data_dir: Directory containing enterprise-attack.json and d3fend.json.
-                     Defaults to project root.
-        """
         if data_dir is None:
-            # Find project root (where the JSON files should be)
             data_dir = Path(__file__).parent.parent.parent
 
         self.data_dir = Path(data_dir)
@@ -46,7 +16,6 @@ class MitreData:
 
     @property
     def attack_data(self) -> dict[str, Any]:
-        """Lazy load ATT&CK data."""
         if self._attack_data is None:
             attack_path = self.data_dir / "enterprise-attack.json"
             if not attack_path.exists():
@@ -60,7 +29,6 @@ class MitreData:
 
     @property
     def defend_data(self) -> dict[str, Any]:
-        """Lazy load D3FEND data."""
         if self._defend_data is None:
             defend_path = self.data_dir / "d3fend.json"
             if not defend_path.exists():
@@ -73,7 +41,6 @@ class MitreData:
         return self._defend_data
 
     def _build_attack_index(self) -> dict[str, dict[str, Any]]:
-        """Build index of ATT&CK techniques by ID."""
         if self._attack_techniques is not None:
             return self._attack_techniques
 
@@ -84,7 +51,6 @@ class MitreData:
             if obj.get("revoked", False):
                 continue
 
-            # Get technique ID from external references
             technique_id = None
             url = None
             for ref in obj.get("external_references", []):
@@ -94,7 +60,6 @@ class MitreData:
                     break
 
             if technique_id:
-                # Get tactics
                 tactics = []
                 for phase in obj.get("kill_chain_phases", []):
                     if phase.get("kill_chain_name") == "mitre-attack":
@@ -113,7 +78,6 @@ class MitreData:
         return self._attack_techniques
 
     def _build_defend_index(self) -> dict[str, dict[str, Any]]:
-        """Build index of D3FEND techniques by ID."""
         if self._defend_techniques is not None:
             return self._defend_techniques
 
@@ -123,7 +87,6 @@ class MitreData:
             if not d3f_id or not d3f_id.startswith("D3-"):
                 continue
 
-            # Extract tactic by traversing hierarchy
             tactic = self._get_defend_tactic_from_ontology(item)
 
             self._defend_techniques[d3f_id] = {
@@ -137,7 +100,6 @@ class MitreData:
         return self._defend_techniques
 
     def _get_defend_tactic_from_ontology(self, item: dict) -> str | None:
-        """Extract tactic for a D3FEND technique by traversing the ontology hierarchy."""
         tactic_ids = {
             "d3f:Model": "Model",
             "d3f:Harden": "Harden",
@@ -148,7 +110,6 @@ class MitreData:
             "d3f:Restore": "Restore",
         }
 
-        # Build items lookup if not exists
         if not hasattr(self, "_defend_items_by_id"):
             self._defend_items_by_id = {
                 i.get("@id", ""): i for i in self.defend_data.get("@graph", [])
@@ -163,14 +124,12 @@ class MitreData:
                 return None
             visited.add(item_id)
 
-            # Check d3f:enables property
             enables = current_item.get("d3f:enables", {})
             if isinstance(enables, dict):
                 tactic_id = enables.get("@id", "")
                 if tactic_id in tactic_ids:
                     return tactic_ids[tactic_id]
 
-            # Check parent classes
             subclass = current_item.get("rdfs:subClassOf", [])
             if isinstance(subclass, dict):
                 subclass = [subclass]
@@ -189,33 +148,14 @@ class MitreData:
         return find_tactic(item)
 
     def get_attack_technique(self, technique_id: str) -> dict[str, Any] | None:
-        """
-        Get ATT&CK technique by ID.
-
-        Args:
-            technique_id: Technique ID (e.g., "T1566.001", "T1021")
-
-        Returns:
-            Dictionary with technique details or None if not found.
-        """
         index = self._build_attack_index()
         return index.get(technique_id)
 
     def get_defend_technique(self, technique_id: str) -> dict[str, Any] | None:
-        """
-        Get D3FEND technique by ID.
-
-        Args:
-            technique_id: D3FEND ID (e.g., "D3-NTA", "D3-SU")
-
-        Returns:
-            Dictionary with technique details or None if not found.
-        """
         index = self._build_defend_index()
         return index.get(technique_id)
 
     def search_attack_techniques(self, query: str) -> list[dict[str, Any]]:
-        """Search ATT&CK techniques by name or description."""
         index = self._build_attack_index()
         query_lower = query.lower()
         results = []
@@ -228,7 +168,6 @@ class MitreData:
         return results
 
     def search_defend_techniques(self, query: str) -> list[dict[str, Any]]:
-        """Search D3FEND techniques by name or definition."""
         index = self._build_defend_index()
         query_lower = query.lower()
         results = []
@@ -241,34 +180,27 @@ class MitreData:
         return results
 
     def get_all_attack_techniques(self) -> list[dict[str, Any]]:
-        """Get all ATT&CK techniques."""
         return list(self._build_attack_index().values())
 
     def get_all_defend_techniques(self) -> list[dict[str, Any]]:
-        """Get all D3FEND techniques."""
         return list(self._build_defend_index().values())
 
     def validate_attack_mapping(self, technique_id: str) -> bool:
-        """Check if an ATT&CK technique ID is valid."""
         return self.get_attack_technique(technique_id) is not None
 
     def validate_defend_mapping(self, technique_id: str) -> bool:
-        """Check if a D3FEND technique ID is valid."""
         return self.get_defend_technique(technique_id) is not None
 
     def get_defend_tactic(self, technique_id: str) -> str | None:
-        """Get the D3FEND tactic for a technique."""
         for tactic, tech_ids in DEFEND_TACTICS.items():
             if technique_id in tech_ids:
                 return tactic
         return None
 
     def get_techniques_by_defend_tactic(self, tactic: str) -> list[str]:
-        """Get all technique IDs for a D3FEND tactic."""
         return DEFEND_TACTICS.get(tactic, [])
 
 
-# Tactic ID to name mapping for ATT&CK
 ATTACK_TACTICS = {
     "TA0043": "reconnaissance",
     "TA0042": "resource-development",
@@ -286,12 +218,9 @@ ATTACK_TACTICS = {
     "TA0040": "impact",
 }
 
-# Reverse mapping
 ATTACK_TACTIC_IDS = {v: k for k, v in ATTACK_TACTICS.items()}
 
 
-# D3FEND Defensive Tactics
-# Maps tactic name to list of technique IDs
 DEFEND_TACTICS = {
     "Model": [
         "D3-AI",
@@ -359,7 +288,6 @@ DEFEND_TACTICS = {
     "Restore": ["D3-RC", "D3-RCO", "D3-RDB", "D3-RDI", "D3-RF", "D3-RS", "D3-UA"],
 }
 
-# D3FEND Tactic descriptions
 DEFEND_TACTIC_DESCRIPTIONS = {
     "Model": "Gather information about systems, assets, and configurations",
     "Harden": "Increase the difficulty of exploiting a system",

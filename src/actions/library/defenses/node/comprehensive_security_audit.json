@@ -24,44 +24,10 @@
         "value": "ADMIN"
       },
       {
-        "type": "forall",
-        "variable": "vuln",
-        "domain": {
-          "type": "vulnerabilities"
-        },
-        "formula": {
-          "type": "negation",
-          "condition": {
-            "type": "variable_ref",
-            "variable": "vuln",
-            "property": "severity",
-            "operator": "equals",
-            "value": "critical"
-          }
-        }
-      },
-      {
-        "type": "implication",
-        "premise": {
-          "type": "network_check",
-          "check_type": "neighbor_count",
-          "operator": "greater_than",
-          "value": 3
-        },
-        "conclusion": {
-          "type": "exists",
-          "variable": "neighbor",
-          "domain": {
-            "type": "neighbors"
-          },
-          "formula": {
-            "type": "variable_ref",
-            "variable": "neighbor",
-            "property": "compromised",
-            "operator": "equals",
-            "value": false
-          }
-        }
+        "type": "time_check",
+        "property": "last_audit",
+        "operator": "time_since_greater_than",
+        "value": 72
       }
     ]
   },
@@ -70,18 +36,24 @@
     "operator": "AND",
     "actions": [
       {
-        "type": "remove_vulnerability",
-        "method": "all"
+        "type": "set_software",
+        "software_key": "version",
+        "value": "2025"
+      },
+      {
+        "type": "set_software",
+        "software_key": "web_version",
+        "value": "2.4.51"
+      },
+      {
+        "type": "set_property",
+        "property": "last_audit",
+        "value": "@current_time"
       },
       {
         "type": "increment_counter",
         "counter": "security_audits",
         "increment": 1
-      },
-      {
-        "type": "set_property",
-        "property": "last_audit",
-        "value": "current_time"
       }
     ]
   },
@@ -91,8 +63,8 @@
   },
   "damage_gain": {
     "one_off_damage": 0.0,
-    "one_off_gain": 100.0,
+    "one_off_gain": 0.0,
     "time_damage": 0.0,
-    "time_gain": 10.0
+    "time_gain": 0.0
   }
 }

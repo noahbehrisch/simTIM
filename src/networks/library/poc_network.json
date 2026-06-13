@@ -1,0 +1,56 @@
+{
+  "name": "Proof of Concept Network",
+  "description": "2-Node proof of concept network, with a web server and a database.",
+  "nodes": [
+    {
+      "id": "webserver",
+      "name": "webserver",
+      "x": 200,
+      "y": 300,
+      "software": {
+        "os": "Ubuntu",
+        "version": "22.04",
+        "web_server": "Apache",
+        "web_version": "2.4.41"
+      },
+      "assets": [
+        "web_application"
+      ],
+      "properties": {
+        "exposed_to_internet": true,
+        "service_ssh": true
+      }
+    },
+    {
+      "id": "database",
+      "name": "database",
+      "x": 600,
+      "y": 300,
+      "software": {
+        "os": "Ubuntu",
+        "version": "20.04",
+        "database": "PostgreSQL",
+        "db_version": "13.4"
+      },
+      "assets": [
+        "customer_data",
+        "financial_records"
+      ],
+      "properties": {
+        "exposed_to_internet": false,
+        "service_ssh": true
+      }
+    }
+  ],
+  "links": [
+    {
+      "node1": "webserver",
+      "node2": "database",
+      "link_type": "ethernet",
+      "properties": {
+        "bandwidth": "1Gbps",
+        "encrypted": false
+      }
+    }
+  ]
+}

@@ -5,7 +5,6 @@ from pathlib import Path
 
 
 def _get_env(key: str, default: str, cast_type: type = str):
-    """Get environment variable with SIMTIM_ prefix."""
     env_key = f"SIMTIM_{key.upper()}"
     value = os.environ.get(env_key, default)
     if cast_type is bool:
@@ -18,23 +17,28 @@ def _get_env(key: str, default: str, cast_type: type = str):
 @dataclass
 class SimConfig:
     default_detection_engine: str = field(
-        default_factory=lambda: _get_env("DETECTION_ENGINE", "exponential")
+        default_factory=lambda: _get_env("DETECTION_ENGINE", "early_weighted")
     )
-    default_sim_time: int = field(default_factory=lambda: _get_env("SIM_TIME", "72", int))
-    default_sim_runs: int = field(default_factory=lambda: _get_env("SIM_RUNS", "1", int))
+    default_sim_time: int = field(default_factory=lambda: _get_env("SIM_TIME", "168", int))
+    default_sim_runs: int = field(default_factory=lambda: _get_env("SIM_RUNS", "3", int))
     log_level: str = field(default_factory=lambda: _get_env("LOG_LEVEL", "INFO"))
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     max_event_queue_size: int = field(
         default_factory=lambda: _get_env("MAX_EVENT_QUEUE_SIZE", "10000", int)
     )
     event_history_limit: int | None = None
-    default_attacker_capacity: int = field(
-        default_factory=lambda: _get_env("ATTACKER_CAPACITY", "3", int)
+    default_attacker_capacity: float = field(
+        default_factory=lambda: _get_env("ATTACKER_CAPACITY", "inf", float)
     )
     default_defender_capacity: int = field(
-        default_factory=lambda: _get_env("DEFENDER_CAPACITY", "3", int)
+        default_factory=lambda: _get_env("DEFENDER_CAPACITY", "2", int)
     )
-    default_budget: float = field(default_factory=lambda: _get_env("DEFAULT_BUDGET", "inf", float))
+    default_budget: float = field(
+        default_factory=lambda: _get_env("DEFAULT_BUDGET", "100000", float)
+    )
+    default_network: str = field(
+        default_factory=lambda: _get_env("DEFAULT_NETWORK", "demo_network.json")
+    )
     damage_multiplier: float = field(
         default_factory=lambda: _get_env("DAMAGE_MULTIPLIER", "1.0", float)
     )
@@ -66,8 +70,8 @@ class PathConfig:
 
 @dataclass
 class DetectionConfig:
-    exponential_lambda: float = 2.0
-    linear_slope: float = 1.0
+    early_weighted_exponent: float = 2.0
+    late_weighted_exponent: float = 2.0
     uniform_rate: float = 1.0
     cdf_tolerance: float = 0.02
     validate_cdf: bool = True
@@ -75,7 +79,7 @@ class DetectionConfig:
 
 @dataclass
 class GUIConfig:
-    window_title: str = "simTIM - Temporal Information Management Simulator"
+    window_title: str = "simTIM"
     min_window_width: int = 800
     min_window_height: int = 600
     default_theme: str = field(default_factory=lambda: _get_env("GUI_THEME", "dark"))
@@ -83,7 +87,6 @@ class GUIConfig:
     default_tab: str = "simulation"
 
 
-# Global config instances
 sim_config = SimConfig()
 path_config = PathConfig()
 detection_config = DetectionConfig()
@@ -91,7 +94,6 @@ gui_config = GUIConfig()
 
 
 def load_config_from_file(filepath: str) -> dict:
-    """Load configuration from JSON file."""
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {filepath}")
@@ -101,14 +103,12 @@ def load_config_from_file(filepath: str) -> dict:
 
 
 def save_config_to_file(filepath: str) -> None:
-    """Save current configuration to JSON file."""
     config = {
         "simulation": asdict(sim_config),
         "paths": asdict(path_config),
         "detection": asdict(detection_config),
         "gui": asdict(gui_config),
     }
-    # Handle infinity serialization
     config["simulation"]["default_budget"] = (
         "inf"
         if config["simulation"]["default_budget"] == float("inf")
@@ -122,7 +122,6 @@ def save_config_to_file(filepath: str) -> None:
 
 
 def get_config_summary() -> dict:
-    """Get a summary of all configuration values."""
     return {
         "simulation": asdict(sim_config),
         "paths": asdict(path_config),

@@ -1,0 +1,42 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{admass2024cyber}
+Admass, W.S., Munaye, Y.Y., Diro, A.A.: Cyber security: State of the art, challenges and future directions. Cyber Security and Applications  \textbf{2},  100031 (2024)
+
+\bibitem{de2024whole}
+De~Nobrega, K.M., Rutkowski, A.F., Saunders, C.: The whole of cyber defense: Syncing practice and theory. J. of Strategic Inf. Systems  \textbf{33}(4),  101861 (2024)
+
+\bibitem{franco2024rcvar}
+Franco, M.F., K{\"u}nzler, F., Von~der Assen, J., Feng, C., Stiller, B.: {RCVaR}: An economic approach to estimate cyberattacks costs using data from industry reports. Computers \& Security  \textbf{139},  103737 (2024)
+
+\bibitem{jaber2022towards}
+Jaber, A., Fritsch, L.: Towards {AI}-powered cybersecurity attack modeling with simulation tools: Review of attack simulators. In: International Conference on P2P, Parallel, Grid, Cloud and Internet Computing. pp. 249--257. Springer (2022)
+
+\bibitem{kavak2021simulation}
+Kavak, H., Padilla, J.J., Vernon-Bido, D., et~al.: Simulation for cybersecurity: state of the art and future directions. Journal of Cybersecurity  \textbf{7}(1),  tyab005 (2021)
+
+\bibitem{malik2020analysis}
+Malik, S., Sun, W.: Analysis and simulation of cyber attacks against connected and autonomous vehicles. In: International Conference on Connected and Autonomous Driving (MetroCAD). pp. 62--70. IEEE (2020)
+
+\bibitem{mann2025time}
+Mann, Z.{\'A}.: Time is money: A temporal model of cybersecurity. In: IFIP Intl. Conf. on ICT Systems Secur. and Privacy Protection (IFIP SEC). pp. 82--96 (2025)
+
+\bibitem{masi2023securing}
+Masi, M., Sellitto, G.P., Aranha, H., Pavleska, T.: Securing critical infrastructures with a cybersecurity digital twin. Softw. and Syst. Modeling  \textbf{22}(2),  689--707 (2023)
+
+\bibitem{qiu2025cyber}
+Qiu, D., Liu, M., Zhang, R., et~al.: Cyber-physical real-time digital simulation for cybersecurity analysis in microgrids. IEEE Trans. Industr. Cyb.-Phys. Syst.  (2025)
+
+\bibitem{shandilya2022ai}
+Shandilya, S.K., Upadhyay, S., Kumar, A., Nagar, A.K.: {AI}-assisted computer network operations testbed for nature-inspired cyber security based adaptive defense simulation and analysis. Future Gen. Comp. Syst.  \textbf{127},  297--308 (2022)
+
+\bibitem{woods2021sok}
+Woods, D.W., B{\"o}hme, R.: {SoK}: Quantifying cyber risk. In: IEEE Symposium on Security and Privacy (SP). pp. 211--228. IEEE (2021)
+
+\bibitem{yamin2021serious}
+Yamin, M.M., Katt, B., Nowostawski, M.: Serious games as a tool to model attack and defense scenarios for cyber-security exercises. Computers \& Security  \textbf{110},  102450 (2021)
+
+\end{thebibliography}
