@@ -50,9 +50,6 @@ Run `make help` to see all available commands:
 | `make test-cov` | Run tests with coverage report |
 | `make lint` | Run linting checks |
 | `make format` | Format code with ruff |
-| `make security` | Run security scans |
-| `make docker` | Build Docker image |
-| `make clean` | Clean build artifacts and caches |
 
 **Windows users**: If you don't have `make`, see the [Makefile](Makefile) for the underlying commands, or use WSL.
 
