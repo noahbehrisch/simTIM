@@ -1,26 +1,26 @@
-# Core dependencies
-matplotlib>=3.10
-numpy>=2.2
+# Production dependencies - pinned versions
+matplotlib==3.10.8
+numpy==2.2.6
 
 # Testing
-pytest>=8.0
-pytest-cov>=4.1
-pytest-timeout>=2.2
+pytest==8.0.0
+pytest-cov==7.0.0
+pytest-timeout==2.4.0
 
 # Linting and formatting
-ruff>=0.3
-mypy>=1.8
+ruff==0.14.14
+mypy==1.19.1
 
 # Security scanning
-pip-audit>=2.7
-bandit>=1.7
+pip-audit==2.10.0
+bandit==1.9.3
 
 # Pre-commit hooks
-pre-commit>=3.6
+pre-commit==4.5.1
 
 # Profiling and debugging
-snakeviz>=2.2
+snakeviz==2.2.2
 
 # Build tools
-build>=1.0
-twine>=4.0
+build==1.4.0
+twine==6.2.0
