@@ -30,7 +30,7 @@ This next tab is the scenario comparison. This is an easy way to compare differe
 Here is a short overview of all the parameters and now we can run the simulation.
 
 Clicking on the results button takes us to this dashboard, giving an overview of all the results. The next tabs are the different event histories, for every run and for each actor. This is a timeline of the economic impact, showing system damage, attacker gain and defender cost. Next is a timeline of the access the attacker has to the nodes, but the following tab shows this even better: the attack path. Here you can see our network and when I press play we see in real time how the attacker propagates through the network and which access they have at any given point in time.
-The last tab is the statistical analysis where you can see the outcomes of the scenario comparison.
+The last tab is the statistical analysis where you can see the outcomes of the scenario comparison. A team that contains an incident in two hours instead of sixteen suffers more than twelve times less damage. This is on the same network, with the same actors and success probabilites. The only thing that changed was time.
 
 simTIM is an open-source project that is still under development. You can find it on GitHub and are welcome to try it out. Extensibility was a main consideration when developing simTIM. Networks and actions are JSON. Strategies and detection engines are Python classes that can easily be extended.
 
