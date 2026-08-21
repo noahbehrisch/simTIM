@@ -9,17 +9,17 @@ HELP_CONTENT = {
     },
     "Attackers": {
         "title": "Attacker Configuration",
-        "content": "• Strategy: random | greedy\n• Capacity: Max concurrent actions\n• Budget: Max spending (use 'inf' for unlimited)\n• Access levels: NONE → VISIBLE → USER → ADMIN",
+        "content": "• Strategy: escalation | greedy | random\n• Capacity: Max concurrent actions\n• Budget: Max spending (use 'inf' for unlimited)\n• Access levels: NONE → VISIBLE → USER → ADMIN",
     },
     "Defenders": {
         "title": "Defender Configuration",
-        "content": "• Strategy: reactive | proactive | monitoring\n• Capacity: Max concurrent actions (lower = realistic constraints)\n• Budget: Max spending\n• Full visibility but limited capacity",
+        "content": "• Strategy: reactive | proactive | monitoring | balanced\n• Capacity: Max concurrent actions (lower = realistic constraints)\n• Budget: Max spending\n• Full visibility but limited capacity",
     },
     "Actions": {
         "title": "Actions Library",
         "content": "• Node Actions: Single node operations\n• Link Actions: Movement between nodes\n• Preconditions: Requirements to execute\n• Postconditions: Effects on success",
     },
-    "Variables": {
+    "Scenarios": {
         "title": "Scenario Variables",
         "content": "Define parameter variations for sensitivity analysis.\nTests all combinations of variable values.\nCompare outcomes across scenarios.",
     },
@@ -39,11 +39,11 @@ TOOLTIPS = {
     "visualize": "Display network graph",
     "create_network": "Build custom network",
     "attacker_id": "Unique identifier",
-    "attacker_strategy": "random | greedy | targeted",
+    "attacker_strategy": "escalation | greedy | random",
     "attacker_capacity": "Max concurrent actions",
     "attacker_budget": "Max spending ('inf' for unlimited)",
     "defender_id": "Unique identifier",
-    "defender_strategy": "reactive | proactive | monitoring",
+    "defender_strategy": "reactive | proactive | monitoring | balanced",
     "defender_capacity": "Max concurrent actions",
     "defender_budget": "Max spending",
     "action_filter": "Filter by name",

@@ -9,7 +9,7 @@ class HelpWindow(tk.Toplevel):
     def __init__(self, parent, tab_name=None):
         super().__init__(parent)
         self.parent = parent
-        self.tab_name = tab_name or "Simulation"
+        self.tab_name = tab_name if tab_name in HELP_CONTENT else "Simulation"
         self.theme = Theme()
         self.title(f"Help - {self.tab_name}")
         self.geometry("700x600")
