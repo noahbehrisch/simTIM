@@ -1,0 +1,42 @@
+% Shared preamble for the talk and the backup deck.
+% Fragment: \input from both, not compiled on its own.
+
+\documentclass[aspectratio=169, 11pt]{beamer}
+
+\usetheme{metropolis}
+\metroset{numbering=fraction, progressbar=frametitle, block=fill}
+
+% Presenter notes. `make notes` defines \notesversion and produces a second PDF
+% with the speaker notes beside each slide; the normal build ignores them.
+\ifdefined\notesversion
+  \setbeameroption{show notes on second screen=right}
+\fi
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{qrcode}
+\usepackage{appendixnumberbeamer}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, fit,
+                backgrounds, patterns, decorations.pathreplacing}
+
+\graphicspath{{figures/}{../Paper/figures/}{../Sources/}}
+
+% --- palette: identical to the colours simTIM uses in its own plots ---------
+\definecolor{atkRed}{HTML}{C7410F}      % attacker / damage
+\definecolor{atkOrange}{HTML}{E8993A}   % user-level access
+\definecolor{atkYellow}{HTML}{F2DC8C}   % visible
+\definecolor{defBlue}{HTML}{1F77B4}     % defender / cost
+\definecolor{gainGold}{HTML}{E8A33D}    % attacker gain
+\definecolor{inkGrey}{HTML}{6B6B6B}
+\definecolor{paleGrey}{HTML}{E9E9E9}
+
+\setbeamercolor{frametitle}{bg=atkRed}
+\setbeamercolor{progress bar}{fg=defBlue}
+\setbeamercolor{alerted text}{fg=atkRed}
+
+\newcommand{\atk}[1]{\textcolor{atkRed}{\textbf{#1}}}
+
+% hyperref writes titles into PDF metadata; keep beamer macros out of them
+\pdfstringdefDisableCommands{\def\translate#1{#1}}
