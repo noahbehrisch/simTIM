@@ -45,7 +45,7 @@ class OverviewTab(BaseTab):
             overview += f"   • Mode: {mode_desc}\n"
             overview += f"   • Scenarios: {len(scenarios)}\n"
             overview += f"   • Total Runs: {total_runs}\n"
-            overview += f"   • Time per run: {sim_config['time']} seconds\n"
+            overview += f"   • Time per run: {sim_config['time']} hours\n"
             overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
             overview += "   Scenario Details:\n"
 
@@ -72,7 +72,7 @@ class OverviewTab(BaseTab):
             overview += "\n"
         else:
             overview += f"   • Runs: {sim_config['runs']}\n"
-            overview += f"   • Time: {sim_config['time']} seconds\n"
+            overview += f"   • Time: {sim_config['time']} hours\n"
             overview += f"   • Detection Engine: {sim_config['detection_engine_type']}\n\n"
 
         overview += "Network Configuration:\n"

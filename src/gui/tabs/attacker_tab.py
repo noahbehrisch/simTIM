@@ -31,14 +31,14 @@ class AttackerTab(BaseTab):
         self.attacker_entries_frame.grid_columnconfigure(2, weight=1, minsize=80)
         self.attacker_entries_frame.grid_columnconfigure(3, weight=0, minsize=40)
         self.attacker_entries_frame.grid_columnconfigure(4, weight=1, minsize=100)
-        self.attacker_entries_frame.grid_columnconfigure(5, weight=1, minsize=80)
-        headers = ["ID", "Strategy", "Capacity", "∞", "Budget ($)", "Actions"]
+        self.attacker_entries_frame.grid_columnconfigure(5, weight=0, minsize=40)
+        self.attacker_entries_frame.grid_columnconfigure(6, weight=1, minsize=80)
+        headers = ["ID", "Strategy", "Capacity", "∞", "Budget ($)", "∞", "Actions"]
         for i, text in enumerate(headers):
             label_style = self.theme.get_label_style("subheading")
             label_style.update({"bg": self.sidebar_color, **self.theme.BORDERS["light"]})
             header_label = tk.Label(self.attacker_entries_frame, text=text, **label_style)
             header_label.grid(row=0, column=i, padx=2, pady=2, sticky="ew")
-        self.attacker_entries_frame.grid_columnconfigure(5, weight=1, minsize=80)
         self.add_attacker_entry()
         self.create_styled_button(self.pad_frame, "Add Attacker", self.add_attacker_entry).pack(
             padx=10, pady=10, anchor="w"
@@ -86,21 +86,31 @@ class AttackerTab(BaseTab):
         infinite_check.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
         if is_inf_capacity:
             capacity_entry.config(state="disabled")
-        budget_default = (
-            "inf"
-            if sim_config.default_budget == float("inf")
-            else str(int(sim_config.default_budget))
+        is_inf_budget = sim_config.default_budget == float("inf")
+        budget_var = tk.StringVar(
+            value="" if is_inf_budget else str(int(sim_config.default_budget))
         )
-        budget_var = tk.StringVar(value=budget_default)
         budget_entry = self.create_styled_entry(self.attacker_entries_frame, budget_var)
         budget_entry.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
+        budget_inf_var = tk.BooleanVar(value=is_inf_budget)
+        budget_inf_check = tk.Checkbutton(
+            self.attacker_entries_frame,
+            text="∞",
+            variable=budget_inf_var,
+            bg=self.tab_color,
+            fg=self.button_fg,
+            command=lambda: self._toggle_budget(budget_entry, budget_inf_var),
+        )
+        budget_inf_check.grid(row=row, column=5, padx=2, pady=2, sticky="ew")
+        if is_inf_budget:
+            budget_entry.config(state="disabled")
         remove_btn = self.create_styled_button(
             self.attacker_entries_frame,
             "Remove",
             lambda: self._remove_attacker(attacker_id),
             style_type="danger",
         )
-        remove_btn.grid(row=row, column=5, padx=2, pady=2, sticky="ew")
+        remove_btn.grid(row=row, column=6, padx=2, pady=2, sticky="ew")
         attacker_widgets = {
             "id_label": id_label,
             "strategy_var": strategy_var,
@@ -111,6 +121,8 @@ class AttackerTab(BaseTab):
             "infinite_check": infinite_check,
             "budget_var": budget_var,
             "budget_entry": budget_entry,
+            "budget_inf_var": budget_inf_var,
+            "budget_inf_check": budget_inf_check,
             "remove_btn": remove_btn,
             "row": row,
         }
@@ -121,9 +133,13 @@ class AttackerTab(BaseTab):
                 capacity_var,
                 infinite_var,
                 budget_var,
+                budget_inf_var,
                 attacker_widgets,
             )
         )
+
+    def _toggle_budget(self, budget_entry, budget_inf_var):
+        budget_entry.config(state="disabled" if budget_inf_var.get() else "normal")
 
     def _toggle_capacity(self, capacity_entry, infinite_var):
         if infinite_var.get():
@@ -134,7 +150,7 @@ class AttackerTab(BaseTab):
     def _remove_attacker(self, attacker_id):
         for i, entry in enumerate(self.attacker_entries):
             if entry[0] == attacker_id:
-                widgets = entry[5]
+                widgets = entry[6]
                 for widget_name, widget in widgets.items():
                     if widget_name != "row" and hasattr(widget, "destroy"):
                         widget.destroy()
@@ -152,6 +168,7 @@ class AttackerTab(BaseTab):
                 "capacity": entry[2].get(),
                 "infinite": entry[3].get(),
                 "budget": entry[4].get(),
+                "budget_infinite": entry[5].get(),
             }
             configs.append(config)
         self.attacker_entries.clear()
@@ -197,13 +214,25 @@ class AttackerTab(BaseTab):
         budget_var = tk.StringVar(value=config["budget"])
         budget_entry = self.create_styled_entry(self.attacker_entries_frame, budget_var)
         budget_entry.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
+        budget_inf_var = tk.BooleanVar(value=config.get("budget_infinite", False))
+        budget_inf_check = tk.Checkbutton(
+            self.attacker_entries_frame,
+            text="∞",
+            variable=budget_inf_var,
+            bg=self.tab_color,
+            fg=self.button_fg,
+            command=lambda: self._toggle_budget(budget_entry, budget_inf_var),
+        )
+        budget_inf_check.grid(row=row, column=5, padx=2, pady=2, sticky="ew")
+        if budget_inf_var.get():
+            budget_entry.config(state="disabled")
         remove_btn = self.create_styled_button(
             self.attacker_entries_frame,
             "Remove",
             lambda: self._remove_attacker(attacker_id),
             style_type="danger",
         )
-        remove_btn.grid(row=row, column=5, padx=2, pady=2, sticky="ew")
+        remove_btn.grid(row=row, column=6, padx=2, pady=2, sticky="ew")
         attacker_widgets = {
             "id_label": id_label,
             "strategy_var": strategy_var,
@@ -214,6 +243,8 @@ class AttackerTab(BaseTab):
             "infinite_check": infinite_check,
             "budget_var": budget_var,
             "budget_entry": budget_entry,
+            "budget_inf_var": budget_inf_var,
+            "budget_inf_check": budget_inf_check,
             "remove_btn": remove_btn,
             "row": row,
         }
@@ -224,6 +255,7 @@ class AttackerTab(BaseTab):
                 capacity_var,
                 infinite_var,
                 budget_var,
+                budget_inf_var,
                 attacker_widgets,
             )
         )
@@ -231,7 +263,15 @@ class AttackerTab(BaseTab):
     def get_attacker_config(self):
         attackers = []
         for entry in self.attacker_entries:
-            attacker_id, strategy_var, capacity_var, infinite_var, budget_var, frame = entry
+            (
+                attacker_id,
+                strategy_var,
+                capacity_var,
+                infinite_var,
+                budget_var,
+                budget_inf_var,
+                frame,
+            ) = entry
             if infinite_var.get():
                 capacity = float("inf")
             else:
@@ -239,10 +279,13 @@ class AttackerTab(BaseTab):
                     capacity = int(capacity_var.get())
                 except ValueError:
                     capacity = 3
-            try:
-                budget = float(budget_var.get())
-            except ValueError:
-                budget = 1000.0
+            if budget_inf_var.get():
+                budget = float("inf")
+            else:
+                try:
+                    budget = float(budget_var.get())
+                except ValueError:
+                    budget = sim_config.default_budget
             attackers.append(
                 {
                     "id": f"attacker{attacker_id}",

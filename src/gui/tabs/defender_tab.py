@@ -30,8 +30,9 @@ class DefenderTab(BaseTab):
         self.defender_entries_frame.grid_columnconfigure(1, weight=2, minsize=100)
         self.defender_entries_frame.grid_columnconfigure(2, weight=1, minsize=80)
         self.defender_entries_frame.grid_columnconfigure(3, weight=1, minsize=100)
-        self.defender_entries_frame.grid_columnconfigure(4, weight=1, minsize=80)
-        headers = ["ID", "Strategy", "Capacity", "Budget ($)", "Actions"]
+        self.defender_entries_frame.grid_columnconfigure(4, weight=0, minsize=40)
+        self.defender_entries_frame.grid_columnconfigure(5, weight=1, minsize=80)
+        headers = ["ID", "Strategy", "Capacity", "Budget ($)", "∞", "Actions"]
         for i, text in enumerate(headers):
             label_style = self.theme.get_label_style("subheading")
             label_style.update({"bg": self.sidebar_color, **self.theme.BORDERS["light"]})
@@ -69,21 +70,31 @@ class DefenderTab(BaseTab):
         capacity_var = tk.StringVar(value=str(int(sim_config.default_defender_capacity)))
         capacity_entry = self.create_styled_entry(self.defender_entries_frame, capacity_var)
         capacity_entry.grid(row=row, column=2, padx=2, pady=2, sticky="ew")
-        budget_default = (
-            "inf"
-            if sim_config.default_budget == float("inf")
-            else str(int(sim_config.default_budget))
+        is_inf_budget = sim_config.default_budget == float("inf")
+        budget_var = tk.StringVar(
+            value="" if is_inf_budget else str(int(sim_config.default_budget))
         )
-        budget_var = tk.StringVar(value=budget_default)
         budget_entry = self.create_styled_entry(self.defender_entries_frame, budget_var)
         budget_entry.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
+        budget_inf_var = tk.BooleanVar(value=is_inf_budget)
+        budget_inf_check = tk.Checkbutton(
+            self.defender_entries_frame,
+            text="∞",
+            variable=budget_inf_var,
+            bg=self.tab_color,
+            fg=self.button_fg,
+            command=lambda: self._toggle_budget(budget_entry, budget_inf_var),
+        )
+        budget_inf_check.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
+        if is_inf_budget:
+            budget_entry.config(state="disabled")
         remove_btn = self.create_styled_button(
             self.defender_entries_frame,
             "Remove",
             lambda: self._remove_defender(defender_id),
             style_type="danger",
         )
-        remove_btn.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
+        remove_btn.grid(row=row, column=5, padx=2, pady=2, sticky="ew")
         defender_widgets = {
             "id_label": id_label,
             "strategy_var": strategy_var,
@@ -92,17 +103,22 @@ class DefenderTab(BaseTab):
             "capacity_entry": capacity_entry,
             "budget_var": budget_var,
             "budget_entry": budget_entry,
+            "budget_inf_var": budget_inf_var,
+            "budget_inf_check": budget_inf_check,
             "remove_btn": remove_btn,
             "row": row,
         }
         self.defender_entries.append(
-            (defender_id, strategy_var, capacity_var, budget_var, defender_widgets)
+            (defender_id, strategy_var, capacity_var, budget_var, budget_inf_var, defender_widgets)
         )
+
+    def _toggle_budget(self, budget_entry, budget_inf_var):
+        budget_entry.config(state="disabled" if budget_inf_var.get() else "normal")
 
     def _remove_defender(self, defender_id):
         for i, entry in enumerate(self.defender_entries):
             if entry[0] == defender_id:
-                widgets = entry[4]
+                widgets = entry[5]
                 for widget_name, widget in widgets.items():
                     if widget_name != "row" and hasattr(widget, "destroy"):
                         widget.destroy()
@@ -119,6 +135,7 @@ class DefenderTab(BaseTab):
                 "strategy": entry[1].get(),
                 "capacity": entry[2].get(),
                 "budget": entry[3].get(),
+                "budget_infinite": entry[4].get(),
             }
             configs.append(config)
         self.defender_entries.clear()
@@ -150,13 +167,25 @@ class DefenderTab(BaseTab):
         budget_var = tk.StringVar(value=config["budget"])
         budget_entry = self.create_styled_entry(self.defender_entries_frame, budget_var)
         budget_entry.grid(row=row, column=3, padx=2, pady=2, sticky="ew")
+        budget_inf_var = tk.BooleanVar(value=config.get("budget_infinite", False))
+        budget_inf_check = tk.Checkbutton(
+            self.defender_entries_frame,
+            text="∞",
+            variable=budget_inf_var,
+            bg=self.tab_color,
+            fg=self.button_fg,
+            command=lambda: self._toggle_budget(budget_entry, budget_inf_var),
+        )
+        budget_inf_check.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
+        if budget_inf_var.get():
+            budget_entry.config(state="disabled")
         remove_btn = self.create_styled_button(
             self.defender_entries_frame,
             "Remove",
             lambda: self._remove_defender(defender_id),
             style_type="danger",
         )
-        remove_btn.grid(row=row, column=4, padx=2, pady=2, sticky="ew")
+        remove_btn.grid(row=row, column=5, padx=2, pady=2, sticky="ew")
         defender_widgets = {
             "id_label": id_label,
             "strategy_var": strategy_var,
@@ -165,25 +194,30 @@ class DefenderTab(BaseTab):
             "capacity_entry": capacity_entry,
             "budget_var": budget_var,
             "budget_entry": budget_entry,
+            "budget_inf_var": budget_inf_var,
+            "budget_inf_check": budget_inf_check,
             "remove_btn": remove_btn,
             "row": row,
         }
         self.defender_entries.append(
-            (defender_id, strategy_var, capacity_var, budget_var, defender_widgets)
+            (defender_id, strategy_var, capacity_var, budget_var, budget_inf_var, defender_widgets)
         )
 
     def get_defender_config(self):
         defenders = []
         for entry in self.defender_entries:
-            defender_id, strategy_var, capacity_var, budget_var, frame = entry
+            defender_id, strategy_var, capacity_var, budget_var, budget_inf_var, frame = entry
             try:
                 capacity = int(capacity_var.get())
             except ValueError:
-                capacity = 2
-            try:
-                budget = float(budget_var.get())
-            except ValueError:
-                budget = 2000.0
+                capacity = sim_config.default_defender_capacity
+            if budget_inf_var.get():
+                budget = float("inf")
+            else:
+                try:
+                    budget = float(budget_var.get())
+                except ValueError:
+                    budget = sim_config.default_budget
             defenders.append(
                 {
                     "id": f"defender{defender_id}",

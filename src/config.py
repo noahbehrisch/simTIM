@@ -33,9 +33,9 @@ class SimConfig:
     default_defender_capacity: int = field(
         default_factory=lambda: _get_env("DEFENDER_CAPACITY", "2", int)
     )
-    default_budget: float = field(
-        default_factory=lambda: _get_env("DEFAULT_BUDGET", "100000", float)
-    )
+    # TIM constrains actors by concurrency (R9), not by a spending cap; a finite
+    # budget is opt-in so it stays an experiment rather than a silent confound.
+    default_budget: float = field(default_factory=lambda: _get_env("DEFAULT_BUDGET", "inf", float))
     default_network: str = field(
         default_factory=lambda: _get_env("DEFAULT_NETWORK", "demo_network.json")
     )

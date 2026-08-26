@@ -1,4 +1,5 @@
 import logging
+import random
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -26,7 +27,9 @@ class AttackerStrategy(ABC):
         if not attacker.available_actions:
             return None
 
-        best: tuple[Any, Any] | None = None
+        # Candidates are gathered rather than kept as a running argmax: targets come
+        # out of identity-hashed sets, so first-wins would decide ties by memory layout.
+        best_candidates: list[tuple[Any, Any]] = []
         best_priority: float = -1
 
         visible_links = list(getattr(attacker, "visible_links", set()))
@@ -40,8 +43,10 @@ class AttackerStrategy(ABC):
                         if action.precondition(link, start_access, attacker.id):
                             priority = self.get_priority(action, link, start_access, attacker)
                             if priority > best_priority:
-                                best = (action, link)
+                                best_candidates = [(action, link)]
                                 best_priority = priority
+                            elif priority == best_priority:
+                                best_candidates.append((action, link))
                     except Exception:
                         logger.debug(
                             "Error evaluating link action %s on %s",
@@ -63,8 +68,10 @@ class AttackerStrategy(ABC):
                         if action.precondition(node, actor_access, attacker.id):
                             priority = self.get_priority(action, node, actor_access, attacker)
                             if priority > best_priority:
-                                best = (action, node)
+                                best_candidates = [(action, node)]
                                 best_priority = priority
+                            elif priority == best_priority:
+                                best_candidates.append((action, node))
                     except Exception:
                         logger.debug(
                             "Error evaluating node action %s on %s",
@@ -74,6 +81,7 @@ class AttackerStrategy(ABC):
                         )
                         continue
 
+        best = random.choice(best_candidates) if best_candidates else None
         if best and best_priority >= threshold:
             return best
         if best:
@@ -123,7 +131,7 @@ class DefenderStrategy(ABC):
         ongoing_count += getattr(defender, "pending_action_count", 0)
         threshold = self.get_minimum_threshold(ongoing_count)
 
-        best: tuple[Any, Any] | None = None
+        best_candidates: list[tuple[Any, Any]] = []
         best_priority: float = -1
 
         detected_node_ids = self._get_detected_nodes(defender)
@@ -149,8 +157,10 @@ class DefenderStrategy(ABC):
                                 action, node, detected_node_ids, network_state
                             )
                             if priority > best_priority:
-                                best = (action, node)
+                                best_candidates = [(action, node)]
                                 best_priority = priority
+                            elif priority == best_priority:
+                                best_candidates.append((action, node))
                     except Exception as e:
                         logger.debug(
                             f"Precondition check failed for {action.name} on {node.id}: {e}"
@@ -170,12 +180,15 @@ class DefenderStrategy(ABC):
                                 action, link.node1, detected_node_ids, network_state
                             )
                             if priority > best_priority:
-                                best = (action, link)
+                                best_candidates = [(action, link)]
                                 best_priority = priority
+                            elif priority == best_priority:
+                                best_candidates.append((action, link))
                     except Exception as e:
                         logger.debug(f"Precondition check failed for {action.name} on {link}: {e}")
                         continue
 
+        best = random.choice(best_candidates) if best_candidates else None
         if best and best_priority >= threshold:
             logger.debug(
                 f"Defender {defender.id} chose {best[0].name} on {getattr(best[1], 'id', str(best[1]))} "
